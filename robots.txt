@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# Roadora is temporarily in besloten beta.
