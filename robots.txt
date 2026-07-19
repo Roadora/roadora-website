@@ -1,4 +1,4 @@
 User-agent: *
-Disallow: /
+Allow: /
 
-# Roadora is temporarily in besloten beta.
+Sitemap: https://roadora.eu/sitemap.xml
