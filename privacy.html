@@ -3,64 +3,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Privacyverklaring — Roadora</title>
-  <meta name="description" content="Lees hoe Roadora omgaat met privacy, lokale opslag en contactgegevens." />
+  <title>Privacy — Roadora</title>
+  <meta name="description" content="Lees hoe Roadora omgaat met privacy, analytische cookies en contactgegevens." />
   <meta name="robots" content="index, follow" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#c99432" />
   <link rel="canonical" href="https://www.roadora.eu/privacy.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Privacy — Roadora" />
+  <meta property="og:description" content="Lees hoe Roadora omgaat met privacy, analytische cookies en contactgegevens." />
+  <meta property="og:url" content="https://www.roadora.eu/privacy.html" />
+  <meta property="og:site_name" content="Roadora" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- Google tag (gtag.js) + Consent Mode v2 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-R0XTKDJ2PH"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag("consent", "default", {
-      analytics_storage: "denied",
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      ad_personalization: "denied",
-      functionality_storage: "granted",
-      security_storage: "granted",
-      wait_for_update: 500
-    });
-    gtag("js", new Date());
-    gtag("config", "G-R0XTKDJ2PH", {
-      anonymize_ip: true,
-      send_page_view: true
-    });
-  </script>
+  <script src="js/config.js"></script>
   <script src="js/analytics-consent.js" defer></script>
-</head>
-<body class="page-simple">
-  <header class="site-header solid" data-header>
-    <a class="brand" href="index.html"><span class="brand-mark">R</span><span>Roadora</span></a>
-    <button class="nav-toggle" type="button" aria-label="Menu openen" data-nav-toggle><span></span><span></span><span></span></button>
-    <nav class="site-nav" data-nav><a href="index.html#features">Features</a><a href="index.html#how">Hoe het werkt</a><a href="index.html#roadtrips">Roadtrips</a><a href="privacy.html">Privacy</a><a href="contact.html">Contact</a><a class="nav-cta" href="index.html">Terug naar home</a></nav>
-  </header>
-  <main class="legal-page">
-    <p class="eyebrow">JURIDISCH</p>
-    <h1>Privacyverklaring</h1>
-    <p class="lead">Roadora is ontworpen om roadtrips overzichtelijker te maken. We gaan zorgvuldig om met gegevens. Op deze publieke website gebruiken we alleen noodzakelijke functionaliteit en, na toestemming, Google Analytics om het gebruik van de website te meten en te verbeteren.</p>
-    <section><h2>Welke gegevens verwerken we?</h2><p>De publieke website verwerkt geen accountgegevens en plaatst geen marketingcookies. Wanneer je contact opneemt, verwerken we alleen de gegevens die je zelf meestuurt, zoals je naam, e-mailadres en bericht.</p></section>
-    <section><h2>Lokale opslag in de app</h2><p>De Roadora-app kan routegegevens, schermstatus en voorkeuren lokaal in je browser bewaren, bijvoorbeeld via localStorage. Deze gegevens blijven op je eigen apparaat, tenzij later expliciet een account- of synchronisatiefunctie wordt toegevoegd.</p></section>
-    <section><h2>Analytics en cookies</h2><p>Roadora gebruikt Google Analytics 4 alleen nadat je analytics toestaat via de cookiemelding. Hiermee meten we bijvoorbeeld paginaweergaven, scrollgedrag en uitgaande klikken. We gebruiken deze gegevens om de website en toekomstige app beter te maken. We gebruiken geen advertentiecookies.</p><p>Je kunt je cookievoorkeuren opnieuw tonen met deze knop: <button class="inline-cookie-button" type="button" data-cookie-reset>Cookievoorkeuren aanpassen</button></p></section>
-    <section><h2>Externe diensten</h2><p>Voor route- en kaartfunctionaliteit kan Roadora later gebruikmaken van externe kaart- of routediensten. De publieke website gebruikt Google Analytics alleen na toestemming en bevat geen advertentietracking.</p></section>
-    <section><h2>Contact</h2><p>Voor vragen over privacy kun je contact opnemen via de contactpagina.</p></section>
-    <section><h2>Wijzigingen</h2><p>Deze privacyverklaring kan worden aangepast wanneer Roadora nieuwe functies krijgt. De datum van de laatste wijziging staat onderaan deze pagina.</p><p><strong>Laatst bijgewerkt:</strong> juli 2026</p></section>
-  </main>
-  <footer class="site-footer compact"><div class="footer-bottom">© 2026 Roadora. Alle rechten voorbehouden.</div></footer>
-
-  <aside class="cookie-banner" data-cookie-banner aria-label="Cookievoorkeuren">
-    <div>
-      <strong>Roadora gebruikt analytische cookies</strong>
-      <p>We gebruiken Google Analytics alleen om te begrijpen hoe de website wordt gebruikt en Roadora te verbeteren. Geen advertentiecookies.</p>
-    </div>
-    <div class="cookie-actions">
-      <button type="button" class="cookie-secondary" data-cookie-decline>Alleen noodzakelijk</button>
-      <button type="button" class="cookie-primary" data-cookie-accept>Analytics toestaan</button>
-    </div>
-  </aside>
-  <script src="js/main.js"></script>
-</body>
-</html>
+  <script src="js/navigation.js" defer></script>
+  <script src="js/walkthrough.js" defer></script>
+</head><body>
+<a class="skip-link" href="#content">Naar inhoud</a>
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html" aria-label="Roadora home"><span class="brand-mark">R</span><span>Roadora</span></a>
+    <button class="nav-toggle" type="button" aria-label="Menu openen" aria-expanded="false" data-nav-toggle><span></span><span></span><span></span></button>
+    <nav class="nav-links" data-nav><a class="" href="index.html#routeplanner">Routeplanner</a><a class="" href="roadtrip-door-europa.html">Inspiratie</a><a class="" href="roadtrip-planner.html">Reisgids</a><a class="active" href="index.html#over">Over Roadora</a><a class="" href="index.html#premium">Premium</a></nav>
+    <div class="nav-actions"><a class="pill hide-mobile" href="index.html#favorieten">♡ Favorieten</a><a class="btn" href="contact.html">Mijn Roadora</a></div>
+  </div>
+</header><main id="content" class="content-page"><div class="container content-shell"><article class="article card"><p class="eyebrow">Roadora</p><h1>Privacyverklaring</h1><p class="lead">Roadora gebruikt zo min mogelijk gegevens. Op deze publieke website meten we met Google Analytics hoe de site wordt gebruikt, alleen nadat daarvoor toestemming is gegeven via de cookiebanner.</p><div class="legal-list"><p>Roadora is een Nederlandse roadtrip-planner in ontwikkeling. De publieke website is bedoeld om het merk, de functies en de toekomstige app duidelijk uit te leggen.</p><p>Deze pagina is opgesteld als praktische basis en kan later worden uitgebreid wanneer accountfuncties, kaarten, boekingen of extra dataverwerking live gaan.</p></div><h2>Cookievoorkeuren</h2><p>Je kunt je keuze opnieuw instellen met onderstaande knop.</p><button class="btn" data-cookie-reset>Cookiekeuze opnieuw instellen</button></article><aside class="toc card"><strong>Roadora</strong><a href="index.html">Home</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></aside></div></main><footer class="section" style="padding-bottom:34px;border-top:1px solid var(--line);background:rgba(255,253,250,.55)">
+  <div class="container grid" style="grid-template-columns:1.2fr repeat(3,1fr);align-items:start">
+    <div><a class="brand" href="index.html"><span class="brand-mark">R</span><span>Roadora</span></a><p class="muted">Slimme roadtrip planner voor routes, stops en overnachten onderweg.</p></div>
+    <div><strong>Product</strong><p><a href="roadtrip-planner.html">Roadtrip planner</a><br><a href="slimme-stops-onderweg.html">Slimme stops</a><br><a href="hotels-onderweg.html">Hotels onderweg</a></p></div>
+    <div><strong>Roadtrips</strong><p><a href="roadtrip-door-europa.html">Roadtrip door Europa</a><br><a href="index.html#routeplanner">Routeplanner</a><br><a href="index.html#stappen">Hoe het werkt</a></p></div>
+    <div><strong>Juridisch</strong><p><a href="privacy.html">Privacy</a><br><a href="voorwaarden.html">Gebruiksvoorwaarden</a><br><a href="contact.html">Contact</a></p></div>
+  </div>
+  <div class="container" style="margin-top:28px;color:var(--muted);font-size:.92rem">© 2026 Roadora. Alle rechten voorbehouden.</div>
+</footer>
+<script src="js/main.js" defer></script>
+<aside class="cookie-banner" data-cookie-banner hidden aria-label="Cookievoorkeuren">
+  <div><strong>Roadora gebruikt analytische cookies.</strong><br><span class="muted">We meten alleen hoe de website wordt gebruikt om Roadora te verbeteren. Geen advertentiecookies.</span></div>
+  <div class="cookie-actions"><button class="btn" data-cookie-decline>Alleen noodzakelijk</button><button class="btn primary" data-cookie-accept>Analytics toestaan</button></div>
+</aside></body></html>

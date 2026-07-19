@@ -1,19 +1,25 @@
-Roadora Website v2 — SEO + Analytics Ready
+Roadora Website v3 Professional Product Walkthrough
 
-Upload alle bestanden uit deze map naar de root van je Roadora GitHub Pages/Vercel project.
+Upload de INHOUD van deze map naar de root van GitHub repo Roadora/roadora-website.
+Niet de map zelf uploaden.
 
-Inbegrepen:
-- professionele publieke Roadora-website
-- SEO meta-tags
-- robots.txt indexeerbaar
+Root moet bevatten:
+- index.html
+- roadtrip-planner.html
+- roadtrip-door-europa.html
+- slimme-stops-onderweg.html
+- hotels-onderweg.html
+- privacy.html
+- contact.html
+- voorwaarden.html
+- robots.txt
 - sitemap.xml
-- Google Analytics 4 Measurement ID: G-R0XTKDJ2PH
-- cookiebanner met analytics-toestemming
-- privacyverklaring bijgewerkt voor analytics
+- assets/
+- css/
+- js/
 
-Na upload:
-1. Wacht op deploy.
-2. Open roadora.eu in incognito.
-3. Accepteer analytics in de cookiebanner.
-4. Test daarna in Google Analytics met Installatie testen of Realtime.
-5. Dien https://www.roadora.eu/sitemap.xml in bij Google Search Console.
+Belangrijk:
+- Geen vercel.json nodig.
+- Geen oude ROADORA_WEBSITE_V2... bestanden laten staan.
+- GA4 Measurement ID staat op G-R0XTKDJ2PH.
+- Na upload: Vercel deployment afwachten en daarna sitemap opnieuw indienen.

@@ -1,133 +1,38 @@
-/* Roadora analytics consent v2.4 — robust GA4 Consent Mode + realtime events */
 (function(){
-  var STORAGE_KEY = 'roadora_analytics_consent_v1';
-  var GA_ID = 'G-R0XTKDJ2PH';
-
+  const cfg = window.RoadoraConfig || { gaMeasurementId: 'G-R0XTKDJ2PH', consentKey: 'roadora_analytics_consent_v1' };
   window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
-
-  function getConsent(){
-    try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
-  }
+  window.gtag = window.gtag || function(){ dataLayer.push(arguments); };
+  gtag('consent', 'default', {
+    analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied',
+    functionality_storage: 'granted', security_storage: 'granted', wait_for_update: 500
+  });
+  gtag('js', new Date());
+  gtag('config', cfg.gaMeasurementId, { anonymize_ip: true, send_page_view: true });
 
   function setConsent(value){
-    try{ localStorage.setItem(STORAGE_KEY, value); }catch(e){ }
-  }
-
-  function sendPageView(){
-    window.gtag('config', GA_ID, {
-      anonymize_ip: true,
-      send_page_view: true,
-      page_title: document.title,
-      page_location: window.location.href,
-      page_path: window.location.pathname
-    });
-  }
-
-  function grantAnalytics(){
-    window.gtag('consent', 'update', {
-      analytics_storage: 'granted',
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-      functionality_storage: 'granted',
-      security_storage: 'granted'
-    });
-
-    sendPageView();
-
-    window.gtag('event', 'roadora_analytics_allowed', {
-      event_category: 'consent',
-      event_label: 'analytics_granted',
-      debug_mode: true
-    });
-  }
-
-  function denyAnalytics(){
-    window.gtag('consent', 'update', {
-      analytics_storage: 'denied',
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-      functionality_storage: 'granted',
-      security_storage: 'granted'
-    });
-  }
-
-  function hideBanner(){
-    var banner = document.querySelector('[data-cookie-banner]');
-    if(banner){
-      banner.hidden = true;
-      banner.setAttribute('aria-hidden', 'true');
+    try{ localStorage.setItem(cfg.consentKey, value); }catch(e){}
+    if(value === 'granted'){
+      gtag('consent','update',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+      gtag('config', cfg.gaMeasurementId, { anonymize_ip:true, send_page_view:true });
+      gtag('event','roadora_analytics_allowed',{event_category:'consent',event_label:'analytics_allowed'});
     }
+    hideBanner();
   }
-
-  function showBanner(){
-    var banner = document.querySelector('[data-cookie-banner]');
-    if(banner){
-      banner.hidden = false;
-      banner.removeAttribute('aria-hidden');
-    }
-  }
-
-  function bindBanner(){
-    var consent = getConsent();
-
-    document.querySelectorAll('[data-cookie-accept]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        setConsent('accepted');
-        grantAnalytics();
-        hideBanner();
-      });
-    });
-
-    document.querySelectorAll('[data-cookie-decline]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        setConsent('declined');
-        denyAnalytics();
-        hideBanner();
-      });
-    });
-
-    document.querySelectorAll('[data-cookie-reset]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ }
-        showBanner();
-      });
-    });
-
-    if(consent === 'accepted'){
-      grantAnalytics();
+  function getConsent(){try{return localStorage.getItem(cfg.consentKey)}catch(e){return null}}
+  function hideBanner(){const b=document.querySelector('[data-cookie-banner]'); if(b) b.hidden=true;}
+  function showBanner(){const b=document.querySelector('[data-cookie-banner]'); if(b) b.hidden=false;}
+  document.addEventListener('DOMContentLoaded', function(){
+    const consent = getConsent();
+    if(consent === 'granted'){
+      gtag('consent','update',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
       hideBanner();
-      return;
-    }
-
-    if(consent === 'declined'){
-      denyAnalytics();
-      hideBanner();
-      return;
-    }
-
-    showBanner();
-  }
-
+    } else if(consent === 'denied') { hideBanner(); } else { showBanner(); }
+    document.querySelectorAll('[data-cookie-accept]').forEach(btn=>btn.addEventListener('click',()=>setConsent('granted')));
+    document.querySelectorAll('[data-cookie-decline]').forEach(btn=>btn.addEventListener('click',()=>setConsent('denied')));
+    document.querySelectorAll('[data-cookie-reset]').forEach(btn=>btn.addEventListener('click',()=>{try{localStorage.removeItem(cfg.consentKey)}catch(e){}; showBanner();}));
+  });
   window.RoadoraAnalyticsDebug = {
-    gaId: GA_ID,
-    consent: getConsent,
-    grant: function(){ setConsent('accepted'); grantAnalytics(); hideBanner(); },
-    reset: function(){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} showBanner(); },
-    testEvent: function(){
-      window.gtag('event', 'roadora_manual_test', {
-        event_category: 'debug',
-        event_label: 'manual_test',
-        debug_mode: true
-      });
-    }
+    getConsent, reset(){try{localStorage.removeItem(cfg.consentKey)}catch(e){}; location.reload();},
+    testEvent(){gtag('event','roadora_manual_test',{event_category:'debug',event_label:'manual_test',debug_mode:true});}
   };
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', bindBanner);
-  } else {
-    bindBanner();
-  }
 })();
