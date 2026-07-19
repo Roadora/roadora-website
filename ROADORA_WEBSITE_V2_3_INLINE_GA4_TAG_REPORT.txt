@@ -1,0 +1,16 @@
+Roadora Website v2.3 — Inline GA4 Tag Fix
+
+Purpose:
+- Make the GA4 tag directly visible in the page source for Google Analytics installation testing.
+
+Changes:
+- Added inline Google tag snippet to the <head> of index.html, privacy.html, contact.html and voorwaarden.html.
+- Kept Consent Mode v2 default denied.
+- Kept analytics granted only after clicking “Analytics toestaan”.
+- Changed js/analytics-consent.js to handle banner + consent updates only.
+- Measurement ID: G-ROXTKDJ2PH.
+- Canonical target remains https://www.roadora.eu/.
+
+After upload:
+- Check view-source:https://www.roadora.eu for G-ROXTKDJ2PH.
+- Open incognito, accept analytics, check GA4 Realtime.
