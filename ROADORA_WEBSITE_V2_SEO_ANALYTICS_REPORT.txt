@@ -1,6 +1,6 @@
 Roadora Website v2 SEO Analytics Ready
 
-Measurement ID: G-ROXTKDJ2PH
+Measurement ID: G-R0XTKDJ2PH
 
 Aanpassingen:
 - GA4 toegevoegd via js/analytics-consent.js

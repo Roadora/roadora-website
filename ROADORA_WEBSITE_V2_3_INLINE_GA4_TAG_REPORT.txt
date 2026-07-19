@@ -8,9 +8,9 @@ Changes:
 - Kept Consent Mode v2 default denied.
 - Kept analytics granted only after clicking “Analytics toestaan”.
 - Changed js/analytics-consent.js to handle banner + consent updates only.
-- Measurement ID: G-ROXTKDJ2PH.
+- Measurement ID: G-R0XTKDJ2PH.
 - Canonical target remains https://www.roadora.eu/.
 
 After upload:
-- Check view-source:https://www.roadora.eu for G-ROXTKDJ2PH.
+- Check view-source:https://www.roadora.eu for G-R0XTKDJ2PH.
 - Open incognito, accept analytics, check GA4 Realtime.

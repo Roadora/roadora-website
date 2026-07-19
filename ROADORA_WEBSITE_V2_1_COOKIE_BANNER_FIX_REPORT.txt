@@ -6,4 +6,4 @@ Wijziging:
 - Hierdoor blijft de banner zichtbaar als analytics-consent.js traag laadt of niet goed uitgevoerd wordt.
 - GA4 blijft pas laden na klik op Analytics toestaan.
 
-Measurement ID: G-ROXTKDJ2PH
+Measurement ID: G-R0XTKDJ2PH

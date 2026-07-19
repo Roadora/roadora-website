@@ -7,7 +7,7 @@ Inbegrepen:
 - SEO meta-tags
 - robots.txt indexeerbaar
 - sitemap.xml
-- Google Analytics 4 Measurement ID: G-ROXTKDJ2PH
+- Google Analytics 4 Measurement ID: G-R0XTKDJ2PH
 - cookiebanner met analytics-toestemming
 - privacyverklaring bijgewerkt voor analytics
 

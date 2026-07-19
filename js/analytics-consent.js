@@ -1,7 +1,7 @@
 /* Roadora analytics consent v2.4 — robust GA4 Consent Mode + realtime events */
 (function(){
   var STORAGE_KEY = 'roadora_analytics_consent_v1';
-  var GA_ID = 'G-ROXTKDJ2PH';
+  var GA_ID = 'G-R0XTKDJ2PH';
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };

@@ -12,7 +12,7 @@ Aangepast:
 - Canonical/robots/sitemap geüpdatet naar https://www.roadora.eu/ omdat Vercel apex redirect naar www actief is.
 
 Measurement ID:
-- G-ROXTKDJ2PH
+- G-R0XTKDJ2PH
 
 Na upload:
 1. Deploy naar Vercel project roadora-website.
