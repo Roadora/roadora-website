@@ -16,4 +16,4 @@ Na upload:
 2. Open roadora.eu in incognito.
 3. Accepteer analytics in de cookiebanner.
 4. Test daarna in Google Analytics met Installatie testen of Realtime.
-5. Dien https://roadora.eu/sitemap.xml in bij Google Search Console.
+5. Dien https://www.roadora.eu/sitemap.xml in bij Google Search Console.

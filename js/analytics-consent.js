@@ -1,17 +1,32 @@
-/* Roadora analytics consent v2.1 — banner visible by default fallback */
+/* Roadora analytics consent v2.2 — Google Consent Mode v2 */
 (function(){
   var MEASUREMENT_ID = 'G-ROXTKDJ2PH';
   var STORAGE_KEY = 'roadora_analytics_consent_v1';
-  var loaded = false;
+  var tagReady = false;
 
-  function injectAnalytics(){
-    if(loaded || !MEASUREMENT_ID || !/^G-[A-Z0-9]+$/.test(MEASUREMENT_ID)) return;
-    loaded = true;
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ window.dataLayer.push(arguments); }
-    window.gtag = window.gtag || gtag;
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ window.dataLayer.push(arguments); }
+  window.gtag = window.gtag || gtag;
+
+  /* Consent Mode v2: tag is findable, storage stays denied until consent. */
+  gtag('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    functionality_storage: 'granted',
+    security_storage: 'granted',
+    wait_for_update: 500
+  });
+
+  function loadGoogleTag(){
+    if(tagReady || !MEASUREMENT_ID || !/^G-[A-Z0-9]+$/.test(MEASUREMENT_ID)) return;
+    tagReady = true;
     gtag('js', new Date());
-    gtag('config', MEASUREMENT_ID, { anonymize_ip: true });
+    gtag('config', MEASUREMENT_ID, {
+      anonymize_ip: true,
+      send_page_view: true
+    });
     var script = document.createElement('script');
     script.async = true;
     script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(MEASUREMENT_ID);
@@ -24,6 +39,27 @@
 
   function setConsent(value){
     try{ localStorage.setItem(STORAGE_KEY, value); }catch(e){ }
+  }
+
+  function grantAnalytics(){
+    gtag('consent', 'update', {
+      analytics_storage: 'granted',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+    loadGoogleTag();
+    gtag('event', 'analytics_consent_granted');
+  }
+
+  function denyAnalytics(){
+    gtag('consent', 'update', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+    loadGoogleTag();
   }
 
   function hideBanner(){
@@ -43,24 +79,39 @@
   }
 
   function bindBanner(){
+    /* Load tag on every page for GA tester and Consent Mode, but denied by default. */
+    loadGoogleTag();
+
     var consent = getConsent();
-    if(consent === 'accepted'){ injectAnalytics(); hideBanner(); return; }
-    if(consent === 'declined'){ hideBanner(); return; }
+    if(consent === 'accepted'){
+      grantAnalytics();
+      hideBanner();
+      return;
+    }
+    if(consent === 'declined'){
+      denyAnalytics();
+      hideBanner();
+      return;
+    }
+
     showBanner();
 
     document.querySelectorAll('[data-cookie-accept]').forEach(function(btn){
       btn.addEventListener('click', function(){
         setConsent('accepted');
-        injectAnalytics();
+        grantAnalytics();
         hideBanner();
       });
     });
+
     document.querySelectorAll('[data-cookie-decline]').forEach(function(btn){
       btn.addEventListener('click', function(){
         setConsent('declined');
+        denyAnalytics();
         hideBanner();
       });
     });
+
     document.querySelectorAll('[data-cookie-reset]').forEach(function(btn){
       btn.addEventListener('click', function(){
         try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ }

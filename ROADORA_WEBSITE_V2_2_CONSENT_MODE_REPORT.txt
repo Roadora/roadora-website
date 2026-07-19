@@ -1,0 +1,22 @@
+Roadora Website v2.2 — GA4 Consent Mode Fix
+
+Doel:
+- Google Analytics-installatietest moet de Google-tag kunnen vinden.
+- Analytics blijft privacyvriendelijk: standaard denied, pas granted na toestemming.
+
+Aangepast:
+- js/analytics-consent.js vervangen door Consent Mode v2 implementatie.
+- Google tag wordt op elke pagina geladen met analytics_storage='denied' als default.
+- Na klikken op "Analytics toestaan" wordt analytics_storage='granted'.
+- Advertentieconsent blijft denied: ad_storage, ad_user_data en ad_personalization blijven denied.
+- Canonical/robots/sitemap geüpdatet naar https://www.roadora.eu/ omdat Vercel apex redirect naar www actief is.
+
+Measurement ID:
+- G-ROXTKDJ2PH
+
+Na upload:
+1. Deploy naar Vercel project roadora-website.
+2. Open https://www.roadora.eu in incognito.
+3. Cookiebanner moet zichtbaar zijn.
+4. Klik Analytics toestaan.
+5. Test Google-tag opnieuw in GA4 en controleer Realtime.
