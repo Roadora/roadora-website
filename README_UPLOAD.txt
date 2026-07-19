@@ -1,18 +1,19 @@
-Roadora Website v1 Public Shell
+Roadora Website v2 — SEO + Analytics Ready
 
-Upload deze bestanden naar de root van je Roadora repository/project.
-Deze versie bevat:
-- professionele publieke homepage
-- privacyverklaring
-- contactpagina
-- gebruiksvoorwaarden
+Upload alle bestanden uit deze map naar de root van je Roadora GitHub Pages/Vercel project.
+
+Inbegrepen:
+- professionele publieke Roadora-website
+- SEO meta-tags
 - robots.txt indexeerbaar
 - sitemap.xml
-- geen Google Analytics
-- geen cookies
-- geen echte app-code
+- Google Analytics 4 Measurement ID: G-ROXTKDJ2PH
+- cookiebanner met analytics-toestemming
+- privacyverklaring bijgewerkt voor analytics
 
-Advies:
-1. Upload deze website naar de repo die aan Vercel gekoppeld is.
-2. Houd GitHub Pages uitgeschakeld, zodat roadora.github.io/roadora-app niet meer als app-ingang blijft bestaan.
-3. Zet de echte Roadora app later apart onder /app of achter een login/besloten beta.
+Na upload:
+1. Wacht op deploy.
+2. Open roadora.eu in incognito.
+3. Accepteer analytics in de cookiebanner.
+4. Test daarna in Google Analytics met Installatie testen of Realtime.
+5. Dien https://roadora.eu/sitemap.xml in bij Google Search Console.
