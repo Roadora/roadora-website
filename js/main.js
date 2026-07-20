@@ -1,1 +1,5 @@
-// Roadora public website entry point. Keep page behaviour small and framework-free.
+import { initConsent } from './analytics-consent.js';
+import { initNavigation } from './navigation.js';
+import { initPlanner } from './app.js';
+
+document.addEventListener('DOMContentLoaded',()=>{initConsent();initNavigation();initPlanner();});

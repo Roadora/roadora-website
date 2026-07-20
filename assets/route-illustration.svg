@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Roadora routekaart illustratie">
+  <rect width="900" height="620" rx="28" fill="#f7f3eb"/>
+  <path d="M0 130 C160 90 252 176 394 126 C540 74 632 132 900 86 V0 H0Z" fill="#cfe9f1" opacity=".75"/>
+  <path d="M0 555 C186 492 238 552 400 506 C561 460 700 494 900 436 V620H0Z" fill="#d8edf2" opacity=".7"/>
+  <g opacity=".38" fill="none" stroke="#cabf9f" stroke-width="1.2">
+    <path d="M100 0v620M210 0v620M320 0v620M430 0v620M540 0v620M650 0v620M760 0v620"/>
+    <path d="M0 90h900M0 200h900M0 310h900M0 420h900M0 530h900"/>
+  </g>
+  <g fill="#1d2c2f" opacity=".72" font-family="Inter,Arial" font-weight="700" font-size="20">
+    <text x="256" y="88">NEDERLAND</text><text x="556" y="204">DUITSLAND</text><text x="404" y="410">ZWITSERLAND</text><text x="648" y="512">ITALIË</text><text x="146" y="282">BELGIË</text>
+  </g>
+  <path d="M302 66 C308 118 344 140 340 186 C336 233 396 251 396 298 C396 346 450 344 469 390 C492 448 548 462 577 508 C600 546 632 556 670 579" fill="none" stroke="#a87308" stroke-width="7" stroke-linecap="round"/>
+  <path d="M302 66 C308 118 344 140 340 186 C336 233 396 251 396 298 C396 346 450 344 469 390 C492 448 548 462 577 508 C600 546 632 556 670 579" fill="none" stroke="#f0c86c" stroke-width="3" stroke-linecap="round"/>
+  <g font-family="Inter,Arial" font-size="14" fill="#142b2f" font-weight="650">
+    <text x="322" y="82">Amsterdam</text><text x="357" y="190">Keulen</text><text x="408" y="296">Frankfurt</text><text x="489" y="390">Ulm</text><text x="606" y="510">Verona</text><text x="688" y="584">Toscane</text>
+  </g>
+  <g>
+    <circle cx="302" cy="66" r="17" fill="#2fa46e" stroke="#fff" stroke-width="5"/><circle cx="340" cy="186" r="16" fill="#bd880e" stroke="#fff" stroke-width="5"/><circle cx="396" cy="298" r="16" fill="#2fa46e" stroke="#fff" stroke-width="5"/><circle cx="469" cy="390" r="16" fill="#e07b10" stroke="#fff" stroke-width="5"/><circle cx="577" cy="508" r="16" fill="#8252b4" stroke="#fff" stroke-width="5"/><circle cx="670" cy="579" r="18" fill="#222" stroke="#fff" stroke-width="5"/>
+  </g>
+</svg>

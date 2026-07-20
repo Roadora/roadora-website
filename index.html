@@ -1,74 +1,145 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Roadora — slimme roadtrip planner voor routes, stops en overnachten</title>
-  <meta name="description" content="Plan je roadtrip met Roadora. Ontdek slimme stops onderweg, vind hotels, eten, laadpunten en tankstations en navigeer eenvoudig verder." />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#c99432" />
-  <link rel="canonical" href="https://www.roadora.eu/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Roadora — slimme roadtrip planner voor routes, stops en overnachten" />
-  <meta property="og:description" content="Plan je roadtrip met Roadora. Ontdek slimme stops onderweg, vind hotels, eten, laadpunten en tankstations en navigeer eenvoudig verder." />
-  <meta property="og:url" content="https://www.roadora.eu/" />
-  <meta property="og:site_name" content="Roadora" />
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R0XTKDJ2PH"></script>
-  <script src="js/config.js"></script>
-  <script src="js/analytics-consent.js" defer></script>
-  <script src="js/navigation.js" defer></script>
-  <script src="js/walkthrough.js" defer></script>
-</head><body>
-<a class="skip-link" href="#content">Naar inhoud</a>
-<header class="site-header">
-  <div class="container nav">
-    <a class="brand" href="index.html" aria-label="Roadora home"><span class="brand-mark">R</span><span>Roadora</span></a>
-    <button class="nav-toggle" type="button" aria-label="Menu openen" aria-expanded="false" data-nav-toggle><span></span><span></span><span></span></button>
-    <nav class="nav-links" data-nav><a class="active" href="index.html#routeplanner">Routeplanner</a><a class="" href="roadtrip-door-europa.html">Inspiratie</a><a class="" href="roadtrip-planner.html">Reisgids</a><a class="" href="index.html#over">Over Roadora</a><a class="" href="index.html#premium">Premium</a></nav>
-    <div class="nav-actions"><a class="pill hide-mobile" href="index.html#favorieten">♡ Favorieten</a><a class="btn" href="contact.html">Mijn Roadora</a></div>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadora — plan je roadtrip zonder gedoe</title>
+  <meta name="description" content="Plan je roadtrip met slimme stopmomenten, hotelzones en persoonlijke voorkeuren zoals kinderen, hond, elektrische auto en gewenste aankomsttijd.">
+  <link rel="canonical" href="https://www.roadora.eu/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="Roadora home">
+      <span class="brand-mark">R</span>
+      <span class="brand-word">Roadora</span>
+    </a>
+    <nav class="header-actions" aria-label="Hoofdnavigatie">
+      <a class="top-link optional" href="#planner">🚗 <span>Plan route</span></a>
+      <a class="top-link optional" href="#uitleg">✨ <span>Waarom Roadora</span></a>
+      <a class="top-link" href="contact.html">✉️ <span>Contact</span></a>
+      <span class="profile-dot" title="Profiel komt later">P</span>
+    </nav>
+  </header>
+
+  <main id="planner" class="shell">
+    <aside class="rail" aria-label="Snelle navigatie">
+      <button class="rail-btn active" data-target="#planner" title="Route">⌘</button>
+      <button class="rail-btn" data-target="#profileBlock" title="Profiel">♡</button>
+      <button class="rail-btn" data-target="#timelineBlock" title="Planning">◷</button>
+      <button class="rail-btn" data-target="#uitleg" title="Uitleg">?</button>
+    </aside>
+
+    <section class="panel" aria-label="Routeplanner">
+      <div class="stack">
+        <article class="card form-card">
+          <div class="progress" aria-label="Stappen">
+            <span class="progress-dot">1</span><span class="progress-line"></span><span class="progress-dot">2</span><span class="progress-line"></span><span class="progress-dot">3</span>
+          </div>
+          <div class="card-title"><h1 style="font-size:1.25rem;margin:0">Plan je roadtrip</h1><button id="resetDemo" class="mini-link" type="button">Reset</button></div>
+          <p class="step-note">Vul alleen in wat je weet. Roadora maakt daarna een logisch overzicht met stops, hotelzone en aanbevelingen.</p>
+          <div class="divider"></div>
+          <div class="field"><label for="origin">Vertrekpunt</label><div class="input-wrap">📍<input id="origin" name="origin" autocomplete="off" value="Amsterdam, Nederland"></div></div>
+          <div class="field"><label for="destination">Bestemming</label><div class="input-wrap">🏁<input id="destination" name="destination" autocomplete="off" value="Toscane, Italië"></div></div>
+          <div class="two">
+            <div class="field"><label for="date">Vertrekdatum</label><div class="input-wrap">📅<input id="date" name="date" type="date" value="2026-05-26"></div></div>
+            <div class="field"><label for="departTime">Vertrektijd</label><div class="input-wrap">🕘<input id="departTime" name="departTime" type="time" value="08:30"></div></div>
+          </div>
+          <div class="field"><label for="hotelArrival">Aankomst hotel rond</label><div class="input-wrap">🏨<select id="hotelArrival" name="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div></div>
+          <button id="planRoute" class="btn primary full" type="button">⌘ Plan mijn roadtrip</button>
+        </article>
+
+        <article id="profileBlock" class="card form-card">
+          <div class="card-title"><h2>Reisprofiel</h2><span class="pill">optioneel</span></div>
+          <div class="field"><label>Met wie reis je?</label><div class="two"><div class="input-wrap">👤<input name="adults" type="number" min="1" value="2" aria-label="Aantal volwassenen"></div><div class="input-wrap">🧒<input name="children" type="number" min="0" value="3" aria-label="Aantal kinderen"></div></div></div>
+          <div class="field"><label for="childAges">Leeftijden kinderen</label><div class="input-wrap">🎒<input id="childAges" name="childAges" value="2, 6, 9"></div></div>
+          <div class="field"><label>Huisdieren</label><div class="choice-grid"><button class="choice" data-pet="none" type="button">Geen</button><button class="choice active" data-pet="dog" type="button">Hond</button><button class="choice" data-pet="multiple" type="button">Meerdere</button></div></div>
+          <p class="step-note">Hiermee tonen we bijvoorbeeld direct familiekamers, hondvriendelijke hotels en rustige pauzeplekken.</p>
+        </article>
+
+        <article class="card form-card">
+          <div class="card-title"><h2>Voertuig</h2></div>
+          <div class="choice-grid"><button class="choice" data-vehicle="car" type="button">🚗 Auto</button><button class="choice active" data-vehicle="electric" type="button">⚡ Elektrisch</button><button class="choice" data-vehicle="camper" type="button">🚐 Camper</button></div>
+          <div id="evFields" class="stack" style="margin-top:14px">
+            <div class="field"><label for="evRangeKm">Hoe ver kom je ongeveer op een volle accu?</label><div class="input-wrap">⚡<input id="evRangeKm" name="evRangeKm" type="number" min="80" max="900" step="1" value="325"><strong>km</strong></div><p class="step-note">Je kunt dit handmatig invullen, bijvoorbeeld 325 km. Roadora gebruikt dit voor veilige laadstopzones.</p></div>
+            <div class="field"><label for="plug">Laadstekker</label><div class="input-wrap">🔌<select id="plug" name="plug"><option selected>CCS</option><option>Type 2</option><option>CHAdeMO</option><option>Weet ik niet</option></select></div></div>
+          </div>
+          <div class="field"><label for="maxDetour">Maximaal omrijden</label><div class="range-row"><input id="maxDetour" name="maxDetour" type="range" min="5" max="45" value="20"><strong>20 min</strong></div></div>
+        </article>
+
+        <article class="card form-card">
+          <div class="card-title"><h2>Belangrijk onderweg</h2><button class="mini-link" type="button">Slim kiezen</button></div>
+          <div class="pref-grid">
+            <button class="pref active" data-pref="family" type="button">👨‍👩‍👧‍👦 Familiekamers</button><button class="pref active" data-pref="pets" type="button">🐾 Huisdieren</button><button class="pref active" data-pref="kids" type="button">🛝 Kindvriendelijk</button><button class="pref active" data-pref="parking" type="button">🅿️ Parkeren</button><button class="pref active" data-pref="charging" type="button">⚡ Laadpunt</button><button class="pref active" data-pref="breakfast" type="button">☕ Ontbijt</button><button class="pref" data-pref="quiet" type="button">🌿 Rustig</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="map-stage" aria-label="Kaart en route">
+      <div class="map-card">
+        <img src="assets/route-illustration.svg" alt="Illustratieve routekaart Amsterdam naar Toscane met slimme stopzones">
+        <div class="map-controls" aria-label="Kaartbediening"><button type="button">⌖</button><button type="button">+</button><button type="button">−</button><button type="button">▧</button></div>
+        <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Hotelzone</span></div>
+        <div class="smart-card pause"><strong>11:00 Pauze</strong><span>WC · koffie · hond uitlaten</span></div>
+        <div class="smart-card lunch"><strong>13:00 Lunch</strong><span>kindvriendelijk langs route</span></div>
+        <div class="smart-card charge"><strong>15:15 Laadstop</strong><span id="chargeDetail">325 km actieradius · CCS</span></div>
+        <div class="smart-card hotel"><strong>16:30 - 18:00 Hotelzone</strong><span>familiekamer · hond welkom</span></div>
+        <div class="map-badge"><h3 id="mapRouteTitle">Amsterdam → Toscane</h3><div class="badge-stats"><span>🚗 1.495 km</span><span>🕘 15 u 45 m</span></div><div id="profileTags" class="tag-row"></div></div>
+      </div>
+    </section>
+
+    <section class="panel right" aria-label="Roadtrip overzicht">
+      <article class="card section-pad">
+        <div class="result-head"><div><h2 style="margin:0">Jouw roadtrip</h2><p id="summaryRoute" class="muted" style="margin:.35rem 0 0">Amsterdam → Toscane</p></div><button id="saveRoute" class="btn" type="button">♡ Bewaar</button></div>
+        <div class="stats"><div class="stat"><span>Afstand</span><strong id="distance">1.495 km</strong></div><div class="stat"><span>Rijtijd</span><strong id="duration">15 u 45 m</strong></div><div class="stat"><span>Hoogte</span><strong id="altitude">12.850 m</strong></div></div>
+        <div class="route-dots"><span class="dot start">✓</span><span class="dash"></span><span class="dot one">1</span><span class="dash"></span><span class="dot two">2</span><span class="dash"></span><span class="dot three">3</span><span class="dash"></span><span class="dot four">4</span><span class="dash"></span><span class="dot end">🏁</span></div>
+      </article>
+
+      <article id="timelineBlock" class="card section-pad">
+        <div class="card-title"><h2>Dagplanning</h2><button class="mini-link" type="button">Bewerken</button></div>
+        <div id="timeline" class="timeline"></div>
+      </article>
+
+      <article class="card section-pad">
+        <div class="card-title"><h2>Aanbevolen in je hotelzone</h2></div>
+        <div id="recommendations" class="rec-grid"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><button class="btn primary" type="button">🏨 Bekijk hotels</button><button id="saveRouteSide" class="btn" type="button">♡ Opslaan</button></div>
+      </article>
+
+      <article class="card section-pad">
+        <div class="card-title"><h2>Reisoverzicht</h2></div>
+        <div class="timeline">
+          <div class="time-row"><div class="time">Route</div><div class="time-card"><strong id="routeTitle">Amsterdam → Toscane</strong><span id="sideDistance">1.495 km</span></div></div>
+          <div class="time-row"><div class="time">Vertrek</div><div class="time-card"><strong id="sideDepart">2026-05-26 · 08:30</strong><span>planning op basis van jouw voorkeuren</span></div></div>
+          <div class="time-row"><div class="time">Hotel</div><div class="time-card hotel"><strong id="sideHotel">16:30 - 18:00</strong><span>Roadora zoekt rond deze zone</span></div></div>
+          <div class="time-row"><div class="time">Auto</div><div class="time-card"><strong id="sideVehicle">Elektrisch (325 km)</strong><span id="sideDuration">15 u 45 m</span></div></div>
+          <div class="time-row"><div class="time">Profiel</div><div class="time-card"><strong id="sideTravelers">2 volwassenen, 3 kinderen, hond</strong><span>persoonlijke stopfilters actief</span></div></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <section id="uitleg" class="below-content">
+    <div class="intro-strip">
+      <div><span class="pill">Roadora concept</span><h2 class="section-title">Geen kaart vol pins, maar een rustige roadtrip-assistent.</h2></div>
+      <p>Roadora combineert route, vertrektijd, gewenste aankomst bij je hotel en persoonlijke voorkeuren. Zo ziet een reiziger sneller waar hij logisch pauzeert, eet, laadt, tankt of overnacht.</p>
+    </div>
+    <div class="explain-grid">
+      <article class="card explain-card"><h3>1. Eerst snel starten</h3><p class="content-copy">Vertrekpunt, bestemming, vertrektijd en gewenste hotel-aankomst zijn genoeg om een eerste planning te maken.</p></article>
+      <article class="card explain-card"><h3>2. Dan persoonlijk maken</h3><p class="content-copy">Kinderen, hond, voertuig en voorkeuren sturen automatisch welke hotels en stops belangrijk zijn.</p></article>
+      <article class="card explain-card"><h3>3. Alles in één overzicht</h3><p class="content-copy">Kaart, tijdlijn, hotelzone en aanbevolen stops blijven naast elkaar zichtbaar. Geen moeilijk gedoe.</p></article>
+    </div>
+  </section>
+
+  <footer class="footer"><div class="footer-inner"><div>© 2026 Roadora. Eerste professionele webplanner.</div><nav><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav></div></footer>
+
+  <div id="cookieBanner" class="cookie" role="dialog" aria-label="Cookie melding">
+    <p><strong>Cookies.</strong> Roadora gebruikt noodzakelijke cookies en, na toestemming, analyse om de website te verbeteren.</p>
+    <div class="cookie-actions"><button id="rejectCookies" class="btn ghost" type="button">Weigeren</button><button id="acceptCookies" class="btn primary" type="button">Accepteren</button></div>
   </div>
-</header><main id="content">
-<section class="hero" id="routeplanner"><div class="container hero-grid">
-  <div class="hero-copy"><p class="eyebrow">Slimme roadtrip planner</p><h1>Jouw roadtrip begint met <span>overzicht.</span></h1><p class="lead">Plan je route, ontdek slimme stops onderweg en bewaar hotels, eten, laadpunten en tankstations in één rustige reisomgeving.</p><div class="hero-actions"><a class="btn primary" href="#stappen" data-step-link>Bekijk de stappen</a><a class="btn" href="roadtrip-planner.html">Wat is Roadora?</a></div></div>
-  <div class="hero-panel card"><div class="mini-browser"><div class="browser-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="pill">Roadora routeplanner</span></div><div class="app-window"><div class="planner-card"><h2 class="serif">Plan je roadtrip</h2><div class="field"><small>Vertrekpunt</small>Amsterdam</div><div class="field"><small>Bestemming</small>Lago di Garda</div><div class="field"><small>Reisdata</small>24 mei 2025 – 31 mei 2025</div><button class="btn primary" style="width:100%">Plan route →</button></div><div class="map" aria-label="Routekaart voorbeeld">
-  <div class="route-line"></div><div class="pin start">1</div><div class="pin mid1">2</div><div class="pin mid2">3</div><div class="pin end">4</div>
-  <div class="map-label label-start">Amsterdam</div><div class="map-label label-end">Lago di Garda</div>
-  <div class="map-tools"><button class="tool">▣</button><button class="tool">+</button><button class="tool">−</button><button class="tool">◎</button></div>
-</div></div></div></div>
-</div></section>
-<section class="section" id="over"><div class="container"><p class="eyebrow">Waarom Roadora</p><h2 class="section-title">Meer dan van A naar B.</h2><p class="lead">Een lange rit plannen betekent vaak schakelen tussen routeplanner, hotelwebsites, laadapps, tankstations en losse lijstjes. Roadora brengt route, stops en overzicht samen.</p><div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:30px"><div class="card" style="padding:24px"><h3>Routes</h3><p class="muted">Vertrekpunt, bestemming en voorkeuren overzichtelijk bij elkaar.</p></div><div class="card" style="padding:24px"><h3>Stops</h3><p class="muted">Hotels, eten, laden, tanken en WC langs je route.</p></div><div class="card" style="padding:24px"><h3>Bewaren</h3><p class="muted">Sla interessante plekken op en bouw je roadtrip rustig op.</p></div><div class="card" style="padding:24px"><h3>Navigeren</h3><p class="muted">Open je route later eenvoudig in je favoriete navigatie-app.</p></div></div></div></section>
-<section class="step-section" id="stappen"><div class="container step-head"><div><p class="eyebrow">Product walkthrough</p><h2 class="section-title">Zo plan je je roadtrip.</h2></div><p class="lead">Vier duidelijke stappen laten zien hoe Roadora straks werkt: route kiezen, opbouwen, slimme stops toevoegen en bewaren.</p></div>
-<div class="container product-screen" id="stap-1"><div class="screen-nav"><strong>Roadora routeplanner</strong><div class="screen-tabs"><span class="active">Routeplanner</span><span>Inspiratie</span><span>Reisgids</span></div></div><div class="screen-body"><div><div class="step-kicker">1</div><h3 class="section-title" style="font-size:3rem">Kies je vertrekpunt en bestemming</h3><p class="muted">Begin met je vertrekpunt, bestemming en reisvoorkeuren.</p><div class="planner-card"><div class="field"><small>Vertrekpunt</small>Amsterdam</div><div class="field"><small>Bestemming</small>Lago di Garda</div><div class="field"><small>Reisdata</small>24 mei 2025 – 31 mei 2025</div><div class="field"><small>Routevoorkeur</small>Mooiste route</div><button class="btn primary" style="width:100%">Plan route →</button></div></div><div class="map" aria-label="Routekaart voorbeeld">
-  <div class="route-line"></div><div class="pin start">1</div><div class="pin mid1">2</div><div class="pin mid2">3</div><div class="pin end">4</div>
-  <div class="map-label label-start">Amsterdam</div><div class="map-label label-end">Lago di Garda</div>
-  <div class="map-tools"><button class="tool">▣</button><button class="tool">+</button><button class="tool">−</button><button class="tool">◎</button></div>
-</div></div></div><div class="container product-screen" id="stap-2" style="margin-top:38px"><div class="screen-nav"><strong>Stap 2 — Bouw je route op de kaart</strong><div class="screen-tabs"><span class="active">Auto</span><span>Motor</span><span>Camper</span></div></div><div class="screen-body"><div><div class="stats"><div class="stat"><span>Totale afstand</span><b>1.349 km</b></div><div class="stat"><span>Totale rijtijd</span><b>14 u 27 min</b></div><div class="stat"><span>Aantal stops</span><b>4 bestemmingen</b></div></div><div class="route-list"><div class="route-item"><span class="num">1</span><div><b>Amsterdam</b><br><span class="muted">Nederland</span></div><span>⋮</span></div><div class="route-item"><span class="num">2</span><div><b>Keulen</b><br><span class="muted">Duitsland</span></div><span>⋮</span></div><div class="route-item"><span class="num">3</span><div><b>Zürich</b><br><span class="muted">Zwitserland</span></div><span>⋮</span></div><div class="route-item"><span class="num">4</span><div><b>Lago di Garda</b><br><span class="muted">Italië</span></div><span>⚑</span></div><button class="btn">+ Tussenstop toevoegen</button></div></div><div class="map" aria-label="Routekaart voorbeeld">
-  <div class="route-line"></div><div class="pin start">1</div><div class="pin mid1">2</div><div class="pin mid2">3</div><div class="pin end">4</div>
-  <div class="map-label label-start">Amsterdam</div><div class="map-label label-end">Lago di Garda</div>
-  <div class="map-tools"><button class="tool">▣</button><button class="tool">+</button><button class="tool">−</button><button class="tool">◎</button></div>
-</div></div></div><div class="container product-screen" id="stap-3" style="margin-top:38px"><div class="screen-nav"><strong>Stap 3 — Voeg slimme stops toe</strong><div class="screen-tabs"><span class="active">Stops</span><span>Kaart</span><span>Favorieten</span></div></div><div class="screen-body stop-grid"><div><div class="filters"><span class="filter active">▦ Hotels</span><span class="filter">ϟ Laden</span><span class="filter">⛽ Tanken</span><span class="filter">🍴 Eten</span><span class="filter">WC</span></div><div class="result-card"><div class="thumb"></div><div><b>AC Hotel Innsbruck</b><br><span class="muted">4,6 ★ • +6 min omweg • parkeren • ontbijt</span></div><button class="btn primary">Toevoegen</button></div><div class="result-card"><div class="thumb"></div><div><b>IONITY München-Süd</b><br><span class="muted">350 kW • 8/12 beschikbaar • café</span></div><button class="btn primary">Toevoegen</button></div><div class="result-card"><div class="thumb"></div><div><b>Gasthof Neuwirt</b><br><span class="muted">4,7 ★ • Beierse keuken • terras</span></div><button class="btn selected">✓ Geselecteerd</button></div><div class="card" style="padding:16px"><b>3 slimme stops geselecteerd</b><br><span class="muted">+21 min extra reistijd • Goed gebalanceerd</span></div></div><div class="map" aria-label="Routekaart voorbeeld">
-  <div class="route-line"></div><div class="pin start">1</div><div class="pin mid1">2</div><div class="pin mid2">3</div><div class="pin end">4</div>
-  <div class="map-label label-start">Amsterdam</div><div class="map-label label-end">Lago di Garda</div>
-  <div class="map-tools"><button class="tool">▣</button><button class="tool">+</button><button class="tool">−</button><button class="tool">◎</button></div>
-</div></div></div><div class="container product-screen" id="stap-4" style="margin-top:38px"><div class="screen-nav"><strong>Stap 4 — Bekijk, bewaar en open je roadtrip</strong><div style="display:flex;gap:10px"><button class="btn">Bewaar roadtrip</button><button class="btn">Deel route</button><button class="btn primary">Open in app →</button></div></div><div class="screen-body overview-grid"><div><div class="card trip-summary"><h3 class="serif" style="font-size:2rem;margin:0">Italië roadtrip</h3><p class="muted">24 mei 2025 – 31 mei 2025 • 8 dagen</p><div class="stats"><div class="stat"><span>Afstand</span><b>1.089 km</b></div><div class="stat"><span>Rijtijd</span><b>12 u 45 min</b></div><div class="stat"><span>Stops</span><b>8 plekken</b></div></div></div><div class="card timeline" style="margin-top:16px"><h3>Jouw route in het kort</h3><div class="day-row"><b>Dag 1</b><div>Amsterdam<br><span class="muted">Vertrekpunt</span></div><span>—</span><span>—</span><span>Start</span><span>›</span></div><div class="day-row"><b>Dag 2</b><div>Lago di Braies<br><span class="muted">Dolomieten</span></div><span>680 km</span><span>1 nacht</span><span>2 stops</span><span>›</span></div><div class="day-row"><b>Dag 3</b><div>Verona<br><span class="muted">Historische stad</span></div><span>230 km</span><span>1 nacht</span><span>1 stop</span><span>›</span></div><div class="day-row"><b>Dag 7</b><div>Rome<br><span class="muted">Eindpunt</span></div><span>180 km</span><span>2 nachten</span><span>2 stops</span><span>›</span></div></div></div><div><div class="map" aria-label="Routekaart voorbeeld">
-  <div class="route-line"></div><div class="pin start">1</div><div class="pin mid1">2</div><div class="pin mid2">3</div><div class="pin end">4</div>
-  <div class="map-label label-start">Amsterdam</div><div class="map-label label-end">Lago di Garda</div>
-  <div class="map-tools"><button class="tool">▣</button><button class="tool">+</button><button class="tool">−</button><button class="tool">◎</button></div>
-</div><div class="card side-card" style="margin-top:16px"><h3>Wat je kunt verwachten</h3><div class="expect"><p><b>Mooiste route</b><br><span class="muted">Landschappen, dorpen en bijzondere stops.</span></p><p><b>Flexibel & aanpasbaar</b><br><span class="muted">Pas je route eenvoudig aan wanneer je wilt.</span></p><p><b>Zorgeloos onderweg</b><br><span class="muted">Alles overzichtelijk bij elkaar.</span></p></div></div></div></div></div></section>
-<section class="section" id="premium"><div class="container cta-band"><p class="eyebrow">Roadora groeit door</p><h2 class="section-title" style="font-size:3.2rem">Vandaag indexeerbaar, straks volledig interactief.</h2><p class="lead">Deze website legt de professionele basis voor Google, merkvertrouwen en de toekomstige Roadora app.</p><a class="btn primary" href="contact.html">Contact opnemen</a></div></section>
-</main><footer class="section" style="padding-bottom:34px;border-top:1px solid var(--line);background:rgba(255,253,250,.55)">
-  <div class="container grid" style="grid-template-columns:1.2fr repeat(3,1fr);align-items:start">
-    <div><a class="brand" href="index.html"><span class="brand-mark">R</span><span>Roadora</span></a><p class="muted">Slimme roadtrip planner voor routes, stops en overnachten onderweg.</p></div>
-    <div><strong>Product</strong><p><a href="roadtrip-planner.html">Roadtrip planner</a><br><a href="slimme-stops-onderweg.html">Slimme stops</a><br><a href="hotels-onderweg.html">Hotels onderweg</a></p></div>
-    <div><strong>Roadtrips</strong><p><a href="roadtrip-door-europa.html">Roadtrip door Europa</a><br><a href="index.html#routeplanner">Routeplanner</a><br><a href="index.html#stappen">Hoe het werkt</a></p></div>
-    <div><strong>Juridisch</strong><p><a href="privacy.html">Privacy</a><br><a href="voorwaarden.html">Gebruiksvoorwaarden</a><br><a href="contact.html">Contact</a></p></div>
-  </div>
-  <div class="container" style="margin-top:28px;color:var(--muted);font-size:.92rem">© 2026 Roadora. Alle rechten voorbehouden.</div>
-</footer>
-<script src="js/main.js" defer></script>
-<aside class="cookie-banner" data-cookie-banner hidden aria-label="Cookievoorkeuren">
-  <div><strong>Roadora gebruikt analytische cookies.</strong><br><span class="muted">We meten alleen hoe de website wordt gebruikt om Roadora te verbeteren. Geen advertentiecookies.</span></div>
-  <div class="cookie-actions"><button class="btn" data-cookie-decline>Alleen noodzakelijk</button><button class="btn primary" data-cookie-accept>Analytics toestaan</button></div>
-</aside></body></html>
+  <div id="toast" class="toast" aria-live="polite"></div>
+</body>
+</html>

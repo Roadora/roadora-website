@@ -2,10 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.roadora.eu/</loc><priority>1.0</priority></url>
   <url><loc>https://www.roadora.eu/roadtrip-planner.html</loc><priority>0.8</priority></url>
-  <url><loc>https://www.roadora.eu/roadtrip-door-europa.html</loc><priority>0.8</priority></url>
   <url><loc>https://www.roadora.eu/slimme-stops-onderweg.html</loc><priority>0.8</priority></url>
   <url><loc>https://www.roadora.eu/hotels-onderweg.html</loc><priority>0.8</priority></url>
-  <url><loc>https://www.roadora.eu/privacy.html</loc><priority>0.5</priority></url>
-  <url><loc>https://www.roadora.eu/contact.html</loc><priority>0.5</priority></url>
-  <url><loc>https://www.roadora.eu/voorwaarden.html</loc><priority>0.5</priority></url>
+  <url><loc>https://www.roadora.eu/roadtrip-door-europa.html</loc><priority>0.7</priority></url>
+  <url><loc>https://www.roadora.eu/privacy.html</loc><priority>0.4</priority></url>
+  <url><loc>https://www.roadora.eu/contact.html</loc><priority>0.4</priority></url>
+  <url><loc>https://www.roadora.eu/voorwaarden.html</loc><priority>0.4</priority></url>
 </urlset>
