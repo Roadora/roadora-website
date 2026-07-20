@@ -1,116 +1,159 @@
-let roadoraMap=null;
-let layers={route:null,markers:null,zones:null};
+const LEAFLET_CSS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const LEAFLET_JS='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
-const stops=[
-  {key:'start',type:'start',label:'Amsterdam',time:'08:30',meta:'Vertrekpunt',lat:52.3676,lng:4.9041},
-  {key:'pause',type:'pause',label:'Pauzezone',time:'11:00',meta:'WC · koffie · hond uitlaten',lat:50.3569,lng:7.5890},
-  {key:'lunch',type:'lunch',label:'Lunchstop',time:'13:00',meta:'kindvriendelijk langs de route',lat:49.4875,lng:8.4660},
-  {key:'charge',type:'charge',label:'Laadstop',time:'15:15',meta:'logisch binnen actieradius',lat:48.4011,lng:9.9876},
-  {key:'hotel',type:'hotel',label:'Hotelzone',time:'16:30 - 18:00',meta:'familiekamer · hond welkom',lat:47.2692,lng:11.4041},
-  {key:'end',type:'end',label:'Toscane',time:'',meta:'Bestemming',lat:43.7696,lng:11.2558}
+let map;
+let routeLayer;
+let markerLayer;
+let pendingState;
+let loadingPromise;
+
+const routePoints=[
+  [52.3676,4.9041],   // Amsterdam
+  [51.0504,6.9603],   // Keulen
+  [50.1109,8.6821],   // Frankfurt
+  [48.4011,9.9876],   // Ulm
+  [47.2692,11.4041],  // Innsbruck
+  [45.4384,10.9916],  // Verona
+  [43.7696,11.2558]   // Toscane / Florence
 ];
 
-const routeLine=[
-  [52.3676,4.9041],[51.9244,4.4777],[51.4416,5.4697],[50.9375,6.9603],[50.3569,7.5890],[49.4875,8.4660],[48.7758,9.1829],[48.4011,9.9876],[47.2692,11.4041],[46.4983,11.3548],[45.4384,10.9916],[44.4949,11.3426],[43.7696,11.2558]
-];
+function loadLeaflet(){
+  if(window.L)return Promise.resolve(window.L);
+  if(loadingPromise)return loadingPromise;
 
-const theme={
-  start:'#2aa66a', pause:'#b78400', lunch:'#de7b10', charge:'#7d53b8', hotel:'#1f7aa3', end:'#151515'
-};
+  loadingPromise=new Promise((resolve,reject)=>{
+    if(!document.querySelector(`link[href="${LEAFLET_CSS}"]`)){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href=LEAFLET_CSS;
+      document.head.appendChild(link);
+    }
 
-export function initRoadoraMap(){
+    const existing=document.querySelector(`script[src="${LEAFLET_JS}"]`);
+    if(existing){
+      existing.addEventListener('load',()=>resolve(window.L),{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+
+    const script=document.createElement('script');
+    script.src=LEAFLET_JS;
+    script.defer=true;
+    script.onload=()=>resolve(window.L);
+    script.onerror=()=>reject(new Error('Leaflet kon niet worden geladen.'));
+    document.head.appendChild(script);
+  });
+
+  return loadingPromise;
+}
+
+export async function initRealMap(){
   const el=document.getElementById('roadoraMap');
-  if(!el || !window.L || roadoraMap)return;
+  if(!el)return;
 
-  roadoraMap=window.L.map(el,{zoomControl:true,scrollWheelZoom:false,attributionControl:true}).setView([48.55,8.3],6);
+  try{
+    const L=await loadLeaflet();
+    if(map)return;
 
-  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:18,
-    attribution:'&copy; OpenStreetMap'
-  }).addTo(roadoraMap);
+    map=L.map(el,{
+      zoomControl:true,
+      scrollWheelZoom:false,
+      preferCanvas:true,
+      attributionControl:true
+    });
 
-  layers.route=window.L.layerGroup().addTo(roadoraMap);
-  layers.markers=window.L.layerGroup().addTo(roadoraMap);
-  layers.zones=window.L.layerGroup().addTo(roadoraMap);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:18,
+      attribution:'&copy; OpenStreetMap'
+    }).addTo(map);
 
-  drawMap();
-  // Leaflet moet na layout/render nogmaals zijn containermaat meten.
-  requestAnimationFrame(()=>{
-    roadoraMap.invalidateSize(true);
-    setTimeout(()=>roadoraMap?.invalidateSize(true),120);
-    setTimeout(()=>roadoraMap?.invalidateSize(true),450);
-  });
-  window.addEventListener('resize',()=>roadoraMap?.invalidateSize(true));
+    routeLayer=L.layerGroup().addTo(map);
+    markerLayer=L.layerGroup().addTo(map);
 
-  window.RoadoraMap={update:updateRoadoraMap,instance:roadoraMap};
+    renderMap(pendingState || {});
+
+    requestAnimationFrame(()=>{
+      map.invalidateSize();
+      fitRoute();
+    });
+
+    window.addEventListener('resize',()=>{
+      if(!map)return;
+      window.setTimeout(()=>{map.invalidateSize();fitRoute();},120);
+    });
+  }catch(error){
+    console.error(error);
+    el.innerHTML='<div style="padding:24px;color:#6f6a60">De kaart kon niet worden geladen. Controleer je internetverbinding.</div>';
+  }
 }
 
-export function updateRoadoraMap(state={}){
-  if(!roadoraMap)return;
-  const chargeStop=stops.find(s=>s.key==='charge');
-  const hotelStop=stops.find(s=>s.key==='hotel');
-  if(chargeStop){
-    chargeStop.label=state.vehicle==='electric'?'Laadstop':'Tankstop';
-    chargeStop.meta=state.vehicle==='electric'?`${state.evRangeKm||325} km actieradius · ${state.plug||'CCS'}`:'handig vóór de hotelzone';
-  }
-  if(hotelStop){
-    hotelStop.time=state.hotelArrival||'16:30 - 18:00';
-    hotelStop.meta=hotelMeta(state);
-  }
-  drawMap();
+export function updateRealMap(state){
+  pendingState=state;
+  if(!map || !window.L)return;
+  renderMap(state || {});
 }
 
-function drawMap(){
-  layers.route.clearLayers();
-  layers.markers.clearLayers();
-  layers.zones.clearLayers();
+function renderMap(state){
+  const L=window.L;
+  if(!L || !map || !routeLayer || !markerLayer)return;
 
-  const line=window.L.polyline(routeLine,{color:'#bb850d',weight:5,opacity:.9,lineJoin:'round'}).addTo(layers.route);
-  window.L.polyline(routeLine,{color:'#fff7e6',weight:2,opacity:.9,lineJoin:'round'}).addTo(layers.route);
+  routeLayer.clearLayers();
+  markerLayer.clearLayers();
 
-  stops.filter(s=>['pause','lunch','charge','hotel'].includes(s.type)).forEach(stop=>{
-    window.L.circle([stop.lat,stop.lng],{
-      radius: stop.type==='hotel'?36000:22000,
-      color: theme[stop.type],
-      weight:1,
-      opacity:.23,
-      fillColor:theme[stop.type],
-      fillOpacity:.08
-    }).addTo(layers.zones);
-  });
+  const vehicle=state.vehicle || 'electric';
+  const isElectric=vehicle==='electric';
+  const chargeTitle=isElectric?'Laadstop':'Tankstop';
+  const chargeMeta=isElectric
+    ? `${state.evRangeKm || 325} km actieradius · ${state.plug || 'CCS'}`
+    : 'logisch vóór de hotelzone';
+
+  L.polyline(routePoints,{color:'#0d6b6e',weight:5,opacity:.9,lineJoin:'round'}).addTo(routeLayer);
+  L.polyline(routePoints,{color:'#bd880e',weight:2,opacity:.85,lineJoin:'round'}).addTo(routeLayer);
+
+  const stops=[
+    {kind:'start',label:'✓',coords:routePoints[0],title:short(state.origin)||'Amsterdam',meta:'Vertrekpunt'},
+    {kind:'pause',label:'1',coords:[51.0504,6.9603],title:'11:00 Pauze',meta:'WC · koffie · rustig bewegen'},
+    {kind:'lunch',label:'2',coords:[50.1109,8.6821],title:'13:00 Lunch',meta:'kindvriendelijk langs de route'},
+    {kind:'charge',label:'3',coords:[48.4011,9.9876],title:`15:15 ${chargeTitle}`,meta:chargeMeta},
+    {kind:'hotel',label:'4',coords:[47.2692,11.4041],title:'16:30 - 18:00 Hotelzone',meta:'familiekamer · hond welkom'},
+    {kind:'end',label:'🏁',coords:routePoints[6],title:short(state.destination)||'Toscane',meta:'Bestemming'}
+  ];
 
   stops.forEach(stop=>{
-    const marker=window.L.marker([stop.lat,stop.lng],{icon:markerIcon(stop.type)}).addTo(layers.markers);
-    marker.bindPopup(`<strong>${escapeHtml(stop.time ? `${stop.time} ${stop.label}` : stop.label)}</strong><br><span>${escapeHtml(stop.meta)}</span>`);
-    if(['pause','lunch','charge','hotel'].includes(stop.type)){
-      marker.bindTooltip(`${stop.time} ${stop.label}`,{permanent:true,direction:'right',offset:[12,0],className:'roadora-tooltip'});
-    }
+    L.marker(stop.coords,{icon:createMarkerIcon(stop.kind,stop.label)})
+      .bindPopup(`<div class="roadora-popup"><strong>${escapeHtml(stop.title)}</strong><span>${escapeHtml(stop.meta)}</span></div>`)
+      .addTo(markerLayer);
   });
 
-  roadoraMap.fitBounds(line.getBounds(),{padding:[38,38],maxZoom:6});
+  fitRoute();
 }
 
-function markerIcon(type){
-  const label={start:'✓',pause:'1',lunch:'2',charge:'3',hotel:'4',end:'🏁'}[type]||'•';
+function createMarkerIcon(kind,label){
   return window.L.divIcon({
-    className:`roadora-marker marker-${type}`,
-    html:`<span>${label}</span>`,
+    className:'',
+    html:`<div class="roadora-marker ${kind}">${label}</div>`,
     iconSize:[34,34],
     iconAnchor:[17,17],
     popupAnchor:[0,-18]
   });
 }
 
-function hotelMeta(state){
-  const bits=[];
-  if(Number(state.children)>0)bits.push('familiekamer');
-  if(state.pet==='dog')bits.push('hond welkom');
-  if(state.vehicle==='electric')bits.push('laadpunt dichtbij');
-  return bits.length?bits.join(' · '):'passende overnachtingszone';
+function fitRoute(){
+  if(!map || !window.L)return;
+  const bounds=window.L.latLngBounds(routePoints);
+  map.fitBounds(bounds,{padding:[42,42],maxZoom:6});
+}
+
+function short(value){
+  return String(value||'').split(',')[0].trim();
 }
 
 function escapeHtml(value){
-  return String(value).replace(/[&<>'"]/g, char=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'
-  }[char]));
+  return String(value).replace(/[&<>'"]/g,char=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    "'":'&#039;',
+    '"':'&quot;'
+  })[char]);
 }

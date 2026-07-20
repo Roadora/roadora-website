@@ -1,122 +1,106 @@
-/* Roadora v2.0 — echte Leaflet kaart in het middenvlak */
-.map-card{
-  background:#eef4ef;
+/* Roadora v2.2 — echte kaart schoon ingebouwd, los van de oude illustratiekaart */
+.real-map-card{
+  position:relative;
+  background:#eaf2ee;
   isolation:isolate;
 }
-.real-map{
-  width:100%;
-  height:100%;
-  min-height:100%;
-  border-radius:inherit;
-  overflow:hidden;
+
+.roadora-map{
+  position:absolute;
+  inset:0;
   z-index:1;
+  min-height:100%;
+  width:100%;
+  background:#eaf2ee;
 }
-.leaflet-container{
+
+.real-map-card .leaflet-container{
   font-family:var(--font);
-  background:#eef4ef;
+  background:#eaf2ee;
 }
-.leaflet-control-container .leaflet-top.leaflet-left{
-  top:14px;
-  left:14px;
+
+.real-map-card .leaflet-tile,
+.real-map-card .leaflet-marker-icon,
+.real-map-card .leaflet-marker-shadow{
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:initial!important;
 }
-.leaflet-control-zoom{
+
+.real-map-card .leaflet-control-zoom{
   border:1px solid var(--line)!important;
-  border-radius:13px!important;
+  border-radius:12px!important;
   overflow:hidden;
   box-shadow:var(--shadow-soft)!important;
 }
-.leaflet-control-zoom a{
-  width:38px!important;
-  height:38px!important;
-  line-height:38px!important;
+
+.real-map-card .leaflet-control-zoom a{
+  width:34px!important;
+  height:34px!important;
+  line-height:34px!important;
+  color:var(--text)!important;
   border-color:var(--line)!important;
-  color:#112827!important;
-  font-weight:500!important;
+  background:#fffdfa!important;
 }
-.leaflet-control-attribution{
-  font-size:10px!important;
-  color:#6f6a60!important;
-  background:rgba(255,253,250,.78)!important;
+
+.real-map-card .leaflet-control-attribution{
+  font-size:10px;
+  background:rgba(255,253,250,.82);
 }
+
+.real-map-legend,
+.real-map-badge{
+  z-index:4;
+  pointer-events:auto;
+}
+
+.real-map-badge{
+  max-width:min(360px,calc(100% - 40px));
+}
+
 .roadora-marker{
-  display:grid;
-  place-items:center;
-  border-radius:999px;
-  box-shadow:0 8px 18px rgba(37,28,15,.18);
-  border:3px solid #fff;
-  color:#fff;
-  font-size:.78rem;
-  font-weight:600;
-}
-.roadora-marker span{
   width:28px;
   height:28px;
   border-radius:999px;
   display:grid;
   place-items:center;
+  color:#fff;
+  border:3px solid #fff;
+  box-shadow:0 8px 18px rgba(20,20,20,.18);
+  font-size:.72rem;
+  font-weight:650;
 }
-.marker-start span{background:#2aa66a;}
-.marker-pause span{background:#b78400;}
-.marker-lunch span{background:#de7b10;}
-.marker-charge span{background:#7d53b8;}
-.marker-hotel span{background:#1f7aa3;}
-.marker-end span{background:#151515;}
-.roadora-tooltip{
-  border:1px solid var(--line)!important;
-  border-radius:12px!important;
-  box-shadow:var(--shadow-soft)!important;
-  background:rgba(255,253,250,.95)!important;
-  color:#122b2b!important;
-  font-size:.74rem!important;
-  font-weight:500!important;
-  padding:7px 9px!important;
+
+.roadora-marker.start{background:var(--green)}
+.roadora-marker.pause{background:var(--green)}
+.roadora-marker.lunch{background:var(--orange)}
+.roadora-marker.charge{background:var(--purple)}
+.roadora-marker.hotel{background:var(--blue)}
+.roadora-marker.end{background:#1e1e1e}
+
+.roadora-popup strong{
+  display:block;
+  font-weight:650;
+  color:var(--text);
+  margin-bottom:2px;
 }
-.roadora-tooltip:before{display:none!important;}
-.map-badge,.legend{z-index:410;}
-.leaflet-popup-content-wrapper{
-  border-radius:14px!important;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow-soft)!important;
-}
-.leaflet-popup-content{
-  margin:10px 12px!important;
+
+.roadora-popup span{
+  display:block;
+  color:var(--muted);
   font-size:.82rem;
   line-height:1.35;
 }
-.leaflet-popup-content strong{font-weight:600;}
-.leaflet-popup-content span{color:var(--muted);}
-@media (max-width:900px){
-  .roadora-tooltip{display:none!important;}
+
+.real-map-card .leaflet-popup-content-wrapper{
+  border-radius:13px;
+  box-shadow:var(--shadow-soft);
 }
 
-/* Roadora v2.1 — Leaflet tile fix: voorkom dat oude .map-card img-regels kaarttegels oprekken */
-.has-real-map .leaflet-tile,
-.has-real-map .leaflet-marker-icon,
-.has-real-map .leaflet-marker-shadow,
-.has-real-map .leaflet-image-layer,
-.has-real-map .leaflet-pane img,
-.has-real-map .leaflet-tile-container img{
-  width:auto!important;
-  height:auto!important;
-  max-width:none!important;
-  max-height:none!important;
-  object-fit:initial!important;
+.real-map-card .leaflet-popup-content{
+  margin:10px 12px;
 }
-.has-real-map .leaflet-tile{
-  width:256px!important;
-  height:256px!important;
-}
-.has-real-map .leaflet-container,
-.has-real-map .leaflet-pane,
-.has-real-map .leaflet-map-pane,
-.has-real-map .leaflet-tile-pane,
-.has-real-map .leaflet-overlay-pane,
-.has-real-map .leaflet-marker-pane,
-.has-real-map .leaflet-tooltip-pane,
-.has-real-map .leaflet-popup-pane{
-  overflow:visible;
-}
-.has-real-map .leaflet-container{
-  overflow:hidden;
-  border-radius:inherit;
+
+@media (max-width:1280px){
+  .real-map-badge{left:14px;bottom:14px;}
 }

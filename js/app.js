@@ -2,6 +2,7 @@ import { loadState, saveState } from './storage.js';
 import { $, $$, setText, showToast } from './dom.js';
 import { buildPlan, estimateTrip } from './planner.js';
 import { getRecommendations } from './recommendations.js';
+import { updateRealMap } from './real-map.js';
 
 let state=loadState();
 
@@ -40,9 +41,8 @@ function render(){
   setText('#chargeDetail', state.vehicle==='electric' ? `${state.evRangeKm || 325} km actieradius · ${state.plug || 'CCS'}` : 'logisch langs de route');
   $('#evFields')?.classList.toggle('hidden',state.vehicle!=='electric');
   renderTimeline();renderRecommendations();renderTags();
-  window.RoadoraMap?.update?.(state);
+  updateRealMap(state);
 }
-
 function renderTimeline(){
   const root=$('#timeline'); if(!root)return; root.innerHTML='';
   buildPlan(state).forEach(item=>{

@@ -7,9 +7,7 @@
   <meta name="description" content="Plan je roadtrip met slimme stopmomenten, hotelzones en persoonlijke voorkeuren zoals kinderen, hond, elektrische auto en gewenste aankomsttijd.">
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQk4+I8swVrbO/0OSS0c6JYg8xP94p0=" crossorigin="">
   <link rel="stylesheet" href="css/styles.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -81,10 +79,21 @@
     </section>
 
     <section class="map-stage" aria-label="Kaart en route">
-      <div class="map-card has-real-map">
-        <div id="roadoraMap" class="real-map" role="img" aria-label="Interactieve Roadora kaart met route, stopzones en hotelzone"></div>
-        <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Hotelzone</span></div>
-        <div class="map-badge"><h3 id="mapRouteTitle">Amsterdam → Toscane</h3><div class="badge-stats"><span>🚗 1.495 km</span><span>🕘 15 u 45 m</span></div><div id="profileTags" class="tag-row"></div></div>
+      <div class="map-card real-map-card" id="realMapShell">
+        <div id="roadoraMap" class="roadora-map" aria-label="Interactieve kaart met Roadora-route en stopzones"></div>
+
+        <div class="legend real-map-legend" aria-label="Legenda">
+          <span><i class="i-pause"></i>Pauze</span>
+          <span><i class="i-lunch"></i>Lunch</span>
+          <span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span>
+          <span><i class="i-hotel"></i>Hotelzone</span>
+        </div>
+
+        <div class="map-badge real-map-badge">
+          <h3 id="mapRouteTitle">Amsterdam → Toscane</h3>
+          <div class="badge-stats"><span>🚗 1.495 km</span><span>🕘 15 u 45 m</span></div>
+          <div id="profileTags" class="tag-row"></div>
+        </div>
       </div>
     </section>
 
