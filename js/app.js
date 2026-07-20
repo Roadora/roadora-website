@@ -33,13 +33,13 @@ function toggleWizard(){
   const wizard=document.querySelector('.planner-wizard');
   const btn=$('#toggleWizard');
   const collapsed=wizard?.classList.toggle('is-collapsed');
-  if(btn){btn.setAttribute('aria-expanded', String(!collapsed));btn.textContent=collapsed?'▼ Keuzes uitklappen':'▲ Keuzes inklappen';}
+  if(btn){btn.setAttribute('aria-expanded', String(!collapsed));btn.textContent=collapsed?'Keuzes tonen':'Keuzes inklappen';}
 }
 function collapseWizard(){
   const wizard=document.querySelector('.planner-wizard');
   const btn=$('#toggleWizard');
   wizard?.classList.add('is-collapsed');
-  if(btn){btn.setAttribute('aria-expanded','false');btn.textContent='▼ Keuzes uitklappen';}
+  if(btn){btn.setAttribute('aria-expanded','false');btn.textContent='Keuzes tonen';}
 }
 function render(){
   const est=estimateTrip(state);

@@ -29,44 +29,44 @@
       <div class="wizard-head">
         <div>
           <span class="pill">Roadora webplanner</span>
-          <h1>In 6 simpele stappen naar je roadtrip</h1>
-          <p>Vul bovenin je route, tijden, reisprofiel en voertuig in. Klap het paneel daarna dicht voor een grotere kaart en meer overzicht.</p>
+          <h1>Plan je roadtrip in 6 stappen</h1>
+          <p>Kies je route, reistijd, profiel en voertuig. Klap daarna dicht voor maximale kaart-ruimte.</p>
         </div>
         <div class="wizard-actions">
-          <button id="planRoute" class="btn primary" type="button">⌘ Plan mijn roadtrip</button>
-          <button id="toggleWizard" class="btn" type="button" aria-expanded="true" aria-controls="wizardSteps">▲ Keuzes inklappen</button>
+          <button id="planRoute" class="btn primary" type="button">Plan roadtrip</button>
+          <button id="toggleWizard" class="btn" type="button" aria-expanded="true" aria-controls="wizardSteps">Keuzes inklappen</button>
         </div>
       </div>
 
       <div id="wizardSteps" class="wizard-steps">
         <article class="wizard-card step-card">
           <span class="step-number">1</span>
-          <h2>Waar ga je heen?</h2>
-          <div class="field"><label for="origin">Vertrekpunt</label><div class="input-wrap">📍<input id="origin" name="origin" autocomplete="off" value="Amsterdam, Nederland"></div></div>
+          <h2>Route</h2>
+          <div class="field"><label for="origin">Vertrek</label><div class="input-wrap">📍<input id="origin" name="origin" autocomplete="off" value="Amsterdam, Nederland"></div></div>
           <div class="field"><label for="destination">Bestemming</label><div class="input-wrap">🏁<input id="destination" name="destination" autocomplete="off" value="Toscane, Italië"></div></div>
-          <button class="btn ghost full" type="button">+ Tussenstop toevoegen</button>
+          <button class="btn ghost full" type="button">+ Tussenstop</button>
         </article>
 
         <article class="wizard-card step-card">
           <span class="step-number">2</span>
-          <h2>Wanneer vertrek je?</h2>
+          <h2>Tijd</h2>
           <div class="field"><label for="departTime">Vertrektijd</label><div class="input-wrap">🕘<input id="departTime" name="departTime" type="time" value="08:30"></div></div>
           <div class="field"><label for="date">Vertrekdatum</label><div class="input-wrap">📅<input id="date" name="date" type="date" value="2026-05-26"></div></div>
-          <div class="field"><label for="hotelArrival">Aankomst hotel rond</label><div class="input-wrap">🏨<select id="hotelArrival" name="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div></div>
+          <div class="field"><label for="hotelArrival">Hotel aankomst</label><div class="input-wrap">🏨<select id="hotelArrival" name="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div></div>
         </article>
 
         <article id="profileBlock" class="wizard-card step-card">
           <span class="step-number">3</span>
-          <h2>Hoe reis je?</h2>
+          <h2>Reisprofiel</h2>
           <div class="field"><label>Met wie reis je?</label><div class="choice-grid compact"><button class="choice" type="button">Alleen</button><button class="choice" type="button">Partner</button><button class="choice active" type="button">Gezin</button></div></div>
-          <div class="field"><label>Aantal reizigers</label><div class="two"><div class="input-wrap">👤<input name="adults" type="number" min="1" value="2" aria-label="Aantal volwassenen"></div><div class="input-wrap">🧒<input name="children" type="number" min="0" value="3" aria-label="Aantal kinderen"></div></div></div>
-          <div class="field"><label for="childAges">Leeftijden kinderen</label><div class="input-wrap">🎒<input id="childAges" name="childAges" value="2, 6, 9"></div></div>
+          <div class="field"><label>Reizigers</label><div class="two"><div class="input-wrap">👤<input name="adults" type="number" min="1" value="2" aria-label="Aantal volwassenen"></div><div class="input-wrap">🧒<input name="children" type="number" min="0" value="3" aria-label="Aantal kinderen"></div></div></div>
+          <div class="field"><label for="childAges">Leeftijden</label><div class="input-wrap">🎒<input id="childAges" name="childAges" value="2, 6, 9"></div></div>
           <div class="choice-grid compact"><button class="choice" data-pet="none" type="button">Geen hond</button><button class="choice active" data-pet="dog" type="button">Hond mee</button><button class="choice" data-pet="multiple" type="button">Meerdere</button></div>
         </article>
 
         <article class="wizard-card step-card">
           <span class="step-number">4</span>
-          <h2>Wat is belangrijk?</h2>
+          <h2>Voorkeuren</h2>
           <div class="pref-grid compact-prefs">
             <button class="pref active" data-pref="family" type="button">Familiekamers</button><button class="pref active" data-pref="pets" type="button">Huisdieren</button><button class="pref active" data-pref="kids" type="button">Kindvriendelijk</button><button class="pref active" data-pref="parking" type="button">Parkeren</button><button class="pref active" data-pref="charging" type="button">Laadpunt</button><button class="pref active" data-pref="breakfast" type="button">Ontbijt</button><button class="pref" data-pref="quiet" type="button">Rustig</button>
           </div>
@@ -86,9 +86,9 @@
         <article class="wizard-card step-card finish-card">
           <span class="step-number">6</span>
           <h2>Klaar?</h2>
-          <p>Roadora maakt een overzicht met stopzones, hotelzone en aanbevelingen die passen bij jouw reis.</p>
-          <button class="btn primary full" type="button" onclick="document.getElementById('planRoute')?.click()">🚀 Plan mijn roadtrip</button>
-          <button id="resetDemo" class="btn ghost full" type="button">Reset voorbeeld</button>
+          <p>Roadora toont je route, slimme stopzones en passende hotels/stops.</p>
+          <button class="btn primary full" type="button" onclick="document.getElementById('planRoute')?.click()">Plan roadtrip</button>
+          <button id="resetDemo" class="btn ghost full" type="button">Reset</button>
         </article>
       </div>
     </section>
@@ -152,7 +152,7 @@
       <p>Roadora combineert route, vertrektijd, gewenste aankomst bij je hotel en persoonlijke voorkeuren. Zo ziet een reiziger sneller waar hij logisch pauzeert, eet, laadt, tankt of overnacht.</p>
     </div>
     <div class="explain-grid">
-      <article class="card explain-card"><h3>1. Eerst snel starten</h3><p class="content-copy">Vertrekpunt, bestemming, vertrektijd en gewenste hotel-aankomst zijn genoeg om een eerste planning te maken.</p></article>
+      <article class="card explain-card"><h3>1. Eerst snel starten</h3><p class="content-copy">Vertrek, bestemming, vertrektijd en gewenste hotel-aankomst zijn genoeg om een eerste planning te maken.</p></article>
       <article class="card explain-card"><h3>2. Dan persoonlijk maken</h3><p class="content-copy">Kinderen, hond, voertuig en voorkeuren sturen automatisch welke hotels en stops belangrijk zijn.</p></article>
       <article class="card explain-card"><h3>3. Alles in één overzicht</h3><p class="content-copy">Kaart, tijdlijn, hotelzone en aanbevolen stops blijven naast elkaar zichtbaar. Geen moeilijk gedoe.</p></article>
     </div>
