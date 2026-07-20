@@ -40,7 +40,9 @@ function render(){
   setText('#chargeDetail', state.vehicle==='electric' ? `${state.evRangeKm || 325} km actieradius · ${state.plug || 'CCS'}` : 'logisch langs de route');
   $('#evFields')?.classList.toggle('hidden',state.vehicle!=='electric');
   renderTimeline();renderRecommendations();renderTags();
+  window.RoadoraMap?.update?.(state);
 }
+
 function renderTimeline(){
   const root=$('#timeline'); if(!root)return; root.innerHTML='';
   buildPlan(state).forEach(item=>{

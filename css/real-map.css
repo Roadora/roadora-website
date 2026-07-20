@@ -1,0 +1,90 @@
+/* Roadora v2.0 — echte Leaflet kaart in het middenvlak */
+.map-card{
+  background:#eef4ef;
+  isolation:isolate;
+}
+.real-map{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  border-radius:inherit;
+  overflow:hidden;
+  z-index:1;
+}
+.leaflet-container{
+  font-family:var(--font);
+  background:#eef4ef;
+}
+.leaflet-control-container .leaflet-top.leaflet-left{
+  top:14px;
+  left:14px;
+}
+.leaflet-control-zoom{
+  border:1px solid var(--line)!important;
+  border-radius:13px!important;
+  overflow:hidden;
+  box-shadow:var(--shadow-soft)!important;
+}
+.leaflet-control-zoom a{
+  width:38px!important;
+  height:38px!important;
+  line-height:38px!important;
+  border-color:var(--line)!important;
+  color:#112827!important;
+  font-weight:500!important;
+}
+.leaflet-control-attribution{
+  font-size:10px!important;
+  color:#6f6a60!important;
+  background:rgba(255,253,250,.78)!important;
+}
+.roadora-marker{
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  box-shadow:0 8px 18px rgba(37,28,15,.18);
+  border:3px solid #fff;
+  color:#fff;
+  font-size:.78rem;
+  font-weight:600;
+}
+.roadora-marker span{
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+}
+.marker-start span{background:#2aa66a;}
+.marker-pause span{background:#b78400;}
+.marker-lunch span{background:#de7b10;}
+.marker-charge span{background:#7d53b8;}
+.marker-hotel span{background:#1f7aa3;}
+.marker-end span{background:#151515;}
+.roadora-tooltip{
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  box-shadow:var(--shadow-soft)!important;
+  background:rgba(255,253,250,.95)!important;
+  color:#122b2b!important;
+  font-size:.74rem!important;
+  font-weight:500!important;
+  padding:7px 9px!important;
+}
+.roadora-tooltip:before{display:none!important;}
+.map-badge,.legend{z-index:410;}
+.leaflet-popup-content-wrapper{
+  border-radius:14px!important;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-soft)!important;
+}
+.leaflet-popup-content{
+  margin:10px 12px!important;
+  font-size:.82rem;
+  line-height:1.35;
+}
+.leaflet-popup-content strong{font-weight:600;}
+.leaflet-popup-content span{color:var(--muted);}
+@media (max-width:900px){
+  .roadora-tooltip{display:none!important;}
+}

@@ -7,7 +7,9 @@
   <meta name="description" content="Plan je roadtrip met slimme stopmomenten, hotelzones en persoonlijke voorkeuren zoals kinderen, hond, elektrische auto en gewenste aankomsttijd.">
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQk4+I8swVrbO/0OSS0c6JYg8xP94p0=" crossorigin="">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -79,14 +81,9 @@
     </section>
 
     <section class="map-stage" aria-label="Kaart en route">
-      <div class="map-card">
-        <img src="assets/route-illustration.svg" alt="Illustratieve routekaart Amsterdam naar Toscane met slimme stopzones">
-        <div class="map-controls" aria-label="Kaartbediening"><button type="button">⌖</button><button type="button">+</button><button type="button">−</button><button type="button">▧</button></div>
+      <div class="map-card has-real-map">
+        <div id="roadoraMap" class="real-map" role="img" aria-label="Interactieve Roadora kaart met route, stopzones en hotelzone"></div>
         <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Hotelzone</span></div>
-        <div class="smart-card pause"><strong>11:00 Pauze</strong><span>WC · koffie · hond uitlaten</span></div>
-        <div class="smart-card lunch"><strong>13:00 Lunch</strong><span>kindvriendelijk langs route</span></div>
-        <div class="smart-card charge"><strong>15:15 Laadstop</strong><span id="chargeDetail">325 km actieradius · CCS</span></div>
-        <div class="smart-card hotel"><strong>16:30 - 18:00 Hotelzone</strong><span>familiekamer · hond welkom</span></div>
         <div class="map-badge"><h3 id="mapRouteTitle">Amsterdam → Toscane</h3><div class="badge-stats"><span>🚗 1.495 km</span><span>🕘 15 u 45 m</span></div><div id="profileTags" class="tag-row"></div></div>
       </div>
     </section>
