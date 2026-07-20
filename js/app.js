@@ -22,25 +22,12 @@ function bindForm(){
   $$(`[data-vehicle]`).forEach(btn=>btn.addEventListener('click',()=>{state.vehicle=btn.dataset.vehicle;hydrateForm();persistRender();}));
   $$(`[data-pet]`).forEach(btn=>btn.addEventListener('click',()=>{state.pet=btn.dataset.pet;hydrateForm();persistRender();}));
   $$(`[data-pref]`).forEach(btn=>btn.addEventListener('click',()=>{const pref=btn.dataset.pref;const prefs=new Set(state.preferences||[]);prefs.has(pref)?prefs.delete(pref):prefs.add(pref);state.preferences=[...prefs];hydrateForm();persistRender();}));
-  $('#planRoute')?.addEventListener('click',()=>{persistRender();collapseWizard();showToast('Roadtrip bijgewerkt. Keuzes zijn ingeklapt zodat de kaart groter is.');});
-  $('#toggleWizard')?.addEventListener('click',toggleWizard);
+  $('#planRoute')?.addEventListener('click',()=>{persistRender();showToast('Roadtrip bijgewerkt op basis van je tijden en profiel.');});
   $('#saveRoute')?.addEventListener('click',()=>{saveState(state);showToast('Roadtrip opgeslagen in deze browser.');});
   $('#saveRouteSide')?.addEventListener('click',()=>{saveState(state);showToast('Roadtrip opgeslagen. Profiel kan later aan account gekoppeld worden.');});
   $('#resetDemo')?.addEventListener('click',()=>{localStorage.removeItem('roadora.route.v1');state=loadState();hydrateForm();render();showToast('Voorbeeldroute teruggezet.');});
 }
 function persistRender(){saveState(state);render();}
-function toggleWizard(){
-  const wizard=document.querySelector('.planner-wizard');
-  const btn=$('#toggleWizard');
-  const collapsed=wizard?.classList.toggle('is-collapsed');
-  if(btn){btn.setAttribute('aria-expanded', String(!collapsed));btn.textContent=collapsed?'Keuzes tonen':'Keuzes inklappen';}
-}
-function collapseWizard(){
-  const wizard=document.querySelector('.planner-wizard');
-  const btn=$('#toggleWizard');
-  wizard?.classList.add('is-collapsed');
-  if(btn){btn.setAttribute('aria-expanded','false');btn.textContent='Keuzes tonen';}
-}
 function render(){
   const est=estimateTrip(state);
   setText('#routeTitle', `${short(state.origin)} → ${short(state.destination)}`);
@@ -48,7 +35,6 @@ function render(){
   setText('#mapRouteTitle', `${short(state.origin)} → ${short(state.destination)}`);
   setText('#distance', est.distance);setText('#duration', est.duration);setText('#altitude','12.850 m');
   setText('#sideDistance', est.distance);setText('#sideDuration', est.duration);setText('#sideVehicle', vehicleLabel());
-  const detour=document.querySelector('#maxDetour + strong'); if(detour) detour.textContent=`${state.maxDetour||20} min`;
   setText('#sideTravelers', travelersLabel());setText('#sideDepart', displayDateTime());setText('#sideHotel', state.hotelArrival);
   setText('#chargeLabel', state.vehicle==='electric' ? 'Laadstop' : 'Tankstop');
   setText('#chargeDetail', state.vehicle==='electric' ? `${state.evRangeKm || 325} km actieradius · ${state.plug || 'CCS'}` : 'logisch langs de route');
