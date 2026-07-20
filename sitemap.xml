@@ -8,4 +8,8 @@
   <url><loc>https://www.roadora.eu/privacy.html</loc><priority>0.4</priority></url>
   <url><loc>https://www.roadora.eu/contact.html</loc><priority>0.4</priority></url>
   <url><loc>https://www.roadora.eu/voorwaarden.html</loc><priority>0.4</priority></url>
+  <url>
+    <loc>https://www.roadora.eu/roadora-uitleg.html</loc>
+    <priority>0.6</priority>
+  </url>
 </urlset>

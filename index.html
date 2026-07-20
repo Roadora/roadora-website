@@ -18,7 +18,7 @@
     </a>
     <nav class="header-actions" aria-label="Hoofdnavigatie">
       <a class="top-link optional" href="#planner">🚗 <span>Plan route</span></a>
-      <a class="top-link optional" href="#footerUitleg">✨ <span>Roadora uitleg</span></a>
+      <a class="top-link optional" href="roadora-uitleg.html">✨ <span>Roadora uitleg</span></a>
       <a class="top-link" href="contact.html">✉️ <span>Contact</span></a>
       <span class="profile-dot" title="Profiel komt later">P</span>
     </nav>
@@ -98,7 +98,7 @@
         <button class="rail-btn active" data-target="#planner" title="Route">⌘</button>
         <button class="rail-btn" data-target="#profileBlock" title="Profiel">♡</button>
         <button class="rail-btn" data-target="#timelineBlock" title="Planning">◷</button>
-        <button class="rail-btn" data-target="#footerUitleg" title="Uitleg">?</button>
+        <button class="rail-btn" type="button" onclick="location.href='roadora-uitleg.html'" title="Uitleg">?</button>
       </aside>
 
       <section class="map-stage" aria-label="Kaart en route">
@@ -146,17 +146,11 @@
     </section>
   </main>
 
-  <footer id="footerUitleg" class="footer">
-    <div class="footer-inner footer-grid">
-      <div class="footer-brand">
-        <strong>Roadora</strong>
-        <span>© 2026 Roadora. Eerste professionele webplanner.</span>
-      </div>
-      <section class="footer-explain" aria-label="Roadora uitleg">
-        <h2>Roadora uitleg</h2>
-        <p>Roadora is geen kaart vol pins, maar een rustige roadtrip-assistent. Je vult route, vertrektijd, gewenste hotel-aankomst, reisprofiel en voertuig in. Daarna toont Roadora een overzichtelijke planning met logische pauzes, hotelzones en passende stops.</p>
-      </section>
-      <nav class="footer-links" aria-label="Footer navigatie">
+  <footer class="footer">
+    <div class="footer-inner">
+      <div><strong>Roadora</strong> © 2026 Roadora. Eerste professionele webplanner.</div>
+      <nav aria-label="Footer navigatie">
+        <a href="roadora-uitleg.html">Roadora uitleg</a>
         <a href="privacy.html">Privacy</a>
         <a href="voorwaarden.html">Voorwaarden</a>
         <a href="contact.html">Contact</a>
