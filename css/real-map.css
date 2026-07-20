@@ -88,3 +88,35 @@
 @media (max-width:900px){
   .roadora-tooltip{display:none!important;}
 }
+
+/* Roadora v2.1 — Leaflet tile fix: voorkom dat oude .map-card img-regels kaarttegels oprekken */
+.has-real-map .leaflet-tile,
+.has-real-map .leaflet-marker-icon,
+.has-real-map .leaflet-marker-shadow,
+.has-real-map .leaflet-image-layer,
+.has-real-map .leaflet-pane img,
+.has-real-map .leaflet-tile-container img{
+  width:auto!important;
+  height:auto!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:initial!important;
+}
+.has-real-map .leaflet-tile{
+  width:256px!important;
+  height:256px!important;
+}
+.has-real-map .leaflet-container,
+.has-real-map .leaflet-pane,
+.has-real-map .leaflet-map-pane,
+.has-real-map .leaflet-tile-pane,
+.has-real-map .leaflet-overlay-pane,
+.has-real-map .leaflet-marker-pane,
+.has-real-map .leaflet-tooltip-pane,
+.has-real-map .leaflet-popup-pane{
+  overflow:visible;
+}
+.has-real-map .leaflet-container{
+  overflow:hidden;
+  border-radius:inherit;
+}

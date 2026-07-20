@@ -34,8 +34,13 @@ export function initRoadoraMap(){
   layers.zones=window.L.layerGroup().addTo(roadoraMap);
 
   drawMap();
-  requestAnimationFrame(()=>roadoraMap.invalidateSize());
-  window.addEventListener('resize',()=>roadoraMap?.invalidateSize());
+  // Leaflet moet na layout/render nogmaals zijn containermaat meten.
+  requestAnimationFrame(()=>{
+    roadoraMap.invalidateSize(true);
+    setTimeout(()=>roadoraMap?.invalidateSize(true),120);
+    setTimeout(()=>roadoraMap?.invalidateSize(true),450);
+  });
+  window.addEventListener('resize',()=>roadoraMap?.invalidateSize(true));
 
   window.RoadoraMap={update:updateRoadoraMap,instance:roadoraMap};
 }
