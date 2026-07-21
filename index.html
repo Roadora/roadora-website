@@ -39,10 +39,10 @@
       <div class="panel-stack">
         <article class="card card-pad">
           <div class="card-title">
-            <h1>Plan je roadtrip</h1>
+            <h1>Eerste dagroute</h1>
             <button id="resetDemo" class="mini-link" type="button">Reset</button>
           </div>
-          <p class="muted">Vul de basis in. Roadora maakt daarna een dagplanning met hotelzone en passende stops.</p>
+          <p class="muted">Vul je eerste reisdag in. Roadora doet een voorstel, maar je kunt tijden, stops en hotelzone volledig zelf aanpassen.</p>
           <div class="divider"></div>
           <div class="field">
             <label for="origin">Vertrekpunt</label>
@@ -72,7 +72,7 @@
               <div class="input"><input id="tripDays" type="number" min="1" max="21" value="8"><strong>dagen</strong></div>
             </div>
           </div>
-          <button id="planRoute" class="btn primary full" type="button">Plan mijn roadtrip</button>
+          <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
         </article>
 
         <article class="card card-pad">
@@ -171,8 +171,14 @@
             <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · Amsterdam → hotelzone</p>
           </article>
           <article class="card card-pad">
-            <div class="card-title"><h2>Dagplanning</h2><button class="mini-link" type="button">Bewerken</button></div>
-            <div id="timeline" class="timeline"></div>
+            <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
+            <p class="muted plan-note">Roadora vult slim voor. Jij kunt elke tijd, stop, locatie of hotelzone zelf wijzigen.</p>
+            <div id="timeline" class="timeline editable-timeline"></div>
+            <div class="planning-actions">
+              <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
+              <button id="chooseHotelZone" class="btn" type="button">Zelf hotelzone kiezen</button>
+              <button id="recalculatePlan" class="btn primary" type="button">Opnieuw berekenen</button>
+            </div>
           </article>
         </div>
       </div>

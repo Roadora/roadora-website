@@ -135,9 +135,38 @@ function renderDays(){
   const tabs=$('#dayTabs'); tabs.innerHTML='';
   for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; renderAll();}; tabs.appendChild(b);}
 }
+function dayPlan(){
+  if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips']];
+  return timelines[state.activeDay];
+}
+function inferType(title=''){
+  const t=String(title).toLowerCase();
+  if(t.includes('vertrek')) return 'Vertrek';
+  if(t.includes('lunch')) return 'Lunch';
+  if(t.includes('laad')||t.includes('tank')) return 'Laden/tanken';
+  if(t.includes('hotel')) return 'Hotelzone';
+  if(t.includes('uitje')) return 'Uitje';
+  if(t.includes('wc')) return 'WC';
+  return 'Pauze';
+}
+function planTypeSelect(type){
+  const opts=['Vertrek','Pauze','Lunch','Laden/tanken','Hotelzone','Restaurant','Hotel','Uitje','WC','Zelf ingevuld'];
+  return `<select class="plan-type" aria-label="Type stop">${opts.map(o=>`<option ${o===type?'selected':''}>${o}</option>`).join('')}</select>`;
+}
 function renderTimeline(){
-  const list = timelines[state.activeDay] || [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips']];
-  $('#timeline').innerHTML = list.map((r,i)=>`<div class="time-row"><div class="time">${r[0]}</div><div class="time-card ${i===list.length-1?'active':''}"><strong>${r[1]}</strong><span>${typeof r[2]==='function'?r[2]():r[2]}</span></div></div>`).join('');
+  const list = dayPlan();
+  $('#timeline').innerHTML = list.map((r,i)=>{
+    const detail = typeof r[2]==='function'?r[2]():r[2];
+    const type = r[3] || inferType(r[1]);
+    return `<div class="plan-row ${i===list.length-1?'active':''}" data-plan-index="${i}">
+      <div class="plan-timebox"><input class="plan-time-input" type="time" value="${r[0]}" aria-label="Tijd"></div>
+      <div class="plan-fields">
+        <div class="plan-topline">${planTypeSelect(type)}<button class="plan-remove" type="button" title="Verwijderen">Verwijder</button></div>
+        <input class="plan-title-input" value="${r[1]}" aria-label="Titel van stop">
+        <input class="plan-detail-input" value="${detail}" aria-label="Details of eigen locatie">
+      </div>
+    </div>`;
+  }).join('');
 }
 function renderStops(){
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
@@ -152,13 +181,33 @@ function renderTrips(){
 function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80);}
 function bind(){
   $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); $$('.tab-panel').forEach(x=>x.classList.remove('active')); b.classList.add('active'); $('#'+b.dataset.tab).classList.add('active'); if(map) setTimeout(()=>map.invalidateSize(),150);});
-  document.addEventListener('click',e=>{const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();} const mode=e.target.closest('[data-view]'); if(mode){state.view=mode.dataset.view; $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view)); renderStops();}});
+  document.addEventListener('click',e=>{
+    const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();}
+    const mode=e.target.closest('[data-view]'); if(mode){state.view=mode.dataset.view; $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view)); renderStops();}
+    const remove=e.target.closest('.plan-remove');
+    if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); renderTimeline(); toast('Stop verwijderd');}
+  });
+  document.addEventListener('input',e=>{
+    const row=e.target.closest('[data-plan-index]'); if(!row) return;
+    const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(!plan[i]) return;
+    if(e.target.classList.contains('plan-time-input')) plan[i][0]=e.target.value;
+    if(e.target.classList.contains('plan-title-input')) plan[i][1]=e.target.value;
+    if(e.target.classList.contains('plan-detail-input')) plan[i][2]=e.target.value;
+  });
+  document.addEventListener('change',e=>{
+    const row=e.target.closest('[data-plan-index]'); if(!row || !e.target.classList.contains('plan-type')) return;
+    const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(plan[i]) plan[i][3]=e.target.value;
+  });
   $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; renderAll();});
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>b.classList.toggle('active'));
   ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
-  $('#planRoute').onclick=()=>{renderAll(); fitMap(); toast('Roadtrip bijgewerkt');}; $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
+  $('#planRoute').onclick=()=>{renderAll(); fitMap(); toast('Dagroute bijgewerkt');};
+  $('#addPlanStop')?.addEventListener('click',()=>{dayPlan().splice(Math.max(1,dayPlan().length-1),0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); renderTimeline(); toast('Stop toegevoegd');});
+  $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone']);} renderTimeline(); toast('Hotelzone handmatig gezet');});
+  $('#recalculatePlan')?.addEventListener('click',()=>{timelines[state.activeDay]=state.activeDay===1?[[state.depart,'Vertrek Amsterdam','Start van je roadtrip','Vertrek'],['11:00','Rustige pauze','WC · koffie · hond uitlaten','Pauze'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],['15:15','Laad-/tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],[state.arrival.split(' - ')[0]||'16:30','Hotelzone','Familiekamer · huisdieren toegestaan · parkeren','Hotelzone']]:dayPlan(); renderTimeline(); toast('Voorstel opnieuw berekend');});
+  $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
   $('#mapToggleStops').onclick=()=>{markers.forEach(m=>map.hasLayer(m)?map.removeLayer(m):m.addTo(map));};
   function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}
   $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>location.reload();
