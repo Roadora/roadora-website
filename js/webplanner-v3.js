@@ -14,15 +14,88 @@ const markerData = [
   {type:'end',label:'B',coords:[43.77,11.25],title:'Toscane'}
 ];
 const recs = [
-  ['Hotels passend','Familiekamer · hond toegestaan · parkeren'],['Restaurants','Geschikt voor gezin rond aankomst'],['Laden/tanken','Binnen jouw rijbereik gecombineerd met pauze'],['Uitjes','Korte wandeling of activiteit in hotelzone']
+  ['Hotels in hotelzone','Familiekamer · hond toegestaan · parkeren · weinig omrijden'],
+  ['Restaurants rond aankomst','Gezinsvriendelijk · hond welkom · dicht bij route'],
+  ['Laden of tanken','Binnen jouw rijbereik · combineren met pauze of lunch'],
+  ['Uitjes en korte stops','Korte wandeling · speeltuin · uitzichtpunt · rustig aankomen'],
+  ['WC en pauzeplekken','Praktisch onderweg · koffie · parkeren · snel verder'],
+  ['Camper/parkeren','Ruime plekken · makkelijk keren · geschikt voor langere voertuigen']
 ];
 const stops = {
-  hotels:[['Hotel Alpenblick','Beste match · familiekamer · hond toegestaan · +8 min omrijden'],['Gasthof Route Süd','Goed alternatief · parkeren · +5 min omrijden'],['City Hotel Ulm','Past deels · huisdieren onbekend · +3 min omrijden'],['Hotel Am Park','Rustige locatie · ontbijt · +11 min omrijden'],['Familiehotel Tirol','Familiekamer · laadpunt dichtbij · +14 min omrijden']],
-  restaurants:[['Raststätte Frankenhöhe','Lunch langs route · WC · parkeren'],['Trattoria Al Lago','Italiaans · geschikt voor gezin'],['Bistro Route Süd','Korte omweg · hond welkom op terras'],['Gasthof Waldblick','Rustige lunchplek · +7 min']],
-  laden:[['IONITY Ulm-West','Snelladen · lunch dichtbij · binnen rijbereik'],['Fastned Augsburg','Snelladen · WC · koffie'],['EnBW Park','Laadplein · meerdere punten'],['Hotelcharger Alpenblick','Laadpunt bij hotel']],
-  tanken:[['Shell Route Süd','Langs route · weinig omrijden'],['Aral Autohof','Ruim parkeren · WC'],['TotalEnergies A8','Goede tankstop voor hotelzone'],['OMV Tirol','Voor aankomst hotelzone']],
-  uitjes:[['Korte wandeling Donau','Rustige stop · hondvriendelijk'],['Speeltuin stadspark','Kindvriendelijk · 15 min pauze'],['Uitzichtpunt Alpenroute','Korte foto-stop'],['Zwembad bij hotelzone','Voor avond na aankomst']],
-  wc:[['Raststätte Keulen Süd','WC · koffie · weinig omrijden'],['Autohof Ulm','WC · parkeren · eten'],['Pauzeplek A8','Snel en praktisch'],['Hotelzone servicepunt','Vlak voor aankomst']]
+  hotels:[
+    ['Hotel Alpenblick','Beste match · familiekamer · hond toegestaan · +8 min omrijden'],
+    ['Gasthof Route Süd','Goed alternatief · parkeren · +5 min omrijden'],
+    ['City Hotel Ulm','Past deels · huisdieren onbekend · +3 min omrijden'],
+    ['Hotel Am Park','Rustige locatie · ontbijt · +11 min omrijden'],
+    ['Familiehotel Tirol','Familiekamer · laadpunt dichtbij · +14 min omrijden'],
+    ['Routehotel Donau','Parkeren · familiekamer mogelijk · +6 min omrijden'],
+    ['Hotel Waldruhe','Hond welkom · rustige ligging · +12 min omrijden'],
+    ['Aparthotel Zuid-Duitsland','Ruime kamer · keukenhoek · geschikt voor gezin'],
+    ['Hotel bij afrit A8','Snel bereikbaar · ontbijt · +4 min omrijden'],
+    ['Pension Alpenroute','Eenvoudig · hond op aanvraag · +9 min omrijden'],
+    ['Hotel met laadpunt','Laadpunt dichtbij · parkeren · +10 min omrijden'],
+    ['Familie Gasthof','Kindvriendelijk · restaurant · +7 min omrijden']
+  ],
+  restaurants:[
+    ['Raststätte Frankenhöhe','Lunch langs route · WC · parkeren'],
+    ['Trattoria Al Lago','Italiaans · geschikt voor gezin · terras'],
+    ['Bistro Route Süd','Korte omweg · hond welkom op terras'],
+    ['Gasthof Waldblick','Rustige lunchplek · +7 min omrijden'],
+    ['Familierestaurant A8','Kinderstoelen · snelle bediening · +5 min'],
+    ['Autohof Restaurant','Ruim parkeren · WC · tanken mogelijk'],
+    ['Lunch bij stadspark','Korte wandeling erbij · kindvriendelijk'],
+    ['Pizzeria langs route','Snel eten · geschikt voor kinderen'],
+    ['Café bij laadplein','Koffie · broodjes · laadpunt naast de deur'],
+    ['Restaurant Hotelzone','Handig rond aankomst · parkeren bij deur']
+  ],
+  laden:[
+    ['IONITY Ulm-West','Snelladen · lunch dichtbij · binnen rijbereik'],
+    ['Fastned Augsburg','Snelladen · WC · koffie'],
+    ['EnBW Park','Laadplein · meerdere punten · weinig omrijden'],
+    ['Hotelcharger Alpenblick','Laadpunt bij hotel · handig bij overnachting'],
+    ['Aral Pulse Autohof','Snelladen · tanken · restaurant'],
+    ['Tesla Supercharger route','Snel laden · eten dichtbij'],
+    ['ChargePoint centrum','Laadpunt + korte wandeling'],
+    ['Laadplein hotelzone','Goed moment vóór inchecken'],
+    ['Shell Recharge A8','Laadstop combineren met WC en koffie'],
+    ['Snellader bij outlet','Laden + korte pauze of uitje']
+  ],
+  tanken:[
+    ['Shell Route Süd','Langs route · weinig omrijden'],
+    ['Aral Autohof','Ruim parkeren · WC'],
+    ['TotalEnergies A8','Goede tankstop voor hotelzone'],
+    ['OMV Tirol','Voor aankomst hotelzone'],
+    ['Esso Raststätte','Tanken · koffie · snel verder'],
+    ['BP Autohof Zuid','Ruime pomp · restaurant naast station'],
+    ['Avia Routepunt','Goed alternatief · +4 min omrijden'],
+    ['Tankstation bij hotelzone','Handig voor vertrek volgende dag'],
+    ['Shell grensroute','Goed moment vóór grensovergang'],
+    ['Total Truckstop','Ruim parkeren · camper/bus geschikt']
+  ],
+  uitjes:[
+    ['Korte wandeling Donau','Rustige stop · hondvriendelijk'],
+    ['Speeltuin stadspark','Kindvriendelijk · 15 min pauze'],
+    ['Uitzichtpunt Alpenroute','Korte foto-stop · weinig omrijden'],
+    ['Zwembad bij hotelzone','Voor avond na aankomst'],
+    ['Historisch centrum Ulm','Korte wandeling · eten dichtbij'],
+    ['Natuurpad langs route','Even bewegen · hond welkom'],
+    ['Outlet stop','Korte tussenstop · parkeren makkelijk'],
+    ['Meer bij hotelzone','Rustig aankomen · wandelen'],
+    ['Kindermuseum omgeving','Voor langere pauze of vrije dag'],
+    ['Panorama parkeerplaats','Foto-stop · 20 minuten']
+  ],
+  wc:[
+    ['Raststätte Keulen Süd','WC · koffie · weinig omrijden'],
+    ['Autohof Ulm','WC · parkeren · eten'],
+    ['Pauzeplek A8','Snel en praktisch'],
+    ['Hotelzone servicepunt','Vlak voor aankomst'],
+    ['Tankstation met WC','Direct langs route · korte stop'],
+    ['Familie pauzeplek','WC · speeltuin · picknicktafel'],
+    ['Laadplein met sanitair','WC tijdens laden'],
+    ['Restaurantstop met WC','Lunch combineren met pauze'],
+    ['Parkeerplaats met voorzieningen','Snel uitstappen · hond uitlaten'],
+    ['Autohof grensroute','WC · tanken · koffie']
+  ]
 };
 const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const timelines = {
