@@ -63,3 +63,155 @@ button{cursor:pointer}
   #stopsTab .card.card-pad{min-height: 640px;}
   #stopsTab .stop-list{height: 430px;min-height:430px;}
 }
+
+/* v3.3: Rustiger rechterpaneel — Stops-tab gebruikt de volledige hoogte, compacte stoprijen */
+@media (min-width:1181px){
+  .right-panel{
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    min-height:0;
+  }
+  .right-tabs{
+    flex:0 0 auto;
+    position:relative;
+    top:auto;
+    margin-bottom:10px;
+  }
+  .tab-panel{
+    min-height:0;
+    flex:1 1 auto;
+    overflow:auto;
+  }
+  .tab-panel.active{
+    display:block;
+  }
+  #stopsTab.active{
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  #stopsTab .card.card-pad{
+    height:100%;
+    min-height:0;
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    padding:14px;
+  }
+  #stopsTab .card-title,
+  #stopsTab .muted,
+  #stopsTab .mode-switch,
+  #stopsTab #recommendPanel > .card-title,
+  #stopsTab #allStopsPanel > .category-grid,
+  #stopsTab .sticky-actions{
+    flex:0 0 auto;
+  }
+  #recommendPanel,
+  #allStopsPanel{
+    min-height:0;
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+  }
+  #recommendPanel.hidden,
+  #allStopsPanel.hidden{
+    display:none!important;
+  }
+  #recommendations.rec-grid{
+    min-height:0;
+    flex:1 1 auto;
+    overflow:auto;
+    grid-template-columns:1fr;
+    align-content:start;
+    padding-right:6px;
+    scrollbar-width:thin;
+  }
+  #allStops.stop-list{
+    height:auto;
+    min-height:0;
+    max-height:none;
+    flex:1 1 auto;
+    overflow:auto;
+    padding-right:6px;
+  }
+  #stopsTab .sticky-actions{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--line);
+    background:var(--panel);
+  }
+}
+
+/* compactere, professionelere stoprijen */
+#stopsTab .stop-item{
+  border-radius:11px;
+  padding:9px 10px;
+  gap:8px;
+  min-height:62px;
+}
+#stopsTab .stop-item strong{
+  font-size:12.5px;
+  line-height:1.25;
+}
+#stopsTab .stop-item p{
+  font-size:11.5px;
+  line-height:1.35;
+  margin-top:2px;
+}
+#stopsTab .stop-item button{
+  font-size:11.5px;
+  white-space:nowrap;
+}
+#stopsTab .rec-card{
+  border-radius:11px;
+  padding:10px 11px;
+}
+#stopsTab .rec-card strong{
+  font-size:12.5px;
+}
+#stopsTab .rec-card span{
+  font-size:11.5px;
+  line-height:1.35;
+}
+#stopsTab .category-grid{
+  gap:6px;
+}
+#stopsTab .category-btn,
+#stopsTab .mode-btn{
+  height:32px;
+  font-size:11.5px;
+}
+#stopsTab .mode-switch{
+  margin:10px 0;
+}
+#stopsTab .card-title{
+  margin-bottom:8px;
+}
+#stopsTab .muted{
+  margin:0;
+  line-height:1.35;
+}
+
+/* kaart rustiger: detail hoort vooral in het rechterpaneel */
+.map-summary{
+  max-width:420px;
+  padding:12px 14px;
+}
+.map-summary h3{
+  font-size:14px;
+  margin-bottom:6px;
+}
+.summary-row{
+  gap:12px;
+  font-size:11.5px;
+}
+.tag{
+  font-size:10.5px;
+  padding:3px 7px;
+}
+@media(max-width:760px){
+  #stopsTab .card.card-pad{min-height:720px;}
+  #allStops.stop-list{height:520px;min-height:520px;max-height:none;}
+  #recommendations.rec-grid{max-height:520px;overflow:auto;grid-template-columns:1fr;}
+}
