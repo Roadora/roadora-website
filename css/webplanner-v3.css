@@ -333,3 +333,70 @@ button{cursor:pointer}
   .plan-timebox,.plan-timebox input{min-width:100%;width:100%}
   .plan-read-main em{display:none}
 }
+
+/* v3.7: linkerzijde rustiger — dagroute open, profiel/voertuig/voorkeuren compact met bewerken */
+.left-panel .card:first-child .muted{
+  max-width: 32ch;
+  line-height:1.35;
+}
+.left-fold{
+  padding: 13px 14px;
+}
+.left-fold .card-title{
+  margin-bottom:0;
+  align-items:flex-start;
+}
+.left-fold-head h2{
+  margin-bottom:4px;
+}
+.fold-summary{
+  margin:0;
+  color:var(--muted);
+  font-size:11.5px;
+  line-height:1.35;
+  max-width:230px;
+}
+.left-edit-toggle{
+  flex:0 0 auto;
+  padding-top:1px;
+}
+.left-fold-body{
+  display:none;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.left-fold.open .left-fold-body{
+  display:block;
+}
+.left-fold.open .left-edit-toggle{
+  color:#0b5a5d;
+}
+.left-fold.open .card-title{
+  margin-bottom:0;
+}
+.left-panel .panel-stack{
+  gap:10px;
+}
+.left-panel .field{
+  margin-bottom:9px;
+}
+.left-panel .input{
+  height:37px;
+  border-radius:10px;
+}
+.left-panel .choice,
+.left-panel .pref{
+  height:34px;
+  border-radius:10px;
+  font-size:11.5px;
+}
+.left-panel .btn{
+  height:38px;
+  border-radius:10px;
+}
+@media(max-width:760px){
+  .fold-summary{max-width:none}
+  .left-fold-body{display:block}
+  .left-edit-toggle{display:none}
+}

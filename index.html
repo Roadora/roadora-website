@@ -75,58 +75,73 @@
           <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
         </article>
 
-        <article class="card card-pad">
-          <div class="card-title"><h2>Reisprofiel</h2><span class="pill">optioneel</span></div>
-          <div class="field">
-            <label>Met wie reis je?</label>
-            <div class="two">
-              <div class="input"><input name="adults" type="number" min="1" value="2"><strong>volw.</strong></div>
-              <div class="input"><input name="children" type="number" min="0" value="3"><strong>kinderen</strong></div>
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Reisprofiel</h2><p id="profileSummary" class="fold-summary">2 volwassenen · 3 kinderen · hond mee</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="field">
+              <label>Met wie reis je?</label>
+              <div class="two">
+                <div class="input"><input name="adults" type="number" min="1" value="2"><strong>volw.</strong></div>
+                <div class="input"><input name="children" type="number" min="0" value="3"><strong>kinderen</strong></div>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label>Huisdieren</label>
-            <div class="choice-grid">
-              <button class="choice" data-pet="none" type="button">Geen</button>
-              <button class="choice active" data-pet="dog" type="button">Hond</button>
-              <button class="choice" data-pet="multiple" type="button">Meerdere</button>
+            <div class="field">
+              <label>Huisdieren</label>
+              <div class="choice-grid">
+                <button class="choice" data-pet="none" type="button">Geen</button>
+                <button class="choice active" data-pet="dog" type="button">Hond</button>
+                <button class="choice" data-pet="multiple" type="button">Meerdere</button>
+              </div>
             </div>
-          </div>
-          <p class="hint">Geen leeftijden voor kinderen. Roadora gebruikt alleen het aantal kinderen voor familiekamers en kindvriendelijke stops.</p>
-        </article>
-
-        <article class="card card-pad">
-          <div class="card-title"><h2>Voertuig</h2></div>
-          <div class="choice-grid vehicle-grid">
-            <button class="choice" data-vehicle="car" type="button">Auto</button>
-            <button class="choice active" data-vehicle="electric" type="button">Elektrisch</button>
-            <button class="choice" data-vehicle="camper" type="button">Camper</button>
-            <button class="choice" data-vehicle="bus" type="button">Bus</button>
-          </div>
-          <div class="field" style="margin-top:12px">
-            <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden op een volle accu?</label>
-            <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" value="325"><strong>km</strong></div>
-            <p class="hint">Handmatig invullen, bijvoorbeeld 325 km.</p>
-          </div>
-          <div id="evFields" class="field">
-            <label for="plug">Laadstekker</label>
-            <div class="input"><select id="plug"><option selected>CCS</option><option>Type 2</option><option>CHAdeMO</option><option>Weet ik niet</option></select></div>
-          </div>
-          <div class="field">
-            <label for="maxDetour">Maximaal omrijden</label>
-            <div class="range-row"><input id="maxDetour" type="range" min="5" max="45" value="20"><strong>20 min</strong></div>
+            <p class="hint">Geen leeftijden voor kinderen. Alleen het aantal kinderen telt mee voor familiekamers en kindvriendelijke stops.</p>
           </div>
         </article>
 
-        <article class="card card-pad">
-          <div class="card-title"><h2>Voorkeuren</h2></div>
-          <div class="pref-grid">
-            <button class="pref active" type="button">Familiekamers</button>
-            <button class="pref active" type="button">Huisdieren</button>
-            <button class="pref active" type="button">Kindvriendelijk</button>
-            <button class="pref active" type="button">Parkeren</button>
-            <button class="pref active" type="button">Laadpunt</button>
-            <button class="pref active" type="button">Ontbijt</button>
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">Elektrisch · 325 km · CCS</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="choice-grid vehicle-grid">
+              <button class="choice" data-vehicle="car" type="button">Auto</button>
+              <button class="choice active" data-vehicle="electric" type="button">Elektrisch</button>
+              <button class="choice" data-vehicle="camper" type="button">Camper</button>
+              <button class="choice" data-vehicle="bus" type="button">Bus</button>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden op een volle accu?</label>
+              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" value="325"><strong>km</strong></div>
+              <p class="hint">Handmatig invullen, bijvoorbeeld 325 km.</p>
+            </div>
+            <div id="evFields" class="field">
+              <label for="plug">Laadstekker</label>
+              <div class="input"><select id="plug"><option selected>CCS</option><option>Type 2</option><option>CHAdeMO</option><option>Weet ik niet</option></select></div>
+            </div>
+            <div class="field">
+              <label for="maxDetour">Maximaal omrijden</label>
+              <div class="range-row"><input id="maxDetour" type="range" min="5" max="45" value="20"><strong>20 min</strong></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Voorkeuren</h2><p id="prefSummary" class="fold-summary">Familiekamers · huisdieren · parkeren · laadpunt</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="pref-grid">
+              <button class="pref active" type="button">Familiekamers</button>
+              <button class="pref active" type="button">Huisdieren</button>
+              <button class="pref active" type="button">Kindvriendelijk</button>
+              <button class="pref active" type="button">Parkeren</button>
+              <button class="pref active" type="button">Laadpunt</button>
+              <button class="pref active" type="button">Ontbijt</button>
+            </div>
           </div>
         </article>
       </div>

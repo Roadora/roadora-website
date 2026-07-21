@@ -117,7 +117,7 @@ function fitMap(){ if(map && routeLine) map.fitBounds(routeLine.getBounds(),{pad
 function toast(msg){ const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
 function readForm(){
   state.origin=$('#origin').value||state.origin; state.destination=$('#destination').value||state.destination; state.date=$('#date').value; state.depart=$('#departTime').value; state.arrival=$('#hotelArrival').value; state.days=Math.max(1,Math.min(21,Number($('#tripDays').value)||1)); state.range=Number($('#vehicleRangeKm').value)||325; state.plug=$('#plug').value;
-  state.adults=Number($('[name="adults"]').value)||1; state.children=Number($('[name="children"]').value)||0;
+  state.adults=Number($('[name="adults"]').value)||1; state.children=Number($('[name="children"]').value)||0; state.maxDetour=Number($('#maxDetour')?.value)||20;
 }
 function vehicleLabel(){return {car:'Auto',electric:'Elektrisch',camper:'Camper',bus:'Bus'}[state.vehicle]||'Auto'}
 function updateTexts(){
@@ -125,6 +125,13 @@ function updateTexts(){
   ['#summaryRoute','#routeTitle','#mapRouteTitle'].forEach(id=>{if($(id)) $(id).textContent=title});
   $('#sideDepart').textContent=`${state.date} · ${state.depart}`; $('#sideHotel').textContent=state.arrival; $('#sideVehicle').textContent=`${vehicleLabel()} (${state.range} km)`;
   $('#sideTravelers').textContent=`${state.adults} volwassenen, ${state.children} kinderen${state.pet!=='none'?', hond':''}`;
+  const petText = state.pet==='none' ? 'geen hond' : (state.pet==='multiple' ? 'meerdere honden' : 'hond mee');
+  const vehicleText = vehicleLabel();
+  const prefTexts = $$('.pref.active').map(b=>b.textContent.trim());
+  if($('#profileSummary')) $('#profileSummary').textContent = `${state.adults} volwassenen · ${state.children} kinderen · ${petText}`;
+  if($('#vehicleSummary')) $('#vehicleSummary').textContent = state.vehicle==='electric' ? `${vehicleText} · ${state.range} km · ${state.plug}` : `${vehicleText} · ${state.range} km rijbereik`;
+  if($('#prefSummary')) $('#prefSummary').textContent = prefTexts.length ? prefTexts.slice(0,4).join(' · ') + (prefTexts.length>4 ? ' +' + (prefTexts.length-4) : '') : 'geen voorkeuren gekozen';
+  const detourValue = $('#maxDetour')?.closest('.range-row')?.querySelector('strong'); if(detourValue) detourValue.textContent = `${state.maxDetour} min`;
   $('#rangeLabel').textContent = state.vehicle==='electric' ? 'Hoe ver kun je ongeveer rijden op een volle accu?' : 'Hoe ver kun je ongeveer rijden op een volle tank?';
   $('#evFields').classList.toggle('hidden', state.vehicle!=='electric'); $('#chargeLabel').textContent = state.vehicle==='electric'?'Laadstop':'Tankstop';
   $('#chargeDetail').textContent = state.vehicle==='electric'?`${state.range} km rijbereik · ${state.plug}`:`${state.range} km rijbereik · tankstop`;
@@ -214,8 +221,9 @@ function bind(){
   });
   $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; renderAll();});
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
-  $$('.pref').forEach(b=>b.onclick=()=>b.classList.toggle('active'));
-  ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
+  $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
+  $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
+  ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=()=>{renderAll(); fitMap(); toast('Dagroute bijgewerkt');};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
