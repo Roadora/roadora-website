@@ -66,3 +66,96 @@
 .stops-card #recommendPanel::-webkit-scrollbar,.stops-card #allStopsPanel::-webkit-scrollbar,.day-tabs::-webkit-scrollbar{height:5px;width:5px}
 .stops-card #recommendPanel::-webkit-scrollbar-thumb,.stops-card #allStopsPanel::-webkit-scrollbar-thumb,.day-tabs::-webkit-scrollbar-thumb{background:#d8d1c4;border-radius:999px}
 @media(max-width:900px){.stops-card{height:390px;max-height:390px}}
+
+/* v2.7 stoplijst: echte interne scroll + strak professioneel paneel */
+.stops-card{
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+.stops-card>.card-title,
+.stops-card>.step-note,
+.stops-card>.mode-switch,
+.stops-card>.stops-actions{
+  flex:0 0 auto!important;
+}
+.stops-card .step-note{
+  margin:0!important;
+  font-size:.70rem!important;
+  line-height:1.35!important;
+}
+.stops-card .mode-switch{
+  margin:4px 0 2px!important;
+}
+.stops-scroll{
+  height:248px!important;
+  min-height:248px!important;
+  max-height:248px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-right:6px!important;
+  scrollbar-width:thin!important;
+  overscroll-behavior:contain!important;
+  border-top:1px solid rgba(219,205,184,.65);
+  border-bottom:1px solid rgba(219,205,184,.65);
+  padding-top:7px!important;
+  padding-bottom:7px!important;
+}
+.stops-scroll::-webkit-scrollbar{width:6px!important}
+.stops-scroll::-webkit-scrollbar-track{background:#f5efe6;border-radius:999px}
+.stops-scroll::-webkit-scrollbar-thumb{background:#cbbda6;border-radius:999px}
+.stops-card #recommendPanel,
+.stops-card #allStopsPanel{
+  display:block!important;
+  overflow:visible!important;
+  min-height:0!important;
+  padding-right:0!important;
+}
+.stops-card #recommendPanel.hidden,
+.stops-card #allStopsPanel.hidden{
+  display:none!important;
+}
+.stops-card #recommendations,
+.stops-card #allStops{
+  max-height:none!important;
+  overflow:visible!important;
+}
+.stops-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:0!important;
+}
+.category-tabs{
+  position:sticky;
+  top:-7px;
+  z-index:2;
+  background:var(--surface);
+  padding:0 0 7px!important;
+  margin-bottom:6px;
+  border-bottom:1px solid rgba(219,205,184,.55);
+}
+.cat-tab{font-size:.68rem!important;padding:5px 8px!important}
+.stop-row{
+  grid-template-columns:18px 1fr auto!important;
+  padding:8px 9px!important;
+  gap:7px!important;
+  border-radius:9px!important;
+}
+.match-score{
+  width:18px!important;
+  height:18px!important;
+  font-size:.65rem!important;
+}
+.stop-row strong{font-size:.73rem!important;line-height:1.15!important}
+.stop-row span{font-size:.65rem!important;line-height:1.22!important}
+.stop-row .mini-link{font-size:.68rem!important;padding:2px!important}
+.rec{min-height:auto!important;padding:9px 10px!important;border-radius:9px!important}
+.rec strong{font-size:.74rem!important}.rec span{font-size:.66rem!important}
+@media(max-width:900px){
+  .stops-scroll{height:270px!important;min-height:270px!important;max-height:270px!important}
+  .stops-actions{grid-template-columns:1fr 1fr}
+}

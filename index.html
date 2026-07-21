@@ -126,15 +126,17 @@
           <button class="mode-btn active" data-view-mode="recommended" type="button">Slim aanbevolen</button>
           <button class="mode-btn" data-view-mode="all" type="button">Alles tonen op kaart</button>
         </div>
-        <div id="recommendPanel">
-          <div class="card-title compact"><h3>Aanbevolen in je hotelzone</h3><button class="mini-link" data-view-mode="all" type="button">Alles tonen</button></div>
-          <div id="recommendations" class="rec-grid"></div>
+        <div class="stops-scroll" aria-label="Beschikbare stops en aanbevelingen">
+          <div id="recommendPanel">
+            <div class="card-title compact"><h3>Aanbevolen in je hotelzone</h3><button class="mini-link" data-view-mode="all" type="button">Alles tonen</button></div>
+            <div id="recommendations" class="rec-grid"></div>
+          </div>
+          <div id="allStopsPanel" class="hidden">
+            <div id="categoryTabs" class="category-tabs" aria-label="Stopcategorieën"></div>
+            <div id="allStops" class="all-list"></div>
+          </div>
         </div>
-        <div id="allStopsPanel" class="hidden">
-          <div id="categoryTabs" class="category-tabs" aria-label="Stopcategorieën"></div>
-          <div id="allStops" class="all-list"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><button class="btn primary" type="button">＋ Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">♡ Opslaan</button></div>
+        <div class="stops-actions"><button class="btn primary" type="button">＋ Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">♡ Opslaan</button></div>
       </article>
 
       <article class="card section-pad">
