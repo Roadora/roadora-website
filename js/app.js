@@ -61,7 +61,7 @@ function renderRecommendations(){
   const root=$('#recommendations'); if(!root)return; root.innerHTML='';
   getRecommendations(state).forEach(item=>{
     const rec=document.createElement('button');rec.type='button';rec.className='rec';
-    rec.innerHTML=`<div class="thumb">${item.icon}</div><div><strong>${item.title}</strong><span>${item.meta}</span></div>`;
+    rec.innerHTML=`<div><strong>${item.title}</strong><span>${item.meta}</span></div>`;
     rec.addEventListener('click',()=>{state.activeStopCategory=categoryFromTitle(item.title);state.stopViewMode='all';persistRender();});
     root.appendChild(rec);
   });
@@ -70,13 +70,13 @@ function renderAllStops(){
   const tabs=$('#categoryTabs'); const list=$('#allStops'); if(!tabs||!list)return;
   tabs.innerHTML=''; list.innerHTML='';
   CATEGORIES.forEach(cat=>{
-    const btn=document.createElement('button'); btn.type='button'; btn.className=`cat-tab ${state.activeStopCategory===cat.id?'active':''}`; btn.textContent=`${cat.icon} ${cat.label}`;
+    const btn=document.createElement('button'); btn.type='button'; btn.className=`cat-tab ${state.activeStopCategory===cat.id?'active':''}`; btn.textContent=cat.label;
     btn.addEventListener('click',()=>{state.activeStopCategory=cat.id;persistRender();});
     tabs.appendChild(btn);
   });
   getAllStops(state,state.activeStopCategory).forEach((item,i)=>{
     const row=document.createElement('div');row.className='stop-row';
-    row.innerHTML=`<div class="match-score">${i===0?'✓':'+'}</div><div><strong>${item.title}</strong><span>${item.meta}</span></div><button class="mini-link" type="button">Toevoegen</button>`;
+    row.innerHTML=`<div class="match-score">${i===0?'•':'+'}</div><div><strong>${item.title}</strong><span>${item.meta}</span></div><button class="mini-link" type="button">Toevoegen</button>`;
     row.querySelector('button')?.addEventListener('click',()=>showToast(`${item.title} toegevoegd aan Dag 1.`));
     list.appendChild(row);
   });

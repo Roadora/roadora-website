@@ -1,10 +1,10 @@
 export const CATEGORIES = [
-  {id:'hotels',label:'Hotels',icon:'🏨'},
-  {id:'restaurants',label:'Restaurants',icon:'🍝'},
-  {id:'charging',label:'Laden',icon:'⚡'},
-  {id:'fuel',label:'Tanken',icon:'⛽'},
-  {id:'activities',label:'Uitjes',icon:'📸'},
-  {id:'wc',label:'WC',icon:'🚻'}
+  {id:'hotels',label:'Hotels'},
+  {id:'restaurants',label:'Restaurants'},
+  {id:'charging',label:'Laden'},
+  {id:'fuel',label:'Tanken'},
+  {id:'activities',label:'Uitjes'},
+  {id:'wc',label:'WC'}
 ];
 export function getRecommendations(state){
   const hotelTags=[];
@@ -13,10 +13,10 @@ export function getRecommendations(state){
   if(state.vehicle==='electric')hotelTags.push('Laadpunt dichtbij');
   if(state.preferences?.includes('parking'))hotelTags.push('Parkeren');
   return [
-    {icon:'🏨',title:'Hotels',meta:`12 passend · ${hotelTags.slice(0,2).join(' + ') || 'langs je route'}`},
-    {icon:'🍝',title:'Restaurants',meta:Number(state.children)>0?'geschikt voor gezinnen rond aankomst':'rond je hotelzone'},
-    {icon:state.vehicle==='electric'?'⚡':'⛽',title:state.vehicle==='electric'?'Laden':'Tanken',meta:`op basis van ${state.vehicleRangeKm||325} km rijbereik`},
-    {icon:'📸',title:'Uitjes',meta:state.pet==='dog'?'wandelplek of korte stop':'korte stop zonder omweg'}
+    {title:'Hotels',meta:`12 passend · ${hotelTags.slice(0,2).join(' + ') || 'langs je route'}`},
+    {title:'Restaurants',meta:Number(state.children)>0?'geschikt voor gezinnen rond aankomst':'rond je hotelzone'},
+    {title:state.vehicle==='electric'?'Laden':'Tanken',meta:`op basis van ${state.vehicleRangeKm||325} km rijbereik`},
+    {title:'Uitjes',meta:state.pet==='dog'?'wandelplek of korte stop':'korte stop zonder omweg'}
   ];
 }
 export function getAllStops(state,category='hotels'){
