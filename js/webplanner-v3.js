@@ -155,6 +155,25 @@ function dayStatus(day){
   if(timelines[day]) return day===1?'gepland':'voorgesteld';
   return 'nog te plannen';
 }
+
+function deleteTripDay(day){
+  if(state.days <= 1){ toast('Je roadtrip moet minimaal 1 dag hebben'); return; }
+  const nextTimelines = {};
+  for(let i=1;i<=state.days;i++){
+    if(i === day) continue;
+    const newIndex = i > day ? i - 1 : i;
+    if(timelines[i]) nextTimelines[newIndex] = timelines[i];
+  }
+  Object.keys(timelines).forEach(k=>delete timelines[k]);
+  Object.assign(timelines, nextTimelines);
+  state.days = Math.max(1, state.days - 1);
+  if(state.activeDay === day) state.activeDay = Math.min(day, state.days);
+  else if(state.activeDay > day) state.activeDay -= 1;
+  const input=$('#tripDays'); if(input) input.value=state.days;
+  editingPlanRows.clear();
+  renderAll();
+  toast('Dag verwijderd');
+}
 function renderTripOverview(){
   const list=$('#overviewDayList');
   if(list){
@@ -164,8 +183,8 @@ function renderTripOverview(){
       const b=document.createElement('button');
       b.type='button';
       b.className='overview-day-row'+(i===state.activeDay?' active':'');
-      b.innerHTML=`<span class="overview-day-num">Dag ${i}</span><span class="overview-day-main"><strong>${dayRouteLabel(i,origin,dest)}</strong><em>${i===state.activeDay?'actieve dag':dayStatus(i)}</em></span>`;
-      b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();};
+      b.innerHTML=`<span class="overview-day-num">Dag ${i}</span><span class="overview-day-main"><strong>${dayRouteLabel(i,origin,dest)}</strong><em>${i===state.activeDay?'actieve dag':dayStatus(i)}</em></span><button class="overview-day-delete" type="button" data-delete-day="${i}" title="Dag verwijderen">Verwijder</button>`;
+      b.onclick=(e)=>{if(e.target.closest('[data-delete-day]')) return; state.activeDay=i; editingPlanRows.clear(); renderAll();};
       list.appendChild(b);
     }
   }
@@ -236,6 +255,7 @@ function bind(){
   document.addEventListener('click',e=>{
     const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();}
     const mode=e.target.closest('[data-view]'); if(mode){state.view=mode.dataset.view; $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view)); renderStops();}
+    const delDay=e.target.closest('[data-delete-day]'); if(delDay){e.preventDefault(); e.stopPropagation(); deleteTripDay(Number(delDay.dataset.deleteDay)); return;}
     const edit=e.target.closest('.plan-edit');
     if(edit){const row=edit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.has(i)?editingPlanRows.delete(i):editingPlanRows.add(i); renderTimeline(); return;}
     const saveEdit=e.target.closest('.plan-save');

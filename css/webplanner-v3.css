@@ -435,7 +435,7 @@ button{cursor:pointer}
   border-radius:12px;
   padding:9px 10px;
   display:grid;
-  grid-template-columns:52px 1fr;
+  grid-template-columns:52px 1fr auto;
   gap:9px;
   align-items:center;
   text-align:left;
@@ -469,6 +469,21 @@ button{cursor:pointer}
   color:var(--muted);
   font-size:11.5px;
 }
+.overview-day-delete{
+  border:0;
+  background:transparent;
+  color:#a66f00;
+  font-size:11.5px;
+  font-weight:800;
+  padding:5px 2px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.overview-day-delete:hover{
+  color:#7a4d00;
+  text-decoration:underline;
+}
+
 .active-day-detail{
   display:flex;
   flex-direction:column;
