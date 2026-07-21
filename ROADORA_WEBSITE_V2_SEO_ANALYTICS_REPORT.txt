@@ -1,0 +1,14 @@
+Roadora Website v2 SEO Analytics Ready
+
+Measurement ID: G-R0XTKDJ2PH
+
+Aanpassingen:
+- GA4 toegevoegd via js/analytics-consent.js
+- Analytics laadt pas na toestemming via cookiebanner
+- Privacyverklaring bijgewerkt
+- Cookievoorkeur reset-knop toegevoegd op privacy.html
+- Twitter card meta toegevoegd
+- robots.txt blijft indexeerbaar
+- sitemap.xml aanwezig
+
+Geen advertentiecookies, geen marketingtracking, geen echte app-code toegevoegd.

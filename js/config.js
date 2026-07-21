@@ -1,8 +1,9 @@
 export const CONFIG = {
   gaMeasurementId: 'G-R0XTKDJ2PH',
   storageKeys: {
-    route: 'roadora.route.v1',
-    profile: 'roadora.profile.v1',
+    route: 'roadora.route.v2',
+    trips: 'roadora.trips.v1',
+    profile: 'roadora.profile.v2',
     consent: 'roadora.cookie-consent.v1'
   },
   defaults: {
@@ -13,12 +14,13 @@ export const CONFIG = {
     hotelArrival: '16:30 - 18:00',
     adults: 2,
     children: 3,
-    childAges: '2, 6, 9',
     pet: 'dog',
     vehicle: 'electric',
-    evRangeKm: 325,
+    vehicleRangeKm: 325,
     plug: 'CCS',
     maxDetour: 20,
+    stopViewMode: 'recommended',
+    activeStopCategory: 'hotels',
     preferences: ['family','pets','kids','parking','charging','breakfast']
   }
 };

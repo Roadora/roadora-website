@@ -1,0 +1,9 @@
+Roadora Website v2.1 Cookie Banner Visibility Fix
+
+Wijziging:
+- Cookiebanner is niet meer standaard hidden in HTML.
+- JS verbergt banner alleen na accepted/declined consent.
+- Hierdoor blijft de banner zichtbaar als analytics-consent.js traag laadt of niet goed uitgevoerd wordt.
+- GA4 blijft pas laden na klik op Analytics toestaan.
+
+Measurement ID: G-R0XTKDJ2PH

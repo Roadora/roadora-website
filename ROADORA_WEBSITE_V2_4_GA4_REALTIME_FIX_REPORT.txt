@@ -1,0 +1,17 @@
+Roadora Website v2.4 — GA4 Realtime Consent Fix
+
+Doel:
+GA4 betrouwbaarder zichtbaar maken in Realtime nadat de bezoeker analytics toestaat.
+
+Aangepast:
+- js/analytics-consent.js robuuster gemaakt.
+- Na Analytics toestaan wordt nu Consent Mode op granted gezet.
+- Daarna wordt gtag('config', G-R0XTKDJ2PH) opnieuw aangeroepen met send_page_view:true.
+- Daarna wordt event roadora_analytics_allowed verstuurd met debug_mode:true.
+- Debug helper beschikbaar: window.RoadoraAnalyticsDebug.testEvent().
+
+Niet aangepast:
+- Layout
+- SEO-content
+- Privacy/voorwaarden inhoud buiten analyticsgedrag
+- Geen advertentie- of marketingcookies toegevoegd
