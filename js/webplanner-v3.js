@@ -120,11 +120,12 @@ function readForm(){
   state.adults=Number($('[name="adults"]').value)||1; state.children=Number($('[name="children"]').value)||0; state.maxDetour=Number($('#maxDetour')?.value)||20;
 }
 function vehicleLabel(){return {car:'Auto',electric:'Elektrisch',camper:'Camper',bus:'Bus'}[state.vehicle]||'Auto'}
+function setText(id, value){ const el=$(id); if(el) el.textContent=value; }
 function updateTexts(){
   readForm(); const simpleOrigin=state.origin.split(',')[0]; const simpleDest=state.destination.split(',')[0]; const title=`${simpleOrigin} → ${simpleDest}`;
-  ['#summaryRoute','#routeTitle','#mapRouteTitle'].forEach(id=>{if($(id)) $(id).textContent=title});
-  $('#sideDepart').textContent=`${state.date} · ${state.depart}`; $('#sideHotel').textContent=state.arrival; $('#sideVehicle').textContent=`${vehicleLabel()} (${state.range} km)`;
-  $('#sideTravelers').textContent=`${state.adults} volwassenen, ${state.children} kinderen${state.pet!=='none'?', hond':''}`;
+  ['#summaryRoute','#routeTitle','#mapRouteTitle','#tripOverviewTitle'].forEach(id=>setText(id,title));
+  setText('#sideDepart',`${state.date} · ${state.depart}`); setText('#sideHotel',state.arrival); setText('#sideVehicle',`${vehicleLabel()} (${state.range} km)`);
+  setText('#sideTravelers',`${state.adults} volwassenen, ${state.children} kinderen${state.pet!=='none'?', hond':''}`);
   const petText = state.pet==='none' ? 'geen hond' : (state.pet==='multiple' ? 'meerdere honden' : 'hond mee');
   const vehicleText = vehicleLabel();
   const prefTexts = $$('.pref.active').map(b=>b.textContent.trim());
@@ -132,16 +133,50 @@ function updateTexts(){
   if($('#vehicleSummary')) $('#vehicleSummary').textContent = state.vehicle==='electric' ? `${vehicleText} · ${state.range} km · ${state.plug}` : `${vehicleText} · ${state.range} km rijbereik`;
   if($('#prefSummary')) $('#prefSummary').textContent = prefTexts.length ? prefTexts.slice(0,4).join(' · ') + (prefTexts.length>4 ? ' +' + (prefTexts.length-4) : '') : 'geen voorkeuren gekozen';
   const detourValue = $('#maxDetour')?.closest('.range-row')?.querySelector('strong'); if(detourValue) detourValue.textContent = `${state.maxDetour} min`;
-  $('#rangeLabel').textContent = state.vehicle==='electric' ? 'Hoe ver kun je ongeveer rijden op een volle accu?' : 'Hoe ver kun je ongeveer rijden op een volle tank?';
-  $('#evFields').classList.toggle('hidden', state.vehicle!=='electric'); $('#chargeLabel').textContent = state.vehicle==='electric'?'Laadstop':'Tankstop';
-  $('#chargeDetail').textContent = state.vehicle==='electric'?`${state.range} km rijbereik · ${state.plug}`:`${state.range} km rijbereik · tankstop`;
-  $('#dayCountPill').textContent=`${state.days} dagen`; $('#overviewDayPill').textContent=`Dag ${state.activeDay}`; $('#activeDaySummary').textContent=`Dag ${state.activeDay} · ${state.activeDay===1?simpleOrigin+' → hotelzone':state.activeDay===2?'hotelzone → '+simpleDest:'lokale dagroute / vrije dag'}`;
+  setText('#rangeLabel', state.vehicle==='electric' ? 'Hoe ver kun je ongeveer rijden op een volle accu?' : 'Hoe ver kun je ongeveer rijden op een volle tank?');
+  $('#evFields')?.classList.toggle('hidden', state.vehicle!=='electric'); setText('#chargeLabel', state.vehicle==='electric'?'Laadstop':'Tankstop');
+  setText('#chargeDetail', state.vehicle==='electric'?`${state.range} km rijbereik · ${state.plug}`:`${state.range} km rijbereik · tankstop`);
+  setText('#dayCountPill',`${state.days} dagen`); setText('#overviewDayPill',`Dag ${state.activeDay}`); setText('#overviewDaysPill',`${state.days} dagen`); setText('#activeDaySummary',`Dag ${state.activeDay} · ${dayRouteLabel(state.activeDay, simpleOrigin, simpleDest)}`); setText('#tripOverviewMeta',`${state.days} dagen · 1.495 km · 15 u 45 m heenreis`);
   const tags = [`${state.children} kinderen`, state.pet==='none'?'geen hond':'hond mee', `${state.range} km rijbereik`, 'familiekamers', state.vehicle==='electric'?'laden':'tanken'];
-  $('#profileTags').innerHTML = tags.map(t=>`<span class="tag">${t}</span>`).join('');
+  if($('#profileTags')) $('#profileTags').innerHTML = tags.map(t=>`<span class="tag">${t}</span>`).join(''); if($('#tripOverviewTags')) $('#tripOverviewTags').innerHTML = tags.slice(0,4).map(t=>`<span class="tag">${t}</span>`).join('');
 }
 function renderDays(){
   const tabs=$('#dayTabs'); tabs.innerHTML='';
   for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();}; tabs.appendChild(b);}
+}
+function dayRouteLabel(day, origin=state.origin.split(',')[0], dest=state.destination.split(',')[0]){
+  if(day===1) return `${origin} → hotelzone`;
+  if(day===2) return `hotelzone → ${dest}`;
+  if(day===state.days && state.days>3) return `${dest} → ${origin}`;
+  if(day===state.days-1 && state.days>4) return `${dest} → tussenstop`;
+  return `${dest} omgeving`;
+}
+function dayStatus(day){
+  if(timelines[day]) return day===1?'gepland':'voorgesteld';
+  return 'nog te plannen';
+}
+function renderTripOverview(){
+  const list=$('#overviewDayList');
+  if(list){
+    const origin=state.origin.split(',')[0], dest=state.destination.split(',')[0];
+    list.innerHTML='';
+    for(let i=1;i<=state.days;i++){
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='overview-day-row'+(i===state.activeDay?' active':'');
+      b.innerHTML=`<span class="overview-day-num">Dag ${i}</span><span class="overview-day-main"><strong>${dayRouteLabel(i,origin,dest)}</strong><em>${i===state.activeDay?'actieve dag':dayStatus(i)}</em></span>`;
+      b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();};
+      list.appendChild(b);
+    }
+  }
+  const detail=$('#activeDayDetail');
+  if(detail){
+    const plan=dayPlan();
+    const hotel=plan.find(r=>inferType(r[1])==='Hotelzone'||String(r[3]||'').includes('Hotel')) || plan[plan.length-1];
+    detail.innerHTML = `<div class="active-day-head"><strong>${dayRouteLabel(state.activeDay)}</strong><span>${dayStatus(state.activeDay)} · ${plan.length} momenten</span></div>` +
+      `<div class="active-day-mini-list">${plan.map(r=>`<div><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('')}</div>` +
+      `<div class="active-day-note"><strong>Hotel / eindpunt</strong><span>${hotel ? (typeof hotel[2]==='function'?hotel[2]():hotel[2]) : state.arrival}</span></div>`;
+  }
 }
 function dayPlan(){
   if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips']];
@@ -195,7 +230,7 @@ function renderTrips(){
   const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]');
   $('#savedTrips').innerHTML = trips.length ? trips.map(t=>`<div class="trip-card"><strong>${t.name}</strong><span>${t.days} dagen · ${t.route} · ${t.created}</span></div>`).join('') : '<p class="muted">Nog geen opgeslagen roadtrips. Bewaar je planning om hem later via je account naar de app te sturen.</p>';
 }
-function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80);}
+function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80);}
 function bind(){
   $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); $$('.tab-panel').forEach(x=>x.classList.remove('active')); b.classList.add('active'); $('#'+b.dataset.tab).classList.add('active'); if(map) setTimeout(()=>map.invalidateSize(),150);});
   document.addEventListener('click',e=>{
@@ -229,6 +264,7 @@ function bind(){
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
   $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone']);} renderTimeline(); toast('Hotelzone handmatig gezet');});
   $('#recalculatePlan')?.addEventListener('click',()=>{timelines[state.activeDay]=state.activeDay===1?[[state.depart,'Vertrek Amsterdam','Start van je roadtrip','Vertrek'],['11:00','Rustige pauze','WC · koffie · hond uitlaten','Pauze'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],['15:15','Laad-/tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],[state.arrival.split(' - ')[0]||'16:30','Hotelzone','Familiekamer · huisdieren toegestaan · parkeren','Hotelzone']]:dayPlan(); renderTimeline(); toast('Voorstel opnieuw berekend');});
+  $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
   $('#mapToggleStops').onclick=()=>{markers.forEach(m=>map.hasLayer(m)?map.removeLayer(m):m.addTo(map));};
   function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}

@@ -162,7 +162,7 @@
       <div class="right-tabs" role="tablist" aria-label="Roadora panelen">
         <button class="tab active" data-tab="planningTab" type="button">Planning</button>
         <button class="tab" data-tab="stopsTab" type="button">Stops</button>
-        <button class="tab" data-tab="roadtripTab" type="button">Roadtrip</button>
+        <button class="tab" data-tab="roadtripTab" type="button">Reisoverzicht</button>
       </div>
 
       <div id="planningTab" class="tab-panel active">
@@ -213,16 +213,25 @@
 
       <div id="roadtripTab" class="tab-panel">
         <div class="panel-stack">
-          <article class="card card-pad">
-            <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDayPill" class="pill">Dag 1</span></div>
-            <div class="timeline">
-              <div class="time-row"><div class="time">Route</div><div class="time-card"><strong id="routeTitle">Amsterdam → Toscane</strong><span id="sideDistance">1.495 km</span></div></div>
-              <div class="time-row"><div class="time">Vertrek</div><div class="time-card"><strong id="sideDepart">2026-05-26 · 08:30</strong><span>planning op basis van jouw voorkeuren</span></div></div>
-              <div class="time-row"><div class="time">Hotel</div><div class="time-card active"><strong id="sideHotel">16:30 - 18:00</strong><span>Roadora zoekt rond deze zone</span></div></div>
-              <div class="time-row"><div class="time">Voertuig</div><div class="time-card"><strong id="sideVehicle">Elektrisch (325 km)</strong><span id="sideDuration">15 u 45 m</span></div></div>
-              <div class="time-row"><div class="time">Profiel</div><div class="time-card"><strong id="sideTravelers">2 volwassenen, 3 kinderen, hond</strong><span>persoonlijke stopfilters actief</span></div></div>
+          <article class="card card-pad trip-overview-card">
+            <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDaysPill" class="pill">8 dagen</span></div>
+            <div class="trip-summary-box">
+              <strong id="tripOverviewTitle">Amsterdam → Toscane</strong>
+              <span id="tripOverviewMeta">8 dagen · 1.495 km · 15 u 45 m heenreis</span>
+              <div id="tripOverviewTags" class="tag-row"></div>
             </div>
           </article>
+
+          <article class="card card-pad trip-days-card">
+            <div class="card-title"><h2>Dagroutes</h2><button id="addTripDay" class="mini-link" type="button">+ Dag</button></div>
+            <div id="overviewDayList" class="overview-day-list"></div>
+          </article>
+
+          <article class="card card-pad active-day-card">
+            <div class="card-title"><h2>Actieve dag</h2><span id="overviewDayPill" class="pill">Dag 1</span></div>
+            <div id="activeDayDetail" class="active-day-detail"></div>
+          </article>
+
           <article class="card card-pad">
             <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">account later</span></div>
             <div id="savedTrips" class="trip-list"></div>
