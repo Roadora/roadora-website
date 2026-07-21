@@ -31,3 +31,35 @@ button{cursor:pointer}
 .custom-marker{width:28px;height:28px;border-radius:999px;border:3px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.18);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}.m-start{background:#2fa875}.m-pause{background:#c99319}.m-lunch{background:#e38419}.m-charge{background:#7d52b9}.m-hotel{background:#2f7fa0}.m-end{background:#262626}
 @media(max-width:1180px){.shell{grid-template-columns:0 minmax(285px,330px) 1fr;grid-template-rows:auto auto;height:auto;min-height:0}.rail{display:none}.right-panel{grid-column:2/4;border-left:0;border-top:1px solid var(--line);max-height:none}.map-stage{min-height:620px}.map-card{min-height:600px}}
 @media(max-width:760px){.app-header{height:auto;min-height:58px;padding:12px 14px}.header-actions .optional{display:none}.shell{display:block;height:auto}.left-panel,.right-panel{border:0;padding:10px}.map-stage{padding:10px;height:560px}.map-card{height:540px;min-height:540px}.map-summary{left:12px;right:12px;bottom:12px;min-width:0}.two,.pref-grid,.choice-grid,.vehicle-grid,.category-grid,.rec-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column}.footer nav{flex-wrap:wrap}.stats{grid-template-columns:1fr 1fr 1fr}.cookie{left:10px;right:10px;bottom:10px;transform:none;flex-direction:column;align-items:flex-start}}
+
+/* v3.2: Stops-tab hoger maken — niet alleen meer resultaten, maar het hele blok langer */
+#stopsTab .card.card-pad{
+  min-height: 720px;
+  display: flex;
+  flex-direction: column;
+}
+#stopsTab .category-grid,
+#stopsTab .mode-switch,
+#stopsTab .card-title,
+#stopsTab .muted,
+#stopsTab .sticky-actions{
+  flex: 0 0 auto;
+}
+#stopsTab .stop-list{
+  max-height: none;
+  height: 520px;
+  min-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+#stopsTab .sticky-actions{
+  margin-top: 12px;
+}
+@media (min-height: 900px){
+  #stopsTab .card.card-pad{min-height: 780px;}
+  #stopsTab .stop-list{height: 580px;min-height:580px;}
+}
+@media (max-width: 900px){
+  #stopsTab .card.card-pad{min-height: 640px;}
+  #stopsTab .stop-list{height: 430px;min-height:430px;}
+}
