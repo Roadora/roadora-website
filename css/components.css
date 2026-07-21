@@ -159,3 +159,28 @@
   .stops-scroll{height:270px!important;min-height:270px!important;max-height:270px!important}
   .stops-actions{grid-template-columns:1fr 1fr}
 }
+
+/* v2.8: stopcategorieën niet horizontaal scrollen maar strak onder elkaar */
+.category-tabs{
+  position:static!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:6px!important;
+  overflow:visible!important;
+  padding:0 0 8px!important;
+  margin:0 0 8px!important;
+  border-bottom:1px solid rgba(219,205,184,.55)!important;
+  background:transparent!important;
+}
+.cat-tab{
+  width:100%!important;
+  text-align:center!important;
+  white-space:normal!important;
+  border-radius:9px!important;
+  padding:7px 8px!important;
+  font-size:.69rem!important;
+  line-height:1.1!important;
+}
+@media(max-width:520px){
+  .category-tabs{grid-template-columns:1fr 1fr!important;}
+}
