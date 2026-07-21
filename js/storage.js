@@ -16,7 +16,7 @@ export function saveTrip(state){
   const trip={
     id,
     name: `${short(state.origin)} naar ${short(state.destination)}`,
-    days: 1,
+    days: Number(state.tripDays)||1,
     updatedAt: new Date().toISOString(),
     route: {
       origin: state.origin,
@@ -34,16 +34,7 @@ export function saveTrip(state){
       plug: state.plug,
       preferences: state.preferences || []
     },
-    daysPlan: [
-      {
-        day: 1,
-        title: `Dag 1 · ${short(state.origin)} → ${short(state.destination)}`,
-        origin: state.origin,
-        destination: state.destination,
-        stops: ['Pauzezone', 'Lunchzone', state.vehicle==='electric'?'Laadstop':'Tankstop', 'Hotelzone'],
-        hotelZone: state.hotelArrival
-      }
-    ]
+    daysPlan: buildDaysPlan(state)
   };
   const existing=trips.findIndex(t=>t.id===id);
   if(existing>=0)trips[existing]=trip; else trips.unshift(trip);
@@ -54,3 +45,25 @@ export function saveTrip(state){
 export function getConsent(){return localStorage.getItem(CONFIG.storageKeys.consent);}
 export function setConsent(value){localStorage.setItem(CONFIG.storageKeys.consent,value);}
 function short(value){return String(value||'').split(',')[0];}
+
+function buildDaysPlan(state){
+  const days=Math.max(1,Math.min(21,Number(state.tripDays)||1));
+  return Array.from({length:days},(_,idx)=>{
+    const day=idx+1;
+    const isFirst=day===1;
+    const isLast=day===days;
+    const title=isFirst
+      ? `Dag ${day} · ${short(state.origin)} → hotelzone`
+      : isLast
+        ? `Dag ${day} · eindroute → ${short(state.destination)}`
+        : `Dag ${day} · dagroute / omgeving`;
+    return {
+      day,
+      title,
+      origin: isFirst ? state.origin : 'Nog te kiezen',
+      destination: isLast ? state.destination : 'Nog te kiezen',
+      stops: isFirst ? ['Pauzezone','Lunchzone',state.vehicle==='electric'?'Laadstop':'Tankstop','Hotelzone'] : ['Dagroute','Stops','Uitjes','Hotel'],
+      hotelZone: state.hotelArrival
+    };
+  });
+}

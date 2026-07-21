@@ -50,7 +50,10 @@
             <div class="field"><label for="date">Vertrekdatum</label><div class="input-wrap">📅<input id="date" name="date" type="date" value="2026-05-26"></div></div>
             <div class="field"><label for="departTime">Vertrektijd</label><div class="input-wrap">🕘<input id="departTime" name="departTime" type="time" value="08:30"></div></div>
           </div>
-          <div class="field"><label for="hotelArrival">Aankomst hotel rond</label><div class="input-wrap">🏨<select id="hotelArrival" name="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div></div>
+          <div class="two">
+            <div class="field"><label for="hotelArrival">Aankomst hotel rond</label><div class="input-wrap"><select id="hotelArrival" name="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div></div>
+            <div class="field"><label for="tripDays">Aantal dagen</label><div class="input-wrap"><input id="tripDays" name="tripDays" type="number" min="1" max="21" value="8"><strong>dagen</strong></div></div>
+          </div>
           <button id="planRoute" class="btn primary full" type="button">⌘ Plan mijn roadtrip</button>
         </article>
 
@@ -105,6 +108,12 @@
         <div class="route-dots"><span class="dot start">✓</span><span class="dash"></span><span class="dot one">1</span><span class="dash"></span><span class="dot two">2</span><span class="dash"></span><span class="dot three">3</span><span class="dash"></span><span class="dot four">4</span><span class="dash"></span><span class="dot end">🏁</span></div>
       </article>
 
+      <article class="card section-pad dayroutes-card">
+        <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">8 dagen</span></div>
+        <div id="dayTabs" class="day-tabs" aria-label="Dagroutes"></div>
+        <p id="activeDaySummary" class="day-summary">Dag 1 · Amsterdam → hotelzone</p>
+      </article>
+
       <article id="timelineBlock" class="card section-pad">
         <div class="card-title"><h2>Dagplanning</h2><button class="mini-link" type="button">Bewerken</button></div>
         <div id="timeline" class="timeline"></div>
@@ -129,7 +138,7 @@
       </article>
 
       <article class="card section-pad">
-        <div class="card-title"><h2>Reisoverzicht</h2><span class="pill">Dag 1</span></div>
+        <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDayPill" class="pill">Dag 1</span></div>
         <div class="timeline">
           <div class="time-row"><div class="time">Route</div><div class="time-card"><strong id="routeTitle">Amsterdam → Toscane</strong><span id="sideDistance">1.495 km</span></div></div>
           <div class="time-row"><div class="time">Vertrek</div><div class="time-card"><strong id="sideDepart">2026-05-26 · 08:30</strong><span>planning op basis van jouw voorkeuren</span></div></div>

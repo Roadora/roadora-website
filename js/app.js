@@ -11,7 +11,7 @@ export function initPlanner(){
   render();
 }
 function hydrateForm(){
-  const fields=['origin','destination','date','departTime','hotelArrival','adults','children','vehicleRangeKm','plug','maxDetour'];
+  const fields=['origin','destination','date','departTime','hotelArrival','tripDays','adults','children','vehicleRangeKm','plug','maxDetour'];
   fields.forEach(name=>{const el=$(`[name="${name}"]`); if(el)el.value=state[name]??'';});
   $$(`[data-vehicle]`).forEach(btn=>btn.classList.toggle('active',btn.dataset.vehicle===state.vehicle));
   $$(`[data-pref]`).forEach(btn=>btn.classList.toggle('active',state.preferences?.includes(btn.dataset.pref)));
@@ -19,7 +19,7 @@ function hydrateForm(){
   $$(`[data-view-mode]`).forEach(btn=>btn.classList.toggle('active',btn.dataset.viewMode===state.stopViewMode));
 }
 function bindForm(){
-  $$('input,select').forEach(el=>el.addEventListener('input',()=>{state[el.name]=el.value;persistRender();}));
+  $$('input,select').forEach(el=>el.addEventListener('input',()=>{state[el.name]=el.type==='number'?Number(el.value):el.value; if(el.name==='tripDays'){state.activeDay=Math.min(Number(state.activeDay)||1, Number(el.value)||1);} persistRender();}));
   $$(`[data-vehicle]`).forEach(btn=>btn.addEventListener('click',()=>{state.vehicle=btn.dataset.vehicle;state.vehicleRangeKm=defaultRange(state.vehicle);hydrateForm();persistRender();}));
   $$(`[data-pet]`).forEach(btn=>btn.addEventListener('click',()=>{state.pet=btn.dataset.pet;hydrateForm();persistRender();}));
   $$(`[data-pref]`).forEach(btn=>btn.addEventListener('click',()=>{const pref=btn.dataset.pref;const prefs=new Set(state.preferences||[]);prefs.has(pref)?prefs.delete(pref):prefs.add(pref);state.preferences=[...prefs];hydrateForm();persistRender();}));
@@ -44,11 +44,32 @@ function render(){
   setText('#chargeDetail', state.vehicle==='electric' ? `${state.vehicleRangeKm || 325} km rijbereik · ${state.plug || 'CCS'}` : `${state.vehicleRangeKm || defaultRange(state.vehicle)} km rijbereik`);
   $('#evFields')?.classList.toggle('hidden',state.vehicle!=='electric');
   updateRangeCopy();
-  renderTimeline();renderRecommendations();renderAllStops();renderTags();renderSavedTrips();
+  renderDayRoutes();renderTimeline();renderRecommendations();renderAllStops();renderTags();renderSavedTrips();
+}
+function renderDayRoutes(){
+  const tabs=$('#dayTabs'); if(!tabs)return;
+  const days=Math.max(1,Math.min(21,Number(state.tripDays)||1));
+  const active=Math.max(1,Math.min(days,Number(state.activeDay)||1));
+  state.activeDay=active;
+  tabs.innerHTML='';
+  for(let day=1;day<=days;day++){
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className=`day-tab ${day===active?'active':''}`;
+    btn.textContent=`Dag ${day}`;
+    btn.addEventListener('click',()=>{state.activeDay=day;persistRender();});
+    tabs.appendChild(btn);
+  }
+  setText('#dayCountPill', `${days} ${days===1?'dag':'dagen'}`);
+  setText('#overviewDayPill', `Dag ${active}`);
+  setText('#activeDaySummary', daySummary(active, days));
 }
 function renderTimeline(){
   const root=$('#timeline'); if(!root)return; root.innerHTML='';
-  buildPlan(state).forEach(item=>{
+  const days=Math.max(1,Number(state.tripDays)||1);
+  const active=Math.max(1,Math.min(days,Number(state.activeDay)||1));
+  const items = active===1 ? buildPlan(state) : buildDayPlan(state, active, days);
+  items.forEach(item=>{
     const row=document.createElement('div');row.className='time-row';
     row.innerHTML=`<div class="time">${item.time}</div><div class="time-card ${item.kind==='hotel'?'hotel':''}"><strong>${item.title}</strong><span>${item.meta}</span></div>`;
     root.appendChild(row);
@@ -87,7 +108,7 @@ function renderSavedTrips(){
   trips.slice(0,3).forEach(trip=>{
     const el=document.createElement('div');el.className='trip-card';
     const d=new Date(trip.updatedAt).toLocaleDateString('nl-NL');
-    el.innerHTML=`<strong>${trip.name}</strong><span>${trip.days} dagroute · ${trip.daysPlan?.[0]?.stops?.length||0} stops · bijgewerkt ${d}</span>`;
+    el.innerHTML=`<strong>${trip.name}</strong><span>${trip.days} dagroutes · ${trip.daysPlan?.reduce((n,day)=>n+(day.stops?.length||0),0)||0} stops · bijgewerkt ${d}</span>`;
     root.appendChild(el);
   });
 }
@@ -111,6 +132,24 @@ function updateRangeCopy(){
     help.textContent='Handmatig invullen kan gewoon. Roadora gebruikt dit voor tankstops, pauzes en dagroutes.';
   }
 }
+
+function daySummary(day, days){
+  if(day===1)return `Dag 1 · ${short(state.origin)} → eerste hotelzone`;
+  if(day===days)return `Dag ${day} · laatste etappe → ${short(state.destination)}`;
+  return `Dag ${day} · dagroute, stops, uitjes en overnachting`;
+}
+function buildDayPlan(state, day, days){
+  const depart=state.departTime || '08:30';
+  const isLast=day===days;
+  return [
+    {time:depart,title:`Start dag ${day}`,meta:isLast?'Laatste reisdag richting bestemming':'Route en stops voor deze dag',kind:'start'},
+    {time:'11:00',title:'Pauze of WC-stop',meta:'zelf kiezen of Roadora aanbevolen stop gebruiken',kind:'pause'},
+    {time:'13:00',title:'Lunch / uitje',meta:'toon aanbevolen of alle opties op kaart',kind:'lunch'},
+    {time:'15:15',title:state.vehicle==='electric'?'Laadstop':'Tankstop',meta:`op basis van ${state.vehicleRangeKm||325} km rijbereik`,kind:'charge'},
+    {time:state.hotelArrival||'16:30 - 18:00',title:isLast?'Aankomst bestemming':'Hotelzone',meta:isLast?'route afronden en opslaan':'hotels passend bij profiel en tijdvenster',kind:'hotel'}
+  ];
+}
+
 function categoryFromTitle(title){return ({Hotels:'hotels',Restaurants:'restaurants',Laden:'charging',Tanken:'fuel',Uitjes:'activities'})[title]||'hotels';}
 function defaultRange(vehicle){return vehicle==='electric'?325:vehicle==='camper'?500:vehicle==='bus'?600:650;}
 function short(value){return String(value||'').split(',')[0];}

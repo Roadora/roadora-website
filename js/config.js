@@ -19,6 +19,8 @@ export const CONFIG = {
     vehicleRangeKm: 325,
     plug: 'CCS',
     maxDetour: 20,
+    tripDays: 8,
+    activeDay: 1,
     stopViewMode: 'recommended',
     activeStopCategory: 'hotels',
     preferences: ['family','pets','kids','parking','charging','breakfast']
