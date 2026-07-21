@@ -4,6 +4,7 @@ const state = {
   origin:'Amsterdam, Nederland', destination:'Toscane, Italië', date:'2026-05-26', depart:'08:30', arrival:'16:30 - 18:00', days:8,
   adults:2, children:3, pet:'dog', vehicle:'electric', range:325, plug:'CCS', maxDetour:20, activeDay:1, view:'recommended', category:'hotels'
 };
+const editingPlanRows = new Set();
 const routeCoords = [[52.3676,4.9041],[51.05,5.1],[50.11,7.0],[49.49,8.47],[48.4,9.99],[47.37,8.54],[46.0,10.2],[43.77,11.25]];
 const markerData = [
   {type:'start',label:'A',coords:[52.3676,4.9041],title:'Vertrek Amsterdam'},
@@ -133,7 +134,7 @@ function updateTexts(){
 }
 function renderDays(){
   const tabs=$('#dayTabs'); tabs.innerHTML='';
-  for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; renderAll();}; tabs.appendChild(b);}
+  for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();}; tabs.appendChild(b);}
 }
 function dayPlan(){
   if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips']];
@@ -158,12 +159,21 @@ function renderTimeline(){
   $('#timeline').innerHTML = list.map((r,i)=>{
     const detail = typeof r[2]==='function'?r[2]():r[2];
     const type = r[3] || inferType(r[1]);
-    return `<div class="plan-row ${i===list.length-1?'active':''}" data-plan-index="${i}">
-      <div class="plan-timebox"><input class="plan-time-input" type="time" value="${r[0]}" aria-label="Tijd"></div>
-      <div class="plan-fields">
-        <div class="plan-topline">${planTypeSelect(type)}<button class="plan-remove" type="button" title="Verwijderen">Verwijder</button></div>
-        <input class="plan-title-input" value="${r[1]}" aria-label="Titel van stop">
-        <input class="plan-detail-input" value="${detail}" aria-label="Details of eigen locatie">
+    const editing = editingPlanRows.has(i);
+    return `<div class="plan-row ${i===list.length-1?'active':''} ${editing?'editing':''}" data-plan-index="${i}">
+      <div class="plan-read">
+        <div class="plan-read-time">${r[0]}</div>
+        <div class="plan-read-main"><strong>${r[1]}</strong><span>${detail}</span><em>${type}</em></div>
+        <button class="plan-edit" type="button">Bewerken</button>
+      </div>
+      <div class="plan-edit-panel">
+        <div class="plan-timebox"><input class="plan-time-input" type="time" value="${r[0]}" aria-label="Tijd"></div>
+        <div class="plan-fields">
+          <div class="plan-topline">${planTypeSelect(type)}<button class="plan-remove" type="button" title="Verwijderen">Verwijder</button></div>
+          <input class="plan-title-input" value="${r[1]}" aria-label="Titel van stop">
+          <input class="plan-detail-input" value="${detail}" aria-label="Details of eigen locatie">
+          <button class="plan-save" type="button">Opslaan</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -184,8 +194,12 @@ function bind(){
   document.addEventListener('click',e=>{
     const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();}
     const mode=e.target.closest('[data-view]'); if(mode){state.view=mode.dataset.view; $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view)); renderStops();}
+    const edit=e.target.closest('.plan-edit');
+    if(edit){const row=edit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.has(i)?editingPlanRows.delete(i):editingPlanRows.add(i); renderTimeline(); return;}
+    const saveEdit=e.target.closest('.plan-save');
+    if(saveEdit){const row=saveEdit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.delete(i); renderTimeline(); toast('Planningregel opgeslagen'); return;}
     const remove=e.target.closest('.plan-remove');
-    if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); renderTimeline(); toast('Stop verwijderd');}
+    if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); editingPlanRows.clear(); renderTimeline(); toast('Stop verwijderd');}
   });
   document.addEventListener('input',e=>{
     const row=e.target.closest('[data-plan-index]'); if(!row) return;
@@ -204,7 +218,7 @@ function bind(){
   ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=()=>{renderAll(); fitMap(); toast('Dagroute bijgewerkt');};
-  $('#addPlanStop')?.addEventListener('click',()=>{dayPlan().splice(Math.max(1,dayPlan().length-1),0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); renderTimeline(); toast('Stop toegevoegd');});
+  $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
   $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone']);} renderTimeline(); toast('Hotelzone handmatig gezet');});
   $('#recalculatePlan')?.addEventListener('click',()=>{timelines[state.activeDay]=state.activeDay===1?[[state.depart,'Vertrek Amsterdam','Start van je roadtrip','Vertrek'],['11:00','Rustige pauze','WC · koffie · hond uitlaten','Pauze'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],['15:15','Laad-/tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],[state.arrival.split(' - ')[0]||'16:30','Hotelzone','Familiekamer · huisdieren toegestaan · parkeren','Hotelzone']]:dayPlan(); renderTimeline(); toast('Voorstel opnieuw berekend');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
