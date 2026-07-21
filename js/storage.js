@@ -53,7 +53,7 @@ function buildDaysPlan(state){
     const isFirst=day===1;
     const isLast=day===days;
     const title=isFirst
-      ? `Dag ${day} · ${short(state.origin)} → hotelzone`
+      ? `Dag ${day} · ${short(state.origin)} → overnachten rond`
       : isLast
         ? `Dag ${day} · eindroute → ${short(state.destination)}`
         : `Dag ${day} · dagroute / omgeving`;
@@ -62,7 +62,7 @@ function buildDaysPlan(state){
       title,
       origin: isFirst ? state.origin : 'Nog te kiezen',
       destination: isLast ? state.destination : 'Nog te kiezen',
-      stops: isFirst ? ['Pauzezone','Lunchzone',state.vehicle==='electric'?'Laadstop':'Tankstop','Hotelzone'] : ['Dagroute','Stops','Uitjes','Hotel'],
+      stops: isFirst ? ['Pauzezone','Lunchzone',state.vehicle==='electric'?'Laadstop':'Tankstop','Overnachten rond'] : ['Dagroute','Stops','Uitjes','Hotel'],
       hotelZone: state.hotelArrival
     };
   });

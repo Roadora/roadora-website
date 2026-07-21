@@ -11,7 +11,7 @@ export function buildPlan(state){
     {time:formatMinutes(depart+150),title:'Rustige pauze',meta:pauseLabel(state),kind:'pause'},
     {time:formatMinutes(depart+285),title:'Lunchstop',meta:profileLunchLabel(state),kind:'lunch'},
     {time:formatMinutes(depart+405),title:isEv?'Laadstop':'Tankstop',meta:isEv?`Aanbevolen rond ${safeKm} km op basis van ${range} km rijbereik`:`Aanbevolen rond ${safeKm} km op basis van ${range} km rijbereik`,kind:'charge'},
-    {time:hotelWindow,title:'Hotelzone',meta:hotelZoneLabel(state),kind:'hotel'}
+    {time:hotelWindow,title:'Overnachten rond',meta:hotelZoneLabel(state),kind:'hotel'}
   ];
 }
 function shortPlace(value){return String(value||'').split(',')[0];}

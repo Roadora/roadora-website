@@ -134,7 +134,7 @@ function updateRangeCopy(){
 }
 
 function daySummary(day, days){
-  if(day===1)return `Dag 1 · ${short(state.origin)} → eerste hotelzone`;
+  if(day===1)return `Dag 1 · ${short(state.origin)} → eerste overnachting`;
   if(day===days)return `Dag ${day} · laatste etappe → ${short(state.destination)}`;
   return `Dag ${day} · dagroute, stops, uitjes en overnachting`;
 }
@@ -146,7 +146,7 @@ function buildDayPlan(state, day, days){
     {time:'11:00',title:'Pauze of WC-stop',meta:'zelf kiezen of Roadora aanbevolen stop gebruiken',kind:'pause'},
     {time:'13:00',title:'Lunch / uitje',meta:'toon aanbevolen of alle opties op kaart',kind:'lunch'},
     {time:'15:15',title:state.vehicle==='electric'?'Laadstop':'Tankstop',meta:`op basis van ${state.vehicleRangeKm||325} km rijbereik`,kind:'charge'},
-    {time:state.hotelArrival||'16:30 - 18:00',title:isLast?'Aankomst bestemming':'Hotelzone',meta:isLast?'route afronden en opslaan':'hotels passend bij profiel en tijdvenster',kind:'hotel'}
+    {time:state.hotelArrival||'16:30 - 18:00',title:isLast?'Aankomst bestemming':'Overnachten rond',meta:isLast?'route afronden en opslaan':'hotels passend bij profiel en tijdvenster',kind:'hotel'}
   ];
 }
 

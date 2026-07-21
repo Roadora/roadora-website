@@ -11,11 +11,11 @@ const markerData = [
   {type:'pause',label:'1',coords:[50.9,6.3],title:'11:00 Pauze'},
   {type:'lunch',label:'2',coords:[49.49,8.47],title:'13:00 Lunch'},
   {type:'charge',label:'3',coords:[48.4,9.99],title:'15:15 Laad-/tankstop'},
-  {type:'hotel',label:'H',coords:[46.9,10.9],title:'16:30 - 18:00 Hotelzone'},
+  {type:'hotel',label:'H',coords:[46.9,10.9],title:'16:30 - 18:00 Overnachten rond'},
   {type:'end',label:'B',coords:[43.77,11.25],title:'Toscane'}
 ];
 const recs = [
-  ['Hotels in hotelzone','Familiekamer · hond toegestaan · parkeren · weinig omrijden'],
+  ['Hotels rond je overnachting','Familiekamer · hond toegestaan · parkeren · weinig omrijden'],
   ['Restaurants rond aankomst','Gezinsvriendelijk · hond welkom · dicht bij route'],
   ['Laden of tanken','Binnen jouw rijbereik · combineren met pauze of lunch'],
   ['Uitjes en korte stops','Korte wandeling · speeltuin · uitzichtpunt · rustig aankomen'],
@@ -47,7 +47,7 @@ const stops = {
     ['Lunch bij stadspark','Korte wandeling erbij · kindvriendelijk'],
     ['Pizzeria langs route','Snel eten · geschikt voor kinderen'],
     ['Café bij laadplein','Koffie · broodjes · laadpunt naast de deur'],
-    ['Restaurant Hotelzone','Handig rond aankomst · parkeren bij deur']
+    ['Restaurant Overnachten rond','Handig rond aankomst · parkeren bij deur']
   ],
   laden:[
     ['IONITY Ulm-West','Snelladen · lunch dichtbij · binnen rijbereik'],
@@ -57,19 +57,19 @@ const stops = {
     ['Aral Pulse Autohof','Snelladen · tanken · restaurant'],
     ['Tesla Supercharger route','Snel laden · eten dichtbij'],
     ['ChargePoint centrum','Laadpunt + korte wandeling'],
-    ['Laadplein hotelzone','Goed moment vóór inchecken'],
+    ['Laadplein rond overnachting','Goed moment vóór inchecken'],
     ['Shell Recharge A8','Laadstop combineren met WC en koffie'],
     ['Snellader bij outlet','Laden + korte pauze of uitje']
   ],
   tanken:[
     ['Shell Route Süd','Langs route · weinig omrijden'],
     ['Aral Autohof','Ruim parkeren · WC'],
-    ['TotalEnergies A8','Goede tankstop voor hotelzone'],
-    ['OMV Tirol','Voor aankomst hotelzone'],
+    ['TotalEnergies A8','Goede tankstop voor je overnachting'],
+    ['OMV Tirol','Voor aankomst bij je overnachting'],
     ['Esso Raststätte','Tanken · koffie · snel verder'],
     ['BP Autohof Zuid','Ruime pomp · restaurant naast station'],
     ['Avia Routepunt','Goed alternatief · +4 min omrijden'],
-    ['Tankstation bij hotelzone','Handig voor vertrek volgende dag'],
+    ['Tankstation bij overnachting','Handig voor vertrek volgende dag'],
     ['Shell grensroute','Goed moment vóór grensovergang'],
     ['Total Truckstop','Ruim parkeren · camper/bus geschikt']
   ],
@@ -77,11 +77,11 @@ const stops = {
     ['Korte wandeling Donau','Rustige stop · hondvriendelijk'],
     ['Speeltuin stadspark','Kindvriendelijk · 15 min pauze'],
     ['Uitzichtpunt Alpenroute','Korte foto-stop · weinig omrijden'],
-    ['Zwembad bij hotelzone','Voor avond na aankomst'],
+    ['Zwembad bij overnachting','Voor avond na aankomst'],
     ['Historisch centrum Ulm','Korte wandeling · eten dichtbij'],
     ['Natuurpad langs route','Even bewegen · hond welkom'],
     ['Outlet stop','Korte tussenstop · parkeren makkelijk'],
-    ['Meer bij hotelzone','Rustig aankomen · wandelen'],
+    ['Meer bij overnachting','Rustig aankomen · wandelen'],
     ['Kindermuseum omgeving','Voor langere pauze of vrije dag'],
     ['Panorama parkeerplaats','Foto-stop · 20 minuten']
   ],
@@ -89,7 +89,7 @@ const stops = {
     ['Raststätte Keulen Süd','WC · koffie · weinig omrijden'],
     ['Autohof Ulm','WC · parkeren · eten'],
     ['Pauzeplek A8','Snel en praktisch'],
-    ['Hotelzone servicepunt','Vlak voor aankomst'],
+    ['Servicepunt rond overnachting','Vlak voor aankomst'],
     ['Tankstation met WC','Direct langs route · korte stop'],
     ['Familie pauzeplek','WC · speeltuin · picknicktafel'],
     ['Laadplein met sanitair','WC tijdens laden'],
@@ -100,8 +100,8 @@ const stops = {
 };
 const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const timelines = {
-  1:[['08:30','Vertrek Amsterdam','Start van je roadtrip'],['11:00','Rustige pauze','WC · koffie · hond uitlaten'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden'],['15:15','Laad-/tankstop',()=> `${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`],['16:30','Hotelzone','Familiekamer · huisdieren toegestaan · parkeren']],
-  2:[['09:00','Vertrek hotelzone','Verder richting Toscane'],['11:15','Korte pauze','WC · koffie'],['13:00','Lunchstop','Restaurant langs route'],['15:30','Aankomst Toscane','Rustig aankomen en inchecken']],
+  1:[['08:30','Vertrek Amsterdam','Start van je roadtrip'],['11:00','Rustige pauze','WC · koffie · hond uitlaten'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden'],['15:15','Laad-/tankstop',()=> `${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`],['16:30','Overnachten rond','Familiekamer · huisdieren toegestaan · parkeren']],
+  2:[['09:00','Vertrek vanaf overnachting','Verder richting Toscane'],['11:15','Korte pauze','WC · koffie'],['13:00','Lunchstop','Restaurant langs route'],['15:30','Aankomst Toscane','Rustig aankomen en inchecken']],
   3:[['10:00','Dagroute Toscane','Rustige lokale route'],['12:30','Lunch','Dorp of uitzichtpunt'],['15:00','Uitje','Korte activiteit in de buurt'],['17:00','Terug naar verblijf','Geen lange rit']]
 };
 let map, routeLine, markers=[];
@@ -145,8 +145,8 @@ function renderDays(){
   for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();}; tabs.appendChild(b);}
 }
 function dayRouteLabel(day, origin=state.origin.split(',')[0], dest=state.destination.split(',')[0]){
-  if(day===1) return `${origin} → hotelzone`;
-  if(day===2) return `hotelzone → ${dest}`;
+  if(day===1) return `${origin} → overnachten rond`;
+  if(day===2) return `overnachting → ${dest}`;
   if(day===state.days && state.days>3) return `${dest} → ${origin}`;
   if(day===state.days-1 && state.days>4) return `${dest} → tussenstop`;
   return `${dest} omgeving`;
@@ -191,7 +191,7 @@ function renderTripOverview(){
   const detail=$('#activeDayDetail');
   if(detail){
     const plan=dayPlan();
-    const hotel=plan.find(r=>inferType(r[1])==='Hotelzone'||String(r[3]||'').includes('Hotel')) || plan[plan.length-1];
+    const hotel=plan.find(r=>inferType(r[1])==='Overnachten rond'||String(r[3]||'').includes('Hotel')) || plan[plan.length-1];
     detail.innerHTML = `<div class="active-day-head"><strong>${dayRouteLabel(state.activeDay)}</strong><span>${dayStatus(state.activeDay)} · ${plan.length} momenten</span></div>` +
       `<div class="active-day-mini-list">${plan.map(r=>`<div><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('')}</div>` +
       `<div class="active-day-note"><strong>Hotel / eindpunt</strong><span>${hotel ? (typeof hotel[2]==='function'?hotel[2]():hotel[2]) : state.arrival}</span></div>`;
@@ -206,13 +206,13 @@ function inferType(title=''){
   if(t.includes('vertrek')) return 'Vertrek';
   if(t.includes('lunch')) return 'Lunch';
   if(t.includes('laad')||t.includes('tank')) return 'Laden/tanken';
-  if(t.includes('hotel')) return 'Hotelzone';
+  if(t.includes('hotel')) return 'Overnachten rond';
   if(t.includes('uitje')) return 'Uitje';
   if(t.includes('wc')) return 'WC';
   return 'Pauze';
 }
 function planTypeSelect(type){
-  const opts=['Vertrek','Pauze','Lunch','Laden/tanken','Hotelzone','Restaurant','Hotel','Uitje','WC','Zelf ingevuld'];
+  const opts=['Vertrek','Pauze','Lunch','Laden/tanken','Overnachten rond','Restaurant','Hotel','Uitje','WC','Zelf ingevuld'];
   return `<select class="plan-type" aria-label="Type stop">${opts.map(o=>`<option ${o===type?'selected':''}>${o}</option>`).join('')}</select>`;
 }
 function renderTimeline(){
@@ -282,8 +282,8 @@ function bind(){
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=()=>{renderAll(); fitMap(); toast('Dagroute bijgewerkt');};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
-  $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen hotelzone','Vul zelf plaats, regio of hotel in','Hotelzone']);} renderTimeline(); toast('Hotelzone handmatig gezet');});
-  $('#recalculatePlan')?.addEventListener('click',()=>{timelines[state.activeDay]=state.activeDay===1?[[state.depart,'Vertrek Amsterdam','Start van je roadtrip','Vertrek'],['11:00','Rustige pauze','WC · koffie · hond uitlaten','Pauze'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],['15:15','Laad-/tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],[state.arrival.split(' - ')[0]||'16:30','Hotelzone','Familiekamer · huisdieren toegestaan · parkeren','Hotelzone']]:dayPlan(); renderTimeline(); toast('Voorstel opnieuw berekend');});
+  $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond']);} renderTimeline(); toast('Overnachting handmatig gezet');});
+  $('#recalculatePlan')?.addEventListener('click',()=>{timelines[state.activeDay]=state.activeDay===1?[[state.depart,'Vertrek Amsterdam','Start van je roadtrip','Vertrek'],['11:00','Rustige pauze','WC · koffie · hond uitlaten','Pauze'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],['15:15','Laad-/tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],[state.arrival.split(' - ')[0]||'16:30','Overnachten rond','Familiekamer · huisdieren toegestaan · parkeren','Overnachten rond']]:dayPlan(); renderTimeline(); toast('Voorstel opnieuw berekend');});
   $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
   $('#mapToggleStops').onclick=()=>{markers.forEach(m=>map.hasLayer(m)?map.removeLayer(m):m.addTo(map));};

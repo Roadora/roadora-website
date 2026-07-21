@@ -13,7 +13,7 @@ const stops = [
   { label: 'Pauzezone Keulen', type: 'pause', time: '11:00', coords: [50.9375, 6.9603], text: 'WC · koffie · hond uitlaten' },
   { label: 'Lunch rond Frankfurt', type: 'lunch', time: '13:00', coords: [50.1109, 8.6821], text: 'Kindvriendelijk langs de route' },
   { label: 'Laad-/tankzone Ulm', type: 'charge', time: '15:15', coords: [48.4011, 9.9876], text: 'Gebaseerd op jouw rijbereik' },
-  { label: 'Hotelzone Verona/Toscane', type: 'hotel', time: '16:30 - 18:00', coords: [45.4384, 10.9916], text: 'Hotels passend bij profiel' },
+  { label: 'Overnachten rond Verona/Toscane', type: 'hotel', time: '16:30 - 18:00', coords: [45.4384, 10.9916], text: 'Hotels passend bij profiel' },
   { label: 'Bestemming Toscane', type: 'end', time: 'Aankomst', coords: [43.7711, 11.2486], text: 'Eindpunt van de voorbeeldroute' }
 ];
 

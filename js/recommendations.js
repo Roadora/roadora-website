@@ -14,7 +14,7 @@ export function getRecommendations(state){
   if(state.preferences?.includes('parking'))hotelTags.push('Parkeren');
   return [
     {title:'Hotels',meta:`12 passend · ${hotelTags.slice(0,2).join(' + ') || 'langs je route'}`},
-    {title:'Restaurants',meta:Number(state.children)>0?'geschikt voor gezinnen rond aankomst':'rond je hotelzone'},
+    {title:'Restaurants',meta:Number(state.children)>0?'geschikt voor gezinnen rond aankomst':'rond je overnachting'},
     {title:state.vehicle==='electric'?'Laden':'Tanken',meta:`op basis van ${state.vehicleRangeKm||325} km rijbereik`},
     {title:'Uitjes',meta:state.pet==='dog'?'wandelplek of korte stop':'korte stop zonder omweg'},
     {title:'WC',meta:'korte noodstop met parkeren en koffie'},
@@ -39,11 +39,11 @@ export function getAllStops(state,category='hotels'){
     ],
     restaurants:[
       {title:'Raststätte Frankenwald',meta:`Beste match · WC · ${children?'gezinsvriendelijk · ':''}+2 min`},
-      {title:'Trattoria Al Lago',meta:'Rond hotelzone · diner · +7 min'},
+      {title:'Trattoria Al Lago',meta:'Rond je overnachting · diner · +7 min'},
       {title:'Bistro Südroute',meta:'Snelle stop · weinig omrijden'},
       {title:'Familierestaurant Route 7',meta:children?'Kindermenu · WC · +5 min':'Diner langs route'},
       {title:'Autohof Grill',meta:'Snel eten · parkeren · weinig omrijden'},
-      {title:'Pizzeria Centrum',meta:'Rond hotelzone · avondeten'},
+      {title:'Pizzeria Centrum',meta:'Rond je overnachting · avondeten'},
       {title:'Koffie & Sandwich stop',meta:'Korte pauze · lichte lunch'},
       {title:'Restaurant met terras',meta:dog?'Hond welkom op terras':'Rustige plek'}
     ],
@@ -54,7 +54,7 @@ export function getAllStops(state,category='hotels'){
       {title:'Fastned Corridor',meta:'Snelladen · langs route'},
       {title:'Tesla Supercharger omgeving',meta:'Snel laden · horeca dichtbij'},
       {title:'Allego laadplein',meta:'Meerdere laders · +6 min'},
-      {title:'Stadslaadpunt hotelzone',meta:'Goed voor avondladen'},
+      {title:'Stadslaadpunt rond overnachting',meta:'Goed voor avondladen'},
       {title:'Reserve laadstop',meta:'Alternatief binnen veilige marge'}
     ],
     fuel:[
@@ -64,7 +64,7 @@ export function getAllStops(state,category='hotels'){
       {title:'Esso Route Service',meta:'Ruime parkeerplaats · WC'},
       {title:'OMV Autohof',meta:'Langs route · shop · koffie'},
       {title:'BP Tankstop Zuid',meta:'Reserve stop · +6 min'},
-      {title:'Tankstation hotelzone',meta:'Handig voor vertrek morgen'},
+      {title:'Tankstation rond overnachting',meta:'Handig voor vertrek morgen'},
       {title:'Grensroute tankstop',meta:'Logisch vóór lange etappe'}
     ],
     activities:[
@@ -74,7 +74,7 @@ export function getAllStops(state,category='hotels'){
       {title:'Kasteel langs route',meta:'Korte bezichtiging · 60 min'},
       {title:'Meerwandeling',meta:dog?'Hondvriendelijk · pauzeplek':'Rustige pauze'},
       {title:'Speelbos bij afrit',meta:children?'Kindvriendelijk · korte omweg':'Groene stop'},
-      {title:'Historisch centrum',meta:'Rond hotelzone · avondwandeling'},
+      {title:'Historisch centrum',meta:'Rond je overnachting · avondwandeling'},
       {title:'Panorama parkeerplaats',meta:'Foto-stop · weinig omrijden'}
     ],
     wc:[

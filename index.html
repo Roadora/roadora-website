@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Roadora — plan je roadtrip zonder gedoe</title>
-  <meta name="description" content="Plan je Europese roadtrip met dagroutes, slimme hotelzones, persoonlijke voorkeuren en keuzevrijheid op de kaart.">
+  <meta name="description" content="Plan je Europese roadtrip met dagroutes, slimme plekken om te overnachten, persoonlijke voorkeuren en keuzevrijheid op de kaart.">
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
@@ -17,7 +17,10 @@
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
-      <span class="brand-word">Roadora</span>
+      <span class="brand-copy">
+        <span class="brand-word">Roadora</span>
+        <span class="brand-slogan">Plan je roadtrip zonder gedoe</span>
+      </span>
     </a>
     <nav class="header-actions" aria-label="Hoofdnavigatie">
       <a class="top-link optional" href="#planner">Plan route</a>
@@ -35,7 +38,7 @@
             <h1>Eerste dagroute</h1>
             <button id="resetDemo" class="mini-link" type="button">Reset</button>
           </div>
-          <p class="muted">Vul je eerste reisdag in. Roadora doet een voorstel, maar je kunt tijden, stops en hotelzone volledig zelf aanpassen.</p>
+          <p class="muted">Vul je eerste reisdag in. Roadora doet een voorstel, maar je kunt tijden, stops en overnachting volledig zelf aanpassen.</p>
           <div class="divider"></div>
           <div class="field">
             <label for="origin">Vertrekpunt</label>
@@ -149,7 +152,7 @@
           <button id="mapZoomOut" type="button" title="Uitzoomen">−</button>
           <button id="mapToggleStops" type="button" title="Stops tonen of verbergen">▧</button>
         </div>
-        <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Hotelzone</span></div>
+        <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
         <div class="map-summary">
           <h3 id="mapRouteTitle">Amsterdam → Toscane</h3>
           <div class="summary-row"><span>1.495 km</span><span>15 u 45 m</span><span id="chargeDetail">325 km rijbereik · CCS</span></div>
@@ -176,15 +179,15 @@
           <article class="card card-pad">
             <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">8 dagen</span></div>
             <div id="dayTabs" class="day-tabs"></div>
-            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · Amsterdam → hotelzone</p>
+            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · Amsterdam → overnachten rond</p>
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
-            <p class="muted plan-note">Roadora vult slim voor. Open alleen wat je wilt aanpassen; tijden, stops en hotelzones blijven volledig vrij.</p>
+            <p class="muted plan-note">Roadora vult slim voor. Open alleen wat je wilt aanpassen; tijden, stops en overnachtingen blijven volledig vrij.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
-              <button id="chooseHotelZone" class="btn" type="button">Zelf hotelzone kiezen</button>
+              <button id="chooseHotelZone" class="btn" type="button">Zelf plek kiezen</button>
               <button id="recalculatePlan" class="btn primary" type="button">Opnieuw berekenen</button>
             </div>
           </article>
@@ -200,7 +203,7 @@
             <button class="mode-btn" data-view="all" type="button">Alles tonen</button>
           </div>
           <div id="recommendPanel">
-            <div class="card-title"><h3>Aanbevolen in je hotelzone</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
+            <div class="card-title"><h3>Aanbevolen om te overnachten</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
             <div id="recommendations" class="rec-grid"></div>
           </div>
           <div id="allStopsPanel" class="hidden">
