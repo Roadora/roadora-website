@@ -181,6 +181,26 @@
             <div id="dayTabs" class="day-tabs"></div>
             <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · Amsterdam → overnachten rond</p>
           </article>
+          <article class="card card-pad dynamic-plan-card">
+            <div class="card-title"><h2>Dagplanning bijwerken</h2><span id="delayStatus" class="pill">op schema</span></div>
+            <p id="delayMessage" class="muted plan-note">Vertrek je later dan gepland? Roadora kan de dagplanning meeschuiven of de hotelzone behouden.</p>
+            <div class="delay-grid">
+              <div class="field compact-field">
+                <label>Gepland vertrek</label>
+                <div class="input readonly"><input id="plannedDepart" value="09:00" readonly></div>
+              </div>
+              <div class="field compact-field">
+                <label for="actualDepart">Werkelijk vertrek</label>
+                <div class="input"><input id="actualDepart" type="time" value="10:00"></div>
+              </div>
+            </div>
+            <div class="delay-actions">
+              <button id="shiftPlan" class="btn primary" type="button">Planning aanpassen</button>
+              <button id="keepHotelZone" class="btn" type="button">Hotelzone behouden</button>
+              <button id="manualPlan" class="btn" type="button">Zelf wijzigen</button>
+            </div>
+          </article>
+
           <article class="card card-pad">
             <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
             <p class="muted plan-note">Roadora vult slim voor. Open alleen wat je wilt aanpassen; tijden, stops en overnachtingen blijven volledig vrij.</p>
@@ -196,8 +216,8 @@
 
       <div id="stopsTab" class="tab-panel">
         <article class="card card-pad">
-          <div class="card-title"><h2>Stops en hotels</h2></div>
-          <p class="muted">We tonen eerst wat het beste past bij jouw reis. Je kunt altijd alle opties op de kaart bekijken.</p>
+          <div class="card-title"><h2>Stops en hotels</h2><button id="suggestionToggle" class="suggestion-toggle is-on" type="button" aria-pressed="true">Roadora suggesties aan</button></div>
+          <p id="stopsIntro" class="muted">We tonen eerst wat het beste past bij jouw reis. Je kunt altijd alle opties op de kaart bekijken.</p>
           <div class="mode-switch">
             <button class="mode-btn active" data-view="recommended" type="button">Slim aanbevolen</button>
             <button class="mode-btn" data-view="all" type="button">Alles tonen</button>

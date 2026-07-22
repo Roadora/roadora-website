@@ -549,3 +549,146 @@ button{cursor:pointer}
 @media(max-width:760px){
   .overview-day-list{max-height:none;}
 }
+
+/* v3.4: dynamische dagplanning, suggesties aan/uit en visuele stopkaarten */
+.dynamic-plan-card{
+  border-color:#d9c6a8;
+  background:linear-gradient(180deg,#fffdf9,#fff8ee);
+}
+.delay-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+.compact-field{margin-bottom:0}
+.input.readonly{background:#f6efe4;color:#736654}
+.input.readonly input{color:#736654;font-weight:750}
+.delay-actions{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:7px;
+  margin-top:10px;
+}
+.delay-actions .btn{height:35px;font-size:12px;border-radius:10px}
+#delayStatus{white-space:nowrap;background:#eefafa;border-color:#b7e2e3;color:#0b5a5d}
+.suggestion-toggle{
+  height:30px;
+  border:1px solid #d6c5aa;
+  border-radius:999px;
+  background:#fff;
+  color:#735a2d;
+  font-size:11px;
+  font-weight:850;
+  padding:0 10px;
+  white-space:nowrap;
+}
+.suggestion-toggle.is-on{
+  background:#eefafa;
+  border-color:#9fd8d9;
+  color:#07595b;
+}
+#stopsIntro{min-height:32px}
+#stopsTab .stop-item.has-thumb{
+  grid-template-columns:74px 1fr auto;
+  min-height:74px;
+  padding:8px;
+  align-items:center;
+}
+.stop-main{min-width:0}
+.stop-thumb{
+  width:74px;
+  height:58px;
+  border-radius:10px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid rgba(90,70,45,.16);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);
+  background:#e4d2b5;
+}
+.stop-thumb::before,
+.stop-thumb::after{
+  content:"";
+  position:absolute;
+  inset:auto;
+  display:block;
+}
+.stop-thumb span{
+  position:absolute;
+  left:6px;
+  bottom:5px;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  text-shadow:0 1px 5px rgba(0,0,0,.35);
+  z-index:2;
+}
+.thumb-hotels{
+  background:linear-gradient(135deg,#9cb2bb 0%,#d8d0bd 52%,#7c8d57 100%);
+}
+.thumb-hotels::before{left:13px;bottom:12px;width:46px;height:28px;border-radius:4px 4px 2px 2px;background:#f5efe3;box-shadow:10px -8px 0 -4px #d4a344, -10px 6px 0 -5px #c9b18b}
+.thumb-hotels::after{left:19px;bottom:18px;width:6px;height:6px;background:#8e7145;box-shadow:11px 0 #8e7145,22px 0 #8e7145,0 9px #8e7145,11px 9px #8e7145,22px 9px #8e7145}
+.thumb-restaurants{
+  background:linear-gradient(135deg,#b86939 0%,#e5c28c 52%,#415f4e 100%);
+}
+.thumb-restaurants::before{left:12px;bottom:13px;width:50px;height:25px;border-radius:4px;background:#fff0d7;box-shadow:0 -10px 0 -4px #9d3f2f}
+.thumb-restaurants::after{right:11px;top:11px;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.55)}
+.thumb-laden{
+  background:linear-gradient(135deg,#335f67 0%,#67b6bb 55%,#dbece7 100%);
+}
+.thumb-laden::before{left:18px;bottom:12px;width:26px;height:34px;border-radius:5px;background:#f5fbfb;box-shadow:14px 9px 0 -8px #123f43}
+.thumb-laden::after{left:26px;bottom:23px;width:9px;height:13px;background:#0a6f71;clip-path:polygon(44% 0,100% 0,63% 47%,100% 47%,32% 100%,50% 58%,0 58%)}
+.thumb-tanken{
+  background:linear-gradient(135deg,#505963 0%,#b8c6cd 55%,#d9b66e 100%);
+}
+.thumb-tanken::before{left:17px;bottom:12px;width:28px;height:35px;border-radius:4px;background:#f8f4eb;box-shadow:7px 7px 0 -4px #c88e17}
+.thumb-tanken::after{left:23px;bottom:28px;width:16px;height:8px;border-radius:2px;background:#6e8390}
+.thumb-uitjes{
+  background:linear-gradient(135deg,#6a8a58 0%,#bed08b 48%,#81a8c2 100%);
+}
+.thumb-uitjes::before{left:0;right:0;bottom:0;height:22px;background:linear-gradient(135deg,#446d36,#8aa85c);clip-path:polygon(0 100%,0 45%,20% 20%,40% 60%,65% 15%,100% 55%,100% 100%)}
+.thumb-uitjes::after{right:13px;top:10px;width:18px;height:18px;border-radius:50%;background:#f9df77}
+.stop-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:6px;
+}
+.stop-meta span{
+  border:1px solid #e6d8bf;
+  background:#fff8ec;
+  color:#7a5b1f;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
+  padding:2px 6px;
+}
+.stop-actions-row{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:5px;
+}
+#stopsTab .stop-item .stop-actions-row button{
+  border:0;
+  background:transparent;
+  color:#b37805;
+  font-weight:850;
+  font-size:11px;
+  white-space:nowrap;
+  padding:0;
+}
+#stopsTab .stop-item .stop-actions-row .ghost-action{color:#0b5a5d}
+#stopsTab .stop-item.compact-stop{
+  grid-template-columns:1fr auto;
+}
+#recommendations.rec-grid .stop-item.has-thumb,
+#recommendations.rec-grid .stop-item.compact-stop{
+  width:100%;
+}
+@media(max-width:760px){
+  .delay-grid{grid-template-columns:1fr}
+  #stopsTab .stop-item.has-thumb{grid-template-columns:64px 1fr;align-items:start}
+  .stop-thumb{width:64px;height:54px}
+  .stop-actions-row{grid-column:1/-1;flex-direction:row;justify-content:flex-end;margin-top:4px}
+}
