@@ -110,12 +110,13 @@ function viewCopy(){
   if(!state.suggestions) return `Zelf zoeken actief · alle ${categoryTitle(state.category).toLowerCase()} worden getoond en gesorteerd op je profiel.`;
   return state.view==='recommended' ? 'We tonen eerst wat past bij jouw reis. Je kunt altijd alles bekijken.' : `Alle ${categoryTitle(state.category).toLowerCase()} · gesorteerd op beste match voor jouw reis.`;
 }
-function stopItemHtml(s, cat=state.category, recommended=false){
+function stopItemHtml(s, cat=state.category, recommended=false, index=0){
   const visual = visualCats.has(cat);
   const label = thumbLabels[cat] || 'Stop';
   const primaryAction = cat==='hotels' ? 'Bekijk hotel' : (cat==='laden'||cat==='tanken' ? 'Bekijk locatie' : 'Bekijk');
   const cls = visual ? ` has-thumb stop-${cat}` : ' compact-stop';
-  return `<div class="stop-item${cls}">${visual?`<div class="stop-thumb thumb-${cat}" aria-label="${label} foto"><span>${label}</span></div>`:''}<div class="stop-main"><strong>${s[0]}</strong><p>${s[1]}</p><div class="stop-meta"><span>${recommended?'Aanbevolen':'Beste match'}</span><span>Profielgestuurd</span></div></div><div class="stop-actions-row">${visual?`<button class="ghost-action" type="button">${primaryAction}</button>`:''}<button class="add-stop-action" type="button">Toevoegen</button></div></div>`;
+  const thumbClass = visual ? `thumb-${cat} thumb-${cat}-${(index % 4) + 1}` : '';
+  return `<div class="stop-item${cls}">${visual?`<div class="stop-thumb ${thumbClass}" aria-label="Foto van ${label}"></div>`:''}<div class="stop-main"><strong>${s[0]}</strong><p>${s[1]}</p><div class="stop-meta"><span>${recommended?'Aanbevolen':'Beste match'}</span><span>Profielgestuurd</span></div></div><div class="stop-actions-row">${visual?`<button class="ghost-action" type="button">${primaryAction}</button>`:''}<button class="add-stop-action" type="button">Toevoegen</button></div></div>`;
 }
 function recommendedStops(){
   const preferred = {
@@ -132,7 +133,7 @@ let map, routeLine, markers=[];
 function initMap(){
   if(!window.L || map) return;
   map = L.map('roadoraMap',{zoomControl:false,scrollWheelZoom:true}).setView([48.4,8.8],5);
-  L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
   routeLine = L.polyline(routeCoords,{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
   markers = markerData.map(m=>L.marker(m.coords,{icon:L.divIcon({className:'',html:`<div class="custom-marker m-${m.type}">${m.label}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindTooltip(m.title));
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
@@ -270,8 +271,8 @@ function renderStops(){
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
   const recommendTitle = categoryTitle(state.category).replace('langs je route','aanbevolen langs je route').replace('in je hotelzone','aanbevolen in je hotelzone');
   const recommendHead = $('#recommendPanel .card-title h3'); if(recommendHead) recommendHead.textContent = recommendTitle;
-  $('#recommendations').innerHTML = recommendedStops().map(s=>stopItemHtml(s,state.category,true)).join('');
-  $('#allStops').innerHTML = (stops[state.category]||[]).map(s=>stopItemHtml(s,state.category,false)).join('');
+  $('#recommendations').innerHTML = recommendedStops().map((s,i)=>stopItemHtml(s,state.category,true,i)).join('');
+  $('#allStops').innerHTML = (stops[state.category]||[]).map((s,i)=>stopItemHtml(s,state.category,false,i)).join('');
   if(!state.suggestions){ state.view='all'; }
   $('#recommendPanel').classList.toggle('hidden', !state.suggestions || state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
