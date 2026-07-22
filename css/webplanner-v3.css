@@ -889,3 +889,43 @@ button{cursor:pointer}
   .modal-facts{grid-template-columns:1fr;}
   .modal-actions{display:grid;}
 }
+
+
+/* v4.0 mobiele stopkaarten: echte demo-foto's in plaats van abstracte placeholders */
+.stop-photo{background-color:#f7f2e8;background-repeat:no-repeat;background-size:cover;background-position:center;}
+.stop-photo-hotels.stop-photo-1{background-image:url('../assets/stops/hotel-1.svg')!important;}
+.stop-photo-hotels.stop-photo-2{background-image:url('../assets/stops/hotel-2.svg')!important;}
+.stop-photo-hotels.stop-photo-3{background-image:url('../assets/stops/hotel-3.svg')!important;}
+.stop-photo-hotels.stop-photo-4{background-image:url('../assets/stops/hotel-4.svg')!important;}
+.stop-photo-hotels.stop-photo-5{background-image:url('../assets/stops/hotel-5.svg')!important;}
+.stop-photo-hotels.stop-photo-6{background-image:url('../assets/stops/hotel-6.svg')!important;}
+.stop-photo-restaurants.stop-photo-1{background-image:url('../assets/stops/restaurant-1.svg')!important;}
+.stop-photo-restaurants.stop-photo-2{background-image:url('../assets/stops/restaurant-2.svg')!important;}
+.stop-photo-restaurants.stop-photo-3{background-image:url('../assets/stops/restaurant-3.svg')!important;}
+.stop-photo-restaurants.stop-photo-4{background-image:url('../assets/stops/restaurant-4.svg')!important;}
+.stop-photo-restaurants.stop-photo-5{background-image:url('../assets/stops/restaurant-5.svg')!important;}
+.stop-photo-restaurants.stop-photo-6{background-image:url('../assets/stops/restaurant-6.svg')!important;}
+.stop-photo-laden.stop-photo-1{background-image:url('../assets/stops/charge-1.svg')!important;}
+.stop-photo-laden.stop-photo-2{background-image:url('../assets/stops/charge-2.svg')!important;}
+.stop-photo-laden.stop-photo-3{background-image:url('../assets/stops/charge-3.svg')!important;}
+.stop-photo-laden.stop-photo-4{background-image:url('../assets/stops/charge-4.svg')!important;}
+.stop-photo-laden.stop-photo-5{background-image:url('../assets/stops/charge-5.svg')!important;}
+.stop-photo-laden.stop-photo-6{background-image:url('../assets/stops/charge-6.svg')!important;}
+.stop-photo-tanken.stop-photo-1{background-image:url('../assets/stops/fuel-1.svg')!important;}
+.stop-photo-tanken.stop-photo-2{background-image:url('../assets/stops/fuel-2.svg')!important;}
+.stop-photo-tanken.stop-photo-3{background-image:url('../assets/stops/fuel-3.svg')!important;}
+.stop-photo-tanken.stop-photo-4{background-image:url('../assets/stops/fuel-4.svg')!important;}
+.stop-photo-tanken.stop-photo-5{background-image:url('../assets/stops/fuel-5.svg')!important;}
+.stop-photo-tanken.stop-photo-6{background-image:url('../assets/stops/fuel-6.svg')!important;}
+.stop-photo-uitjes.stop-photo-1{background-image:url('../assets/stops/outing-1.svg')!important;}
+.stop-photo-uitjes.stop-photo-2{background-image:url('../assets/stops/outing-2.svg')!important;}
+.stop-photo-uitjes.stop-photo-3{background-image:url('../assets/stops/outing-3.svg')!important;}
+.stop-photo-uitjes.stop-photo-4{background-image:url('../assets/stops/outing-4.svg')!important;}
+.stop-photo-uitjes.stop-photo-5{background-image:url('../assets/stops/outing-5.svg')!important;}
+.stop-photo-uitjes.stop-photo-6{background-image:url('../assets/stops/outing-6.svg')!important;}
+@media(max-width:760px){
+  .stop-result{grid-template-columns:96px minmax(0,1fr);gap:12px;min-height:104px;align-items:center;}
+  .stop-photo{width:96px;height:76px;border-radius:12px;}
+  .stop-result-main p{margin:4px 0 7px;}
+  .stop-result-actions-inline{gap:12px;}
+}

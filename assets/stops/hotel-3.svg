@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8ef"/><stop offset="1" stop-color="#f8f3ea"/></linearGradient><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values=".08"/><feComponentTransfer><feFuncA type="table" tableValues="0 .08"/></feComponentTransfer></filter></defs>
+  <rect width="400" height="300" fill="url(#s)"/><rect width="400" height="105" y="195" fill="#8a9b74" opacity=".88"/><path d="M0 205 C70 178 120 203 190 185 C275 162 330 185 400 170 L400 300 L0 300Z" fill="#6f8a62" opacity=".5"/>
+  <rect x="96" y="117" width="208" height="112" rx="10" fill="#f1dfbd"/><path d="M74 129 L200 54 L326 129 Z" fill="#7b4f2b"/><path d="M110 129 L200 78 L290 129 Z" fill="#b5873a" opacity=".55"/>
+  <rect x="125" y="146" width="38" height="34" rx="4" fill="#dff0f5"/><rect x="181" y="146" width="38" height="34" rx="4" fill="#dff0f5"/><rect x="237" y="146" width="38" height="34" rx="4" fill="#dff0f5"/>
+  <rect x="177" y="189" width="46" height="40" rx="5" fill="#6e4a2d"/><path d="M96 229 H304" stroke="#d1b78e" stroke-width="9"/>
+  <rect width="400" height="300" filter="url(#n)" opacity=".35"/>
+</svg>
