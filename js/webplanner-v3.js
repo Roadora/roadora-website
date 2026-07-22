@@ -106,6 +106,52 @@ function fromMinutes(min){ min=((min%1440)+1440)%1440; return `${String(Math.flo
 function shiftTime(t, diff){ return fromMinutes(toMinutes(t)+diff); }
 function firstPlanTime(){ return dayPlan()[0]?.[0] || state.depart || '09:00'; }
 function categoryTitle(cat=state.category){ return ({hotels:'Hotels in je hotelzone',restaurants:'Restaurants langs je route',laden:'Laadpunten langs je route',tanken:'Tankstations langs je route',uitjes:'Uitjes en korte stops',wc:'WC en pauzeplekken'}[cat]||'Stops langs je route'); }
+
+function escHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function stopKindLabel(cat=state.category){return ({hotels:'hotel',restaurants:'restaurant',laden:'laadstation',tanken:'tankstation',uitjes:'uitje',wc:'WC-stop'}[cat]||'stop');}
+function stopDetailDataFromItem(item){
+  const cat=item?.dataset.cat || state.category;
+  const title=item?.dataset.title || item?.querySelector('strong')?.textContent || 'Gekozen stop';
+  const desc=item?.dataset.desc || item?.querySelector('p')?.textContent || '';
+  const imageClass=item?.dataset.thumb || '';
+  const isHotel=cat==='hotels';
+  const isCharge=cat==='laden';
+  const isFuel=cat==='tanken';
+  const isVisual=visualCats.has(cat);
+  const badges=[];
+  if(desc.toLowerCase().includes('familie')) badges.push('Familiegeschikt');
+  if(desc.toLowerCase().includes('hond')||desc.toLowerCase().includes('huisdieren')) badges.push('Hond/huisdier');
+  if(desc.toLowerCase().includes('parkeren')) badges.push('Parkeren');
+  if(desc.toLowerCase().includes('laad')) badges.push('Laden dichtbij');
+  if(!badges.length) badges.push('Past bij je profiel','Weinig omrijden');
+  return {cat,title,desc,imageClass,isHotel,isCharge,isFuel,isVisual,badges};
+}
+function openStopDetail(item){
+  const modal=$('#stopDetailModal'); if(!modal) return;
+  const data=stopDetailDataFromItem(item);
+  $('#detailTitle').textContent=data.title;
+  $('#detailType').textContent=stopKindLabel(data.cat).replace(/^./,c=>c.toUpperCase());
+  $('#detailDesc').textContent=data.desc;
+  $('#detailMatch').textContent = data.isHotel ? 'Aanbevolen rond je hotelzone' : 'Aanbevolen langs je route';
+  $('#detailDetour').textContent = (data.desc.match(/\+\s?\d+\s?min/i)||['+8 min omrijden'])[0];
+  $('#detailTime').textContent = data.isHotel ? state.arrival : (data.isCharge||data.isFuel ? 'rond 15:15' : 'past in dagplanning');
+  $('#detailProfile').textContent = `${state.adults} volwassenen · ${state.children} kinderen${state.pet==='dog'?' · hond mee':''} · ${state.range} km rijbereik`;
+  $('#detailBadges').innerHTML=data.badges.map(b=>`<span>${escHtml(b)}</span>`).join('');
+  const visual=$('#detailVisual');
+  visual.className='detail-visual';
+  if(data.isVisual && data.imageClass) visual.classList.add(...data.imageClass.split(' ').filter(Boolean));
+  else visual.classList.add('thumb-hotels-1');
+  const provider=$('#detailProvider');
+  provider.textContent = data.isHotel ? 'Bekijk aanbieder / boeken' : 'Bekijk locatie';
+  provider.disabled = true;
+  provider.title = data.isHotel ? 'Wordt later gekoppeld aan hotelpartner of eigen detailpagina.' : 'Wordt later gekoppeld aan kaart/aanbieder.';
+  modal.dataset.title=data.title;
+  modal.dataset.cat=data.cat;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  document.body.classList.add('modal-open');
+}
+function closeStopDetail(){const modal=$('#stopDetailModal'); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open');}
 function viewCopy(){
   if(!state.suggestions) return `Zelf zoeken actief · alle ${categoryTitle(state.category).toLowerCase()} worden getoond en gesorteerd op je profiel.`;
   return state.view==='recommended' ? 'We tonen eerst wat past bij jouw reis. Je kunt altijd alles bekijken.' : `Alle ${categoryTitle(state.category).toLowerCase()} · gesorteerd op beste match voor jouw reis.`;
@@ -116,7 +162,9 @@ function stopItemHtml(s, cat=state.category, recommended=false, index=0){
   const primaryAction = cat==='hotels' ? 'Bekijk hotel' : (cat==='laden'||cat==='tanken' ? 'Bekijk locatie' : 'Bekijk');
   const cls = visual ? ` has-thumb stop-${cat}` : ' compact-stop';
   const thumbClass = visual ? `thumb-${cat} thumb-${cat}-${(index % 4) + 1}` : '';
-  return `<div class="stop-item${cls}">${visual?`<div class="stop-thumb ${thumbClass}" aria-label="Foto van ${label}"></div>`:''}<div class="stop-main"><strong>${s[0]}</strong><p>${s[1]}</p><div class="stop-meta"><span>${recommended?'Aanbevolen':'Beste match'}</span><span>Profielgestuurd</span></div></div><div class="stop-actions-row">${visual?`<button class="ghost-action" type="button">${primaryAction}</button>`:''}<button class="add-stop-action" type="button">Toevoegen</button></div></div>`;
+  const title=escHtml(s[0]);
+  const desc=escHtml(s[1]);
+  return `<div class="stop-item${cls}" data-cat="${escHtml(cat)}" data-title="${title}" data-desc="${desc}" data-thumb="${escHtml(thumbClass)}">${visual?`<div class="stop-thumb ${thumbClass}" aria-label="Foto van ${escHtml(label)}"></div>`:''}<div class="stop-main"><strong>${title}</strong><p>${desc}</p><div class="stop-meta"><span>${recommended?'Aanbevolen':'Beste match'}</span><span>Profielgestuurd</span></div></div><div class="stop-actions-row">${visual?`<button class="ghost-action" type="button">${primaryAction}</button>`:''}<button class="add-stop-action" type="button">Toevoegen</button></div></div>`;
 }
 function recommendedStops(){
   const preferred = {
@@ -319,6 +367,13 @@ function bind(){
     if(saveEdit){const row=saveEdit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.delete(i); renderTimeline(); toast('Planningregel opgeslagen'); return;}
     const remove=e.target.closest('.plan-remove');
     if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); editingPlanRows.clear(); renderTimeline(); toast('Stop verwijderd');}
+    const detailBtn=e.target.closest('.ghost-action');
+    if(detailBtn){e.preventDefault(); openStopDetail(detailBtn.closest('.stop-item')); return;}
+    const modalClose=e.target.closest('[data-close-detail]');
+    if(modalClose){closeStopDetail(); return;}
+    if(e.target.id==='stopDetailModal'){closeStopDetail(); return;}
+    const modalAdd=e.target.closest('#detailAddStop');
+    if(modalAdd){const modal=$('#stopDetailModal'); const title=modal?.dataset.title || 'Gekozen stop'; const cat=modal?.dataset.cat || state.category; const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:30',title,'Toegevoegd vanuit detailvenster', categoryTitle(cat).replace(' langs je route','')]); closeStopDetail(); renderAll(); toast('Toegevoegd aan Dag '+state.activeDay); return;}
     const addStop=e.target.closest('.add-stop-action');
     if(addStop){ const item=addStop.closest('.stop-item'); const title=item?.querySelector('strong')?.textContent || 'Gekozen stop'; const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:30',title,'Toegevoegd vanuit Stops-tab', categoryTitle(state.category).replace(' langs je route','')]); renderAll(); toast('Stop toegevoegd aan Dag '+state.activeDay); return; }
   });
@@ -333,6 +388,7 @@ function bind(){
     const row=e.target.closest('[data-plan-index]'); if(!row || !e.target.classList.contains('plan-type')) return;
     const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(plan[i]) plan[i][3]=e.target.value;
   });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
   $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; renderAll();});
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
