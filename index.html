@@ -195,22 +195,28 @@
       </div>
 
       <div id="stopsTab" class="tab-panel">
-        <article class="card card-pad">
-          <div class="card-title"><h2>Stops en hotels</h2></div>
-          <p class="muted">Beste match voor jouw reis. Je kunt altijd alles bekijken.</p>
+        <article class="card card-pad stops-card">
+          <div class="card-title stops-head">
+            <div>
+              <h2>Stops en hotels</h2>
+              <p class="muted compact-copy">Beste match voor jouw reis. Je kunt altijd alles bekijken.</p>
+            </div>
+            <button id="suggestionToggle" class="suggestion-toggle" type="button" aria-pressed="true">Roadora suggesties aan</button>
+          </div>
           <div class="mode-switch">
             <button class="mode-btn active" data-view="recommended" type="button">Slim aanbevolen</button>
             <button class="mode-btn" data-view="all" type="button">Alles tonen</button>
           </div>
-          <div id="recommendPanel">
-            <div class="card-title"><h3>Aanbevolen om te overnachten</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
-            <div id="recommendations" class="rec-grid"></div>
+          <div id="categoryTabs" class="category-grid stops-cats"></div>
+          <div id="recommendPanel" class="stops-results-panel">
+            <div class="card-title stops-subhead"><h3 id="recommendTitle">Aanbevolen hotels in je hotelzone</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
+            <div id="recommendations" class="stop-list rich-stop-list"></div>
           </div>
-          <div id="allStopsPanel" class="hidden">
-            <div id="categoryTabs" class="category-grid"></div>
-            <div id="allStops" class="stop-list"></div>
+          <div id="allStopsPanel" class="hidden stops-results-panel">
+            <div class="card-title stops-subhead"><h3 id="allStopsTitle">Alle hotels rond je hotelzone</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
+            <div id="allStops" class="stop-list rich-stop-list"></div>
           </div>
-          <div class="sticky-actions"><button class="btn primary" type="button">Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
+          <div class="sticky-actions"><button id="addManualStop" class="btn primary" type="button">Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
         </article>
       </div>
 
@@ -251,6 +257,30 @@
       <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
     </div>
   </footer>
+
+
+  <div id="stopDetailModal" class="stop-modal" aria-hidden="true">
+    <div class="stop-modal-backdrop" data-close-stop-modal></div>
+    <article class="stop-modal-card" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle">
+      <button class="stop-modal-close" type="button" data-close-stop-modal aria-label="Sluiten">×</button>
+      <div id="stopModalPhoto" class="stop-modal-photo"></div>
+      <div class="stop-modal-body">
+        <p id="stopModalType" class="eyebrow">Stop langs je route</p>
+        <h2 id="stopModalTitle">Bekijk locatie</h2>
+        <p id="stopModalDescription" class="muted"></p>
+        <div id="stopModalTags" class="modal-tags"></div>
+        <div class="modal-facts">
+          <div><span>Omrijden</span><strong id="stopModalDetour">+8 min</strong></div>
+          <div><span>Past rond</span><strong id="stopModalWindow">16:30 - 18:00</strong></div>
+          <div><span>Profiel</span><strong id="stopModalProfile">gezin · hond</strong></div>
+        </div>
+        <div class="modal-actions">
+          <button id="modalAddStop" class="btn primary" type="button">Toevoegen aan dagroute</button>
+          <button class="btn" type="button" disabled>Bekijk aanbieder / boeken later</button>
+        </div>
+      </div>
+    </article>
+  </div>
 
   <div id="cookieBanner" class="cookie" role="dialog" aria-label="Cookie melding">
     <p><strong>Cookies.</strong> Roadora gebruikt noodzakelijke cookies en, na toestemming, analyse om de website te verbeteren.</p>
