@@ -99,6 +99,50 @@ const stops = {
   ]
 };
 const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
+const categorySpecs = {
+  hotels: {
+    singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je hotelzone',
+    recommended:'Aanbevolen hotels in je hotelzone', all:'Alle hotels rond je hotelzone',
+    sort:'Beste match op gezin, hond, parkeren en omrijtijd',
+    match:['Hotelzone', 'Familiekamer', 'Hond/parkeren'],
+    why:['Binnen je gewenste aankomsttijd', 'Past bij je reisprofiel', 'Logisch vanaf de route']
+  },
+  restaurants: {
+    singular:'restaurant', action:'Bekijk locatie', type:'restaurant langs je route',
+    recommended:'Aanbevolen restaurants rond je pauzes', all:'Alle restaurants langs je route',
+    sort:'Beste match op lunchmoment, gezin/hond en weinig omrijden',
+    match:['Lunchmoment', 'Gezin/hond', 'Weinig omrijden'],
+    why:['Past rond je lunch- of aankomstmoment', 'Praktisch met parkeren en WC', 'Niet te ver van de route']
+  },
+  laden: {
+    singular:'laadpunt', action:'Bekijk locatie', type:'laadstop binnen je rijbereik',
+    recommended:'Aanbevolen laadpunten binnen je rijbereik', all:'Alle laadpunten langs je route',
+    sort:'Beste match op rijbereik, stekker, voorzieningen en omrijtijd',
+    match:['Rijbereik', 'Stekker', 'Voorzieningen'],
+    why:['Past binnen je opgegeven rijbereik', 'Goed moment in je dagplanning', 'Te combineren met eten of WC']
+  },
+  tanken: {
+    singular:'tankstation', action:'Bekijk locatie', type:'tankstop langs je route',
+    recommended:'Aanbevolen tankstations rond je planning', all:'Alle tankstations langs je route',
+    sort:'Beste match op rijbereik, voorzieningen en weinig omrijden',
+    match:['Rijbereik', 'WC/koffie', 'Weinig omrijden'],
+    why:['Past bij je tank-/rijbereik', 'Handig rond pauze of hotelzone', 'Snel bereikbaar vanaf de route']
+  },
+  uitjes: {
+    singular:'uitje', action:'Bekijk locatie', type:'uitje of korte stop onderweg',
+    recommended:'Aanbevolen uitjes en korte stops', all:'Alle uitjes en korte stops',
+    sort:'Beste match op tijd, kinderen/hond en afstand vanaf route',
+    match:['Korte stop', 'Kind/hond', 'Rustmoment'],
+    why:['Geschikt als korte onderbreking', 'Past bij je reisgezelschap', 'Goed te combineren met pauze of aankomst']
+  },
+  wc: {
+    singular:'pauzeplek', action:'Bekijk locatie', type:'WC- of pauzeplek onderweg',
+    recommended:'Aanbevolen WC- en pauzeplekken', all:'Alle WC- en pauzeplekken',
+    sort:'Beste match op snel bereikbaar, voorzieningen en routeafstand',
+    match:['Snel', 'WC', 'Koffie/parkeren'],
+    why:['Snelste praktische stop onderweg', 'Handig met kinderen of hond', 'Zo min mogelijk omrijden']
+  }
+};
 const timelines = {
   1:[['08:30','Vertrek Amsterdam','Start van je roadtrip'],['11:00','Rustige pauze','WC · koffie · hond uitlaten'],['13:00','Lunchstop','Gezinsvriendelijk · weinig omrijden'],['15:15','Laad-/tankstop',()=> `${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`],['16:30','Overnachten rond','Familiekamer · huisdieren toegestaan · parkeren']],
   2:[['09:00','Vertrek vanaf overnachting','Verder richting Toscane'],['11:15','Korte pauze','WC · koffie'],['13:00','Lunchstop','Restaurant langs route'],['15:30','Aankomst Toscane','Rustig aankomen en inchecken']],
@@ -242,31 +286,38 @@ function renderTimeline(){
 
 function escapeHtml(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function categoryLabel(id){return (cats.find(c=>c[0]===id)||['',id])[1];}
-function categorySingular(id){return {hotels:'hotel',restaurants:'restaurant',laden:'laadpunt',tanken:'tankstation',uitjes:'uitje',wc:'pauzeplek'}[id]||'stop';}
-function categoryTitle(id, view){
-  const all = view==='all';
-  return {
-    hotels: all ? 'Alle hotels rond je hotelzone' : 'Aanbevolen hotels in je hotelzone',
-    restaurants: all ? 'Alle restaurants langs je route' : 'Aanbevolen restaurants rond je pauzes',
-    laden: all ? 'Alle laadpunten langs je route' : 'Aanbevolen laadpunten binnen je rijbereik',
-    tanken: all ? 'Alle tankstations langs je route' : 'Aanbevolen tankstations rond je planning',
-    uitjes: all ? 'Alle uitjes en korte stops' : 'Aanbevolen uitjes en korte stops',
-    wc: all ? 'Alle WC- en pauzeplekken' : 'Aanbevolen WC- en pauzeplekken'
-  }[id] || 'Stops langs je route';
+function categorySpec(id){return categorySpecs[id] || {singular:'stop', action:'Bekijk locatie', type:'stop langs je route', recommended:'Aanbevolen stops', all:'Alle stops', sort:'Beste match voor jouw reis', match:['Route','Tijd','Profiel'], why:['Past bij je route', 'Past bij je tijd', 'Past bij je profiel']};}
+function categorySingular(id){return categorySpec(id).singular;}
+function categoryTitle(id, view){return view==='all' ? categorySpec(id).all : categorySpec(id).recommended;}
+function stopMatchLabels(cat, desc=''){
+  const spec = categorySpec(cat);
+  const detour = (String(desc).match(/\+\d+\s*min/)||['weinig omrijden'])[0];
+  return [spec.match[0], detour, stopWindow(cat)];
+}
+function stopWhyList(cat){
+  const base = categorySpec(cat).why.slice(0,3);
+  if(state.children>0 && !base.some(x=>x.toLowerCase().includes('kind'))) base.push('Rekening met kinderen');
+  if(state.pet==='dog' && !base.some(x=>x.toLowerCase().includes('hond'))) base.push('Hond mee als voorkeur');
+  return base.slice(0,4);
 }
 function stopVisualClass(cat, i){return `stop-photo stop-photo-${cat} stop-photo-${(i%6)+1}`;}
 function stopWindow(cat){return {hotels:state.arrival,restaurants:'rond 13:00',laden:'rond 15:15',tanken:'rond 15:15',uitjes:'flexibel onderweg',wc:'wanneer nodig'}[cat]||'onderweg';}
 function isPhotoStop(cat){return cat!=='wc';}
 function stopCardHtml(item, index, cat, compact=false){
   const name = escapeHtml(item[0]);
-  const desc = escapeHtml(typeof item[1]==='function'?item[1]():item[1]);
+  const rawDesc = typeof item[1]==='function'?item[1]():item[1];
+  const desc = escapeHtml(rawDesc);
   const showPhoto = isPhotoStop(cat);
-  const primaryAction = cat==='hotels' ? 'Bekijk hotel' : 'Bekijk locatie';
+  const primaryAction = categorySpec(cat).action;
+  const labels = stopMatchLabels(cat, rawDesc).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
+  const why = stopWhyList(cat).slice(0, compact ? 2 : 3).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   return `<div class="stop-result ${showPhoto?'has-photo':'no-photo'}" data-stop-card="${index}" data-stop-cat="${cat}">
     ${showPhoto ? `<button class="${stopVisualClass(cat,index)}" data-view-stop="${index}" data-stop-cat="${cat}" type="button" aria-label="${primaryAction} ${name}"></button>` : ''}
     <div class="stop-result-main">
       <strong>${name}</strong>
       <p>${desc}</p>
+      <div class="stop-match-line">${labels}</div>
+      <div class="stop-why-line">${why}</div>
       <div class="stop-result-actions-inline">
         <button class="text-action" data-view-stop="${index}" data-stop-cat="${cat}" type="button">${primaryAction}</button>
         <button class="text-action add" data-add-stop="${index}" data-stop-cat="${cat}" type="button">Toevoegen</button>
@@ -282,6 +333,9 @@ function renderStops(){
   const allTitle = categoryTitle(state.category,'all');
   $('#recommendTitle').textContent = recTitle;
   $('#allStopsTitle').textContent = allTitle;
+  const recommendSub = $('#recommendPanel .tiny-muted') || $('#recommendPanel .stops-subhead .mini-link');
+  const allSub = $('#allStopsPanel .tiny-muted');
+  if(allSub) allSub.textContent = categorySpec(state.category).sort;
   $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Zelf zoeken actief';
   $('#suggestionToggle').setAttribute('aria-pressed', String(state.suggestions));
   $('#suggestionToggle').classList.toggle('off', !state.suggestions);
@@ -297,8 +351,10 @@ function openStopDetail(cat,index){
   state.activeStop={cat,index};
   const title=item[0]; const desc=typeof item[1]==='function'?item[1]():item[1];
   $('#stopModalTitle').textContent=title;
-  $('#stopModalType').textContent=`${categoryLabel(cat)} · ${cat==='hotels'?'overnachten rond je hotelzone':'stop langs je route'}`;
+  $('#stopModalType').textContent=`${categoryLabel(cat)} · ${categorySpec(cat).type}`;
   $('#stopModalDescription').textContent=desc;
+  const whyEl = $('#stopModalWhy');
+  if(whyEl) whyEl.innerHTML = stopWhyList(cat).map(x=>`<li>${escapeHtml(x)}</li>`).join('');
   $('#stopModalDetour').textContent=(desc.match(/\+\d+\s*min/)||['weinig omrijden'])[0];
   $('#stopModalWindow').textContent=stopWindow(cat);
   $('#stopModalProfile').textContent=`${state.children} kinderen · ${state.pet==='dog'?'hond mee':'geen hond'} · ${state.range} km`;
