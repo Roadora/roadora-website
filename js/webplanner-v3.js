@@ -117,14 +117,14 @@ const categorySpecs = {
   },
   laden: {
     singular:'laadpunt', action:'Bekijk locatie', type:'laadstop binnen je rijbereik',
-    recommended:'Aanbevolen laadpunten binnen je rijbereik', all:'Alle laadpunten langs je route',
+    recommended:'5–10 laadopties rond je laadmoment', all:'Alle laadpunten langs je route',
     sort:'Beste match op rijbereik, stekker, voorzieningen en omrijtijd',
     match:['Rijbereik', 'Stekker', 'Voorzieningen'],
     why:['Past binnen je opgegeven rijbereik', 'Goed moment in je dagplanning', 'Te combineren met eten of WC']
   },
   tanken: {
     singular:'tankstation', action:'Bekijk locatie', type:'tankstop langs je route',
-    recommended:'Aanbevolen tankstations rond je planning', all:'Alle tankstations langs je route',
+    recommended:'5–10 tankstations rond je tankmoment', all:'Alle tankstations langs je route',
     sort:'Beste match op rijbereik, voorzieningen en weinig omrijden',
     match:['Rijbereik', 'WC/koffie', 'Weinig omrijden'],
     why:['Past bij je tank-/rijbereik', 'Handig rond pauze of overnachting', 'Snel bereikbaar vanaf de route']
@@ -170,11 +170,11 @@ function placeMarkerHtml(cat,index){
   return `<div class="place-marker place-marker-${cat}">${letter}</div>`;
 }
 function displayedPlacesForMap(){
-  const list = stops[state.category] || [];
+  const list = currentDisplayedStopsForMap();
   if(!Array.isArray(list) || !list.length) return [];
-  const max = state.suggestions && state.view === 'recommended' ? (state.category === 'hotels' ? 3 : 4) : 40;
+  const max = state.suggestions && state.view === 'recommended' ? (isEnergyCategory(state.category) ? 10 : (state.category === 'hotels' ? 3 : 4)) : 40;
   return list.slice(0,max)
-    .map((item,index)=>({item,index,meta:item?.[2] || {}}))
+    .map((item,index)=>({item,index:item?.[2]?.__stopIndex ?? index,meta:item?.[2] || {}}))
     .filter(x=>Number.isFinite(Number(x.meta.lat)) && Number.isFinite(Number(x.meta.lng)));
 }
 function renderPlaceMarkers(){
@@ -294,6 +294,68 @@ function routeSamplePoints(maxPoints=12,{includeEnds=false}={}){
   }
   return pts;
 }
+function routePointAtDistanceKm(distanceKm,index=0){
+  const coords=Array.isArray(routeCoords)?routeCoords:[];
+  const total=Math.max(1,Number(state.routeDistanceKm)||1);
+  if(coords.length<2) return null;
+  const km=Math.max(0,Math.min(total,Number(distanceKm)||0));
+  const progress=km/total;
+  const idx=Math.max(0,Math.min(coords.length-1,Math.round(progress*(coords.length-1))));
+  const c=coords[idx];
+  return c ? {lat:c[0],lng:c[1],index,progress,distanceFromStartMeters:Math.round(km*1000)} : null;
+}
+function isEnergyCategory(cat){ return cat==='tanken' || cat==='laden'; }
+function rangeZone(){
+  const total=Math.max(1,Number(state.routeDistanceKm)||1);
+  const range=Math.max(80,Number(state.range)||325);
+  const factor=state.vehicle==='electric' ? 0.78 : 0.88;
+  const target=Math.min(Math.max(60,range*factor),Math.max(60,total-35));
+  const low=Math.max(20,target-(range*(state.vehicle==='electric'?0.18:0.16)));
+  const high=Math.min(total-10,target+(range*(state.vehicle==='electric'?0.16:0.14)));
+  return {target,low,high,range,total};
+}
+function energySearchPoints(){
+  const z=rangeZone();
+  const distances=[];
+  const step=Math.max(18,(z.high-z.low)/6);
+  for(let d=z.low; d<=z.high+1; d+=step) distances.push(d);
+  distances.push(z.target);
+  return [...new Set(distances.map(d=>Math.round(d)))].sort((a,b)=>a-b).slice(0,9)
+    .map((d,i)=>routePointAtDistanceKm(d,i)).filter(Boolean);
+}
+function energyDistanceKm(item){
+  const meta=item?.[2]||{};
+  const raw=Number(meta.distanceFromStartMeters);
+  if(Number.isFinite(raw) && raw>0) return Math.round(raw/1000);
+  const progress=Number(meta.routeProgress);
+  if(Number.isFinite(progress)) return Math.round((Number(state.routeDistanceKm)||0)*progress);
+  return null;
+}
+function energyFitLabel(km){
+  if(!Number.isFinite(Number(km))) return 'langs route';
+  const z=rangeZone();
+  if(km<z.low) return 'te vroeg';
+  if(km>z.high) return 'alternatief';
+  return state.vehicle==='electric' ? 'goede laadzone' : 'goede tankzone';
+}
+function recommendedEnergyStops(list){
+  const indexed=(Array.isArray(list)?list:[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
+  const z=rangeZone();
+  const scored=indexed.map((item,i)=>{
+    const km=energyDistanceKm(item);
+    const diff=Number.isFinite(km) ? Math.abs(km-z.target) : 9999;
+    return {item,km,diff,i};
+  }).sort((a,b)=>a.diff-b.diff || a.i-b.i);
+  let chosen=scored.filter(x=>Number.isFinite(x.km) && x.km>=z.low && x.km<=z.high).slice(0,10);
+  if(chosen.length<5) chosen=scored.slice(0,Math.min(10,Math.max(5,scored.length)));
+  return chosen.map(x=>x.item);
+}
+function currentDisplayedStopsForMap(){
+  const list=(stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
+  if(state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) return recommendedEnergyStops(list);
+  if(state.suggestions && state.view==='recommended') return list.slice(0,state.category==='hotels'?3:4);
+  return list;
+}
 
 async function geocodePlace(query){
   const q=String(query||'').trim();
@@ -319,20 +381,22 @@ function normalizeLivePlace(place,cat){
   const bits=[];
   if(place?.rating) bits.push(`${place.rating} ★`);
   if(Array.isArray(place?.amenities)&&place.amenities.length) bits.push(place.amenities.slice(0,3).join(' · '));
+  const distanceKm = Number.isFinite(Number(place?.distanceFromStartMeters)) ? Math.round(Number(place.distanceFromStartMeters)/1000) : null;
+  if(isEnergyCategory(cat) && Number.isFinite(distanceKm)) bits.push(`± ${distanceKm} km vanaf vertrek`);
   bits.push(place?.detourLabel || (cat==='hotels'?'+10 min omrijden':'+3 min omrijden'));
   const derivedPhotoUrl = place?.photoUrl || (place?.photoName ? `/api/google-photo?name=${encodeURIComponent(place.photoName)}&w=420` : null);
   const derivedPhotoUrls = Array.isArray(place?.photoUrls) && place.photoUrls.length
     ? place.photoUrls
     : (derivedPhotoUrl ? [derivedPhotoUrl] : []);
-  const meta={...place, live:true, photoUrl:derivedPhotoUrl, photoUrls:derivedPhotoUrls, address:place?.address||'', googleMapsUri:place?.googleMapsUri||null, website:place?.website||null};
+  const meta={...place, live:true, distanceFromStartKm:distanceKm, photoUrl:derivedPhotoUrl, photoUrls:derivedPhotoUrls, address:place?.address||'', googleMapsUri:place?.googleMapsUri||null, website:place?.website||null};
   return [name,bits.filter(Boolean).join(' · '),meta];
 }
 async function loadLivePlacesFor(cat){
-  const endpoint = cat==='hotels' ? '/api/google-hotels' : cat==='tanken' ? '/api/google-fuel' : null;
+  const endpoint = cat==='hotels' ? '/api/google-hotels' : cat==='tanken' ? '/api/google-fuel' : cat==='laden' ? '/api/google-charging' : null;
   if(!endpoint) return false;
   const points = cat==='hotels'
     ? routeSamplePoints(8,{includeEnds:false}).filter(p=>p.progress>.35 && p.progress<.92)
-    : routeSamplePoints(10,{includeEnds:false});
+    : (isEnergyCategory(cat) ? energySearchPoints() : routeSamplePoints(10,{includeEnds:false}));
   if(!points.length) return false;
   try{
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?16000:7000,mode:cat==='hotels'?'route_planning':'route_quick'})});
@@ -380,7 +444,7 @@ async function loadRealRoute(){
     updateTexts();
     renderTimeline();
     toast('Echte route geladen');
-    await Promise.allSettled([loadLivePlacesFor('hotels'), loadLivePlacesFor('tanken')]);
+    await Promise.allSettled([loadLivePlacesFor('hotels'), loadLivePlacesFor(state.vehicle==='electric'?'laden':'tanken')]);
     return true;
   }catch(err){
     console.warn('Roadora route error:',err);
@@ -543,9 +607,14 @@ function categoryLabel(id){return (cats.find(c=>c[0]===id)||['',id])[1];}
 function categorySpec(id){return categorySpecs[id] || {singular:'stop', action:'Bekijk locatie', type:'stop langs je route', recommended:'Aanbevolen stops', all:'Alle stops', sort:'Beste match voor jouw reis', match:['Route','Tijd','Profiel'], why:['Past bij je route', 'Past bij je tijd', 'Past bij je profiel']};}
 function categorySingular(id){return categorySpec(id).singular;}
 function categoryTitle(id, view){return view==='all' ? categorySpec(id).all : categorySpec(id).recommended;}
-function stopMatchLabels(cat, desc=''){
+function stopMatchLabels(cat, desc='', meta={}){
   const spec = categorySpec(cat);
-  const detour = (String(desc).match(/\+\d+\s*min/)||['weinig omrijden'])[0];
+  const detour = (String(desc).match(/[±+]?\s*\d+\s*min[^·]*/)||['weinig omrijden'])[0].trim();
+  if(isEnergyCategory(cat)){
+    const km = energyDistanceKm([null,null,meta]);
+    const distance = Number.isFinite(km) ? `± ${km} km vanaf vertrek` : stopZoneDistance(cat);
+    return [distance, energyFitLabel(km), detour].slice(0,3);
+  }
   return [spec.match[0], detour, stopWindow(cat), stopZoneDistance(cat)].slice(0,3);
 }
 function stopWhyList(cat){
@@ -559,27 +628,27 @@ function zoneForCategory(cat){ return (state.routeZones||[]).find(z=>z.category=
 function stopWindow(cat){ const z=zoneForCategory(cat); return z ? (cat==='hotels' ? state.arrival : `rond ${z.time}`) : ({hotels:state.arrival,restaurants:'rond 13:00',laden:'rond 15:15',tanken:'rond 15:15',uitjes:'flexibel onderweg',wc:'wanneer nodig'}[cat]||'onderweg');}
 function stopZoneDistance(cat){ const z=zoneForCategory(cat); return z?.distanceKm ? `rond ${z.distanceKm} km` : 'langs je route';}
 function isPhotoStop(cat){return cat!=='wc';}
-function stopCardHtml(item, index, cat, compact=false){
+function stopCardHtml(item, index, cat, compact=false, originalIndex=index){
   const name = escapeHtml(item[0]);
   const rawDesc = typeof item[1]==='function'?item[1]():item[1];
   const desc = escapeHtml(rawDesc);
   const meta = item[2] || {};
   const showPhoto = isPhotoStop(cat) && Boolean(meta.photoUrl);
   const primaryAction = categorySpec(cat).action;
-  const labels = stopMatchLabels(cat, rawDesc).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
+  const labels = stopMatchLabels(cat, rawDesc, meta).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   const why = stopWhyList(cat).slice(0, compact ? 2 : 3).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   const photoStyle = meta.photoUrl ? ` style="background-image:url('${escapeHtml(meta.photoUrl)}')"` : '';
   const livePill = meta.live ? '<span class="live-place-pill">live</span>' : '';
-  return `<div class="stop-result ${showPhoto?'has-photo':'no-photo'} ${meta.live?'live-place':''}" data-stop-card="${index}" data-stop-cat="${cat}">
-    ${showPhoto ? `<button class="${stopVisualClass(cat,index)} has-live-photo"${photoStyle} data-view-stop="${index}" data-stop-cat="${cat}" type="button" aria-label="${primaryAction} ${name}"></button>` : ''}
+  return `<div class="stop-result ${showPhoto?'has-photo':'no-photo'} ${meta.live?'live-place':''}" data-stop-card="${originalIndex}" data-stop-cat="${cat}">
+    ${showPhoto ? `<button class="${stopVisualClass(cat,index)} has-live-photo"${photoStyle} data-view-stop="${originalIndex}" data-stop-cat="${cat}" type="button" aria-label="${primaryAction} ${name}"></button>` : ''}
     <div class="stop-result-main">
       <strong>${name}${livePill}</strong>
       <p>${desc}</p>
       <div class="stop-match-line">${labels}</div>
       <div class="stop-why-line">${why}</div>
       <div class="stop-result-actions-inline">
-        <button class="text-action" data-view-stop="${index}" data-stop-cat="${cat}" type="button">${primaryAction}</button>
-        <button class="text-action add" data-add-stop="${index}" data-stop-cat="${cat}" type="button">Toevoegen</button>
+        <button class="text-action" data-view-stop="${originalIndex}" data-stop-cat="${cat}" type="button">${primaryAction}</button>
+        <button class="text-action add" data-add-stop="${originalIndex}" data-stop-cat="${cat}" type="button">Toevoegen</button>
       </div>
     </div>
   </div>`;
@@ -588,8 +657,11 @@ function renderStops(){
   if(!state.suggestions && state.view !== 'all') state.view = 'all';
   $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
-  const selected = stops[state.category]||[];
-  const recommended = state.suggestions ? selected.slice(0, state.category==='hotels'?3:4) : [];
+  const rawSelected = (stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
+  const selected = (state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) ? recommendedEnergyStops(rawSelected) : rawSelected;
+  const recommended = state.suggestions
+    ? (isEnergyCategory(state.category) ? recommendedEnergyStops(rawSelected).slice(0,10) : rawSelected.slice(0, state.category==='hotels'?3:4))
+    : [];
   const recTitle = state.suggestions ? categoryTitle(state.category,'recommended') : 'Zelf zoeken actief';
   const allTitle = categoryTitle(state.category,'all');
   $('#recommendTitle').textContent = recTitle;
@@ -608,9 +680,9 @@ function renderStops(){
       ? `<div class="empty-stops error"><strong>Live resultaten niet geladen.</strong><span>${escapeHtml(statusMessage || 'Controleer je API-key, Vercel env vars of Network-tab.')}</span></div>`
       : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
-    ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category)).join('') : emptyHtml)
+    ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category,false,s?.[2]?.__stopIndex ?? i)).join('') : emptyHtml)
     : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Je zoekt vrij rond je route. De gevonden locaties blijven als pins zichtbaar op de kaart.</span></div>`;
-  $('#allStops').innerHTML = selected.length ? selected.map((s,i)=>stopCardHtml(s,i,state.category,true)).join('') : emptyHtml;
+  $('#allStops').innerHTML = rawSelected.length ? rawSelected.map((s,i)=>stopCardHtml(s,i,state.category,true,s?.[2]?.__stopIndex ?? i)).join('') : emptyHtml;
   $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
   renderPlaceMarkers();
