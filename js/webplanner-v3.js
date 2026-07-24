@@ -149,7 +149,7 @@ const timelines = {
   2:[['09:00','Vertrek vanaf overnachting','Verder richting Toscane'],['11:15','Korte pauze','WC · koffie'],['13:00','Lunchstop','Restaurant langs route'],['15:30','Aankomst Toscane','Rustig aankomen en inchecken']],
   3:[['10:00','Dagroute Toscane','Rustige lokale route'],['12:30','Lunch','Dorp of uitzichtpunt'],['15:00','Uitje','Korte activiteit in de buurt'],['17:00','Terug naar verblijf','Geen lange rit']]
 };
-let map, routeLine, markers=[];
+let map, routeLine, markers=[], placeMarkers=[];
 let routeZoneMarkersVisible = true;
 function setRouteZoneMarkersVisible(visible){
   routeZoneMarkersVisible = Boolean(visible);
@@ -159,12 +159,44 @@ function setRouteZoneMarkersVisible(visible){
     else if(map.hasLayer(m)) map.removeLayer(m);
   });
 }
+
+function clearPlaceMarkers(){
+  if(!Array.isArray(placeMarkers)) placeMarkers=[];
+  placeMarkers.forEach(m=>{ if(map && map.hasLayer(m)) map.removeLayer(m); });
+  placeMarkers=[];
+}
+function placeMarkerHtml(cat,index){
+  const letter = {hotels:'H',restaurants:'R',laden:'L',tanken:'T',uitjes:'U',wc:'W'}[cat] || 'P';
+  return `<div class="place-marker place-marker-${cat}">${letter}</div>`;
+}
+function displayedPlacesForMap(){
+  const list = stops[state.category] || [];
+  if(!Array.isArray(list) || !list.length) return [];
+  const max = state.suggestions && state.view === 'recommended' ? (state.category === 'hotels' ? 3 : 4) : 40;
+  return list.slice(0,max)
+    .map((item,index)=>({item,index,meta:item?.[2] || {}}))
+    .filter(x=>Number.isFinite(Number(x.meta.lat)) && Number.isFinite(Number(x.meta.lng)));
+}
+function renderPlaceMarkers(){
+  if(!map || !window.L) return;
+  clearPlaceMarkers();
+  const places = displayedPlacesForMap();
+  placeMarkers = places.map(({item,index,meta})=>{
+    const name = item?.[0] || categoryLabel(state.category);
+    return L.marker([Number(meta.lat),Number(meta.lng)],{
+      icon:L.divIcon({className:'',html:placeMarkerHtml(state.category,index),iconSize:[24,30],iconAnchor:[12,28],popupAnchor:[0,-26]})
+    }).bindTooltip(name);
+  });
+  placeMarkers.forEach(m=>m.addTo(map));
+}
+
 function initMap(){
   if(!window.L || map) return;
   map = L.map('roadoraMap',{zoomControl:false,scrollWheelZoom:true}).setView([48.4,8.8],5);
   L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
   routeLine = L.polyline(routeCoords,{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
   renderRouteZoneMarkers(true);
+  renderPlaceMarkers();
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
 }
 function fitMap(){ if(map && routeLine) map.fitBounds(routeLine.getBounds(),{padding:[45,45]}); }
@@ -553,6 +585,8 @@ function stopCardHtml(item, index, cat, compact=false){
   </div>`;
 }
 function renderStops(){
+  if(!state.suggestions && state.view !== 'all') state.view = 'all';
+  $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
   const selected = stops[state.category]||[];
   const recommended = state.suggestions ? selected.slice(0, state.category==='hotels'?3:4) : [];
@@ -575,10 +609,11 @@ function renderStops(){
       : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
     ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category)).join('') : emptyHtml)
-    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Roadora-stopmarkers zijn verborgen. Gebruik Alles tonen om vrij te zoeken rond je route.</span></div>`;
+    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Je zoekt vrij rond je route. De gevonden locaties blijven als pins zichtbaar op de kaart.</span></div>`;
   $('#allStops').innerHTML = selected.length ? selected.map((s,i)=>stopCardHtml(s,i,state.category,true)).join('') : emptyHtml;
   $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
+  renderPlaceMarkers();
 }
 function openStopDetail(cat,index){
   const item=(stops[cat]||[])[index]; if(!item) return;
