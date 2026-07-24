@@ -555,7 +555,7 @@ function stopCardHtml(item, index, cat, compact=false){
 function renderStops(){
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
   const selected = stops[state.category]||[];
-  const recommended = state.suggestions ? selected.slice(0, state.category==='hotels'?6:5) : [];
+  const recommended = state.suggestions ? selected.slice(0, state.category==='hotels'?3:4) : [];
   const recTitle = state.suggestions ? categoryTitle(state.category,'recommended') : 'Zelf zoeken actief';
   const allTitle = categoryTitle(state.category,'all');
   $('#recommendTitle').textContent = recTitle;
@@ -575,7 +575,7 @@ function renderStops(){
       : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
     ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category)).join('') : emptyHtml)
-    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Roadora-stopmarkers zijn verborgen. Kies een categorie en bekijk zelf de resultaten.</span></div>`;
+    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Roadora-stopmarkers zijn verborgen. Gebruik Alles tonen om vrij te zoeken rond je route.</span></div>`;
   $('#allStops').innerHTML = selected.length ? selected.map((s,i)=>stopCardHtml(s,i,state.category,true)).join('') : emptyHtml;
   $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
@@ -630,7 +630,13 @@ function bind(){
     const close=e.target.closest('[data-close-stop-modal]');
     if(close){closeStopDetail(); return;}
     const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();}
-    const mode=e.target.closest('[data-view]'); if(mode){state.view=mode.dataset.view; $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view)); renderStops();}
+    const mode=e.target.closest('[data-view]');
+    if(mode){
+      state.view=mode.dataset.view;
+      $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
+      renderStops();
+      return;
+    }
     const delDay=e.target.closest('[data-delete-day]'); if(delDay){e.preventDefault(); e.stopPropagation(); deleteTripDay(Number(delDay.dataset.deleteDay)); return;}
     const edit=e.target.closest('.plan-edit');
     if(edit){const row=edit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.has(i)?editingPlanRows.delete(i):editingPlanRows.add(i); renderTimeline(); return;}
