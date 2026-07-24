@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.roadora.eu/sitemap.xml
+Sitemap: https://www.roadora.eu/roadora-sitemap.xml

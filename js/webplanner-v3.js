@@ -101,10 +101,10 @@ const stops = {
 const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const categorySpecs = {
   hotels: {
-    singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je hotelzone',
-    recommended:'Aanbevolen hotels in je hotelzone', all:'Alle hotels rond je hotelzone',
+    singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je stopmoment',
+    recommended:'Aanbevolen overnachtingen rond je stopmoment', all:'Alle overnachtingen rond je stopmoment',
     sort:'Beste match op gezin, hond, parkeren en omrijtijd',
-    match:['Hotelzone', 'Familiekamer', 'Hond/parkeren'],
+    match:['Overnachten rond', 'Familiekamer', 'Hond/parkeren'],
     why:['Binnen je gewenste aankomsttijd', 'Past bij je reisprofiel', 'Logisch vanaf de route']
   },
   restaurants: {
@@ -126,7 +126,7 @@ const categorySpecs = {
     recommended:'Aanbevolen tankstations rond je planning', all:'Alle tankstations langs je route',
     sort:'Beste match op rijbereik, voorzieningen en weinig omrijden',
     match:['Rijbereik', 'WC/koffie', 'Weinig omrijden'],
-    why:['Past bij je tank-/rijbereik', 'Handig rond pauze of hotelzone', 'Snel bereikbaar vanaf de route']
+    why:['Past bij je tank-/rijbereik', 'Handig rond pauze of overnachting', 'Snel bereikbaar vanaf de route']
   },
   uitjes: {
     singular:'uitje', action:'Bekijk locatie', type:'uitje of korte stop onderweg',
