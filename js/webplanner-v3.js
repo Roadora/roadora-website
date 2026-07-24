@@ -150,12 +150,13 @@ const timelines = {
   3:[['10:00','Dagroute Toscane','Rustige lokale route'],['12:30','Lunch','Dorp of uitzichtpunt'],['15:00','Uitje','Korte activiteit in de buurt'],['17:00','Terug naar verblijf','Geen lange rit']]
 };
 let map, routeLine, markers=[];
+let routeZoneMarkersVisible = true;
 function initMap(){
   if(!window.L || map) return;
   map = L.map('roadoraMap',{zoomControl:false,scrollWheelZoom:true}).setView([48.4,8.8],5);
   L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
   routeLine = L.polyline(routeCoords,{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
-  markers = markerData.map(m=>L.marker(m.coords,{icon:L.divIcon({className:'',html:`<div class="custom-marker m-${m.type}">${m.label}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindTooltip(m.title));
+  renderRouteZoneMarkers(true);
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
 }
 function fitMap(){ if(map && routeLine) map.fitBounds(routeLine.getBounds(),{padding:[45,45]}); }
@@ -197,11 +198,18 @@ function setRouteCoordsFromLngLat(coords){
   routeCoords = coords.map(c=>[Number(c[1]),Number(c[0])]).filter(c=>Number.isFinite(c[0])&&Number.isFinite(c[1]));
   return routeCoords.length>1;
 }
+
+function renderRouteZoneMarkers(forceVisible=false){
+  if(!map) return;
+  markers.forEach(m=>{ if(map.hasLayer(m)) map.removeLayer(m); });
+  markers = markerData.map(m=>L.marker(m.coords,{icon:L.divIcon({className:'',html:`<div class="custom-marker m-${m.type}">${m.label}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).bindTooltip(m.title));
+  if(forceVisible) routeZoneMarkersVisible = true;
+  if(routeZoneMarkersVisible) markers.forEach(m=>m.addTo(map));
+}
 function updateMapRoute(){
   if(!map || !routeLine || !Array.isArray(routeCoords) || routeCoords.length<2) return;
   routeLine.setLatLngs(routeCoords);
-  markers.forEach(m=>map.removeLayer(m));
-  markers = markerData.map(m=>L.marker(m.coords,{icon:L.divIcon({className:'',html:`<div class="custom-marker m-${m.type}">${m.label}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindTooltip(m.title));
+  renderRouteZoneMarkers(true);
   fitMap();
 }
 function applyRouteZones(){
@@ -272,7 +280,11 @@ function normalizeLivePlace(place,cat){
   if(place?.rating) bits.push(`${place.rating} ★`);
   if(Array.isArray(place?.amenities)&&place.amenities.length) bits.push(place.amenities.slice(0,3).join(' · '));
   bits.push(place?.detourLabel || (cat==='hotels'?'+10 min omrijden':'+3 min omrijden'));
-  const meta={...place, live:true, photoUrl:place?.photoUrl||null, photoUrls:Array.isArray(place?.photoUrls)?place.photoUrls:[], address:place?.address||'', googleMapsUri:place?.googleMapsUri||null, website:place?.website||null};
+  const derivedPhotoUrl = place?.photoUrl || (place?.photoName ? `/api/google-photo?name=${encodeURIComponent(place.photoName)}&w=420` : null);
+  const derivedPhotoUrls = Array.isArray(place?.photoUrls) && place.photoUrls.length
+    ? place.photoUrls
+    : (derivedPhotoUrl ? [derivedPhotoUrl] : []);
+  const meta={...place, live:true, photoUrl:derivedPhotoUrl, photoUrls:derivedPhotoUrls, address:place?.address||'', googleMapsUri:place?.googleMapsUri||null, website:place?.website||null};
   return [name,bits.filter(Boolean).join(' · '),meta];
 }
 async function loadLivePlacesFor(cat){
@@ -512,14 +524,14 @@ function stopCardHtml(item, index, cat, compact=false){
   const rawDesc = typeof item[1]==='function'?item[1]():item[1];
   const desc = escapeHtml(rawDesc);
   const meta = item[2] || {};
-  const showPhoto = isPhotoStop(cat);
+  const showPhoto = isPhotoStop(cat) && Boolean(meta.photoUrl);
   const primaryAction = categorySpec(cat).action;
   const labels = stopMatchLabels(cat, rawDesc).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   const why = stopWhyList(cat).slice(0, compact ? 2 : 3).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   const photoStyle = meta.photoUrl ? ` style="background-image:url('${escapeHtml(meta.photoUrl)}')"` : '';
   const livePill = meta.live ? '<span class="live-place-pill">live</span>' : '';
   return `<div class="stop-result ${showPhoto?'has-photo':'no-photo'} ${meta.live?'live-place':''}" data-stop-card="${index}" data-stop-cat="${cat}">
-    ${showPhoto ? `<button class="${stopVisualClass(cat,index)}"${photoStyle} data-view-stop="${index}" data-stop-cat="${cat}" type="button" aria-label="${primaryAction} ${name}"></button>` : ''}
+    ${showPhoto ? `<button class="${stopVisualClass(cat,index)} has-live-photo"${photoStyle} data-view-stop="${index}" data-stop-cat="${cat}" type="button" aria-label="${primaryAction} ${name}"></button>` : ''}
     <div class="stop-result-main">
       <strong>${name}${livePill}</strong>
       <p>${desc}</p>
@@ -573,8 +585,9 @@ function openStopDetail(cat,index){
   $('#stopModalWindow').textContent=stopWindow(cat);
   $('#stopModalProfile').textContent=`${state.children} kinderen · ${state.pet==='dog'?'hond mee':'geen hond'} · ${state.range} km`;
   const meta = item[2] || {};
-  $('#stopModalPhoto').className = isPhotoStop(cat) ? `stop-modal-photo stop-photo-${cat} stop-photo-${(index%6)+1}` : 'stop-modal-photo stop-photo-wc stop-photo-1';
-  if(meta.photoUrl) $('#stopModalPhoto').style.backgroundImage = `url('${meta.photoUrl}')`;
+  const modalPhotoUrl = meta.photoUrl || (Array.isArray(meta.photoUrls) ? meta.photoUrls[0] : null);
+  $('#stopModalPhoto').className = modalPhotoUrl ? 'stop-modal-photo has-live-photo' : 'stop-modal-photo no-live-photo';
+  if(modalPhotoUrl) $('#stopModalPhoto').style.backgroundImage = `url('${modalPhotoUrl}')`;
   else $('#stopModalPhoto').style.backgroundImage = '';
   const tags = [categorySingular(cat), state.children>0?'kindvriendelijk':null, state.pet==='dog'?'hond mee':null, `${state.range} km rijbereik`, meta.provider || null].filter(Boolean);
   $('#stopModalTags').innerHTML = tags.map(t=>`<span>${escapeHtml(t)}</span>`).join('');
@@ -638,14 +651,14 @@ function bind(){
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
   $('#addManualStop')?.addEventListener('click',()=>$('#addPlanStop')?.click());
-  $('#suggestionToggle')?.addEventListener('click',()=>{state.suggestions=!state.suggestions; if(!state.suggestions) state.view='all'; renderStops(); toast(state.suggestions?'Roadora suggesties aan':'Zelf zoeken actief');});
+  $('#suggestionToggle')?.addEventListener('click',()=>{state.suggestions=!state.suggestions; if(!state.suggestions) state.view='all'; renderStops(); renderRouteZoneMarkers(true); toast(state.suggestions?'Roadora suggesties aan':'Zelf zoeken actief');});
   $('#modalAddStop')?.addEventListener('click',()=>{if(state.activeStop){addStopToActiveDay(state.activeStop.cat,state.activeStop.index); closeStopDetail();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
   $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond']);} renderTimeline(); toast('Overnachting handmatig gezet');});
   $('#recalculatePlan')?.addEventListener('click',async()=>{await loadRealRoute(); renderAll(); toast('Voorstel opnieuw berekend op basis van route en tijden');});
   $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
-  $('#mapToggleStops').onclick=()=>{markers.forEach(m=>map.hasLayer(m)?map.removeLayer(m):m.addTo(map));};
+  $('#mapToggleStops').onclick=()=>{routeZoneMarkersVisible=!routeZoneMarkersVisible; markers.forEach(m=>routeZoneMarkersVisible?m.addTo(map):map.removeLayer(m));};
   function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}
   $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>location.reload();
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
