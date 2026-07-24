@@ -182,10 +182,57 @@ function renderPlaceMarkers(){
   clearPlaceMarkers();
   const places = displayedPlacesForMap();
   placeMarkers = places.map(({item,index,meta})=>{
-    const name = item?.[0] || categoryLabel(state.category);
-    return L.marker([Number(meta.lat),Number(meta.lng)],{
-      icon:L.divIcon({className:'',html:placeMarkerHtml(state.category,index),iconSize:[24,30],iconAnchor:[12,28],popupAnchor:[0,-26]})
+    const cat = state.category;
+    const originalIndex = Number(index);
+    const name = item?.[0] || categoryLabel(cat);
+    const openFromPin = (event)=>{
+      if(event?.originalEvent){
+        L.DomEvent.stopPropagation(event.originalEvent);
+        L.DomEvent.preventDefault(event.originalEvent);
+      }
+      if(Number.isFinite(originalIndex)){
+        openStopDetail(cat, originalIndex);
+      }
+    };
+    const marker = L.marker([Number(meta.lat),Number(meta.lng)],{
+      interactive:true,
+      keyboard:true,
+      bubblingMouseEvents:false,
+      riseOnHover:true,
+      zIndexOffset:650,
+      title:name,
+      alt:name,
+      icon:L.divIcon({
+        className:'roadora-place-marker-icon',
+        html:placeMarkerHtml(cat, originalIndex),
+        iconSize:[30,34],
+        iconAnchor:[15,32],
+        popupAnchor:[0,-30]
+      })
     }).bindTooltip(name);
+    marker.on('click', openFromPin);
+    marker.on('keypress', (event)=>{
+      const key = event?.originalEvent?.key;
+      if(key === 'Enter' || key === ' ') openFromPin(event);
+    });
+    marker.on('add',()=>{
+      const el = marker.getElement?.();
+      if(!el) return;
+      el.setAttribute('role','button');
+      el.setAttribute('tabindex','0');
+      el.setAttribute('aria-label',`Bekijk ${name}`);
+      el.addEventListener('click',(ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(Number.isFinite(originalIndex)) openStopDetail(cat, originalIndex);
+      });
+      el.addEventListener('touchend',(ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(Number.isFinite(originalIndex)) openStopDetail(cat, originalIndex);
+      },{passive:false});
+    });
+    return marker;
   });
   placeMarkers.forEach(m=>m.addTo(map));
 }

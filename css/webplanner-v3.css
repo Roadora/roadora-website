@@ -1706,3 +1706,29 @@ button{cursor:pointer}
   #stopsTab .stop-result-main strong{font-size:12.2px !important;}
   #stopsTab .stop-result-main p{font-size:10.7px !important;}
 }
+
+
+/* v4.4.9 solide klikbare Places-pins */
+.roadora-place-marker-icon,
+.roadora-place-marker-icon *{
+  pointer-events:auto!important;
+  cursor:pointer!important;
+}
+.roadora-place-marker-icon{
+  z-index:680!important;
+}
+.roadora-place-marker-icon:focus .place-marker,
+.roadora-place-marker-icon:hover .place-marker{
+  transform:rotate(-45deg) scale(1.08);
+  box-shadow:0 8px 18px rgba(0,0,0,.28);
+}
+.place-marker{
+  width:30px;
+  height:30px;
+  position:relative;
+  pointer-events:auto!important;
+  user-select:none;
+}
+.place-marker::after{
+  font-size:11px;
+}
