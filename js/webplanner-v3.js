@@ -182,15 +182,10 @@ function renderPlaceMarkers(){
   clearPlaceMarkers();
   const places = displayedPlacesForMap();
   placeMarkers = places.map(({item,index,meta})=>{
-    const cat = state.category;
-    const name = item?.[0] || categoryLabel(cat);
-    const marker = L.marker([Number(meta.lat),Number(meta.lng)],{
-      icon:L.divIcon({className:'',html:placeMarkerHtml(cat,index),iconSize:[24,30],iconAnchor:[12,28],popupAnchor:[0,-26]})
+    const name = item?.[0] || categoryLabel(state.category);
+    return L.marker([Number(meta.lat),Number(meta.lng)],{
+      icon:L.divIcon({className:'',html:placeMarkerHtml(state.category,index),iconSize:[24,30],iconAnchor:[12,28],popupAnchor:[0,-26]})
     }).bindTooltip(name);
-    marker.on('click',()=>{
-      if(Number.isFinite(Number(index))) openStopDetail(cat, Number(index));
-    });
-    return marker;
   });
   placeMarkers.forEach(m=>m.addTo(map));
 }
