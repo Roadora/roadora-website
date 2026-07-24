@@ -1119,3 +1119,108 @@ button{cursor:pointer}
   }
   .stop-modal-photo.has-live-photo{min-height:185px;}
 }
+
+/* v4.4.3 Zelf zoeken + Stops list hardening */
+#stopsTab .stops-subhead{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:start;
+  gap:6px 10px;
+}
+#stopsTab .stops-subhead h3{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+#stopsTab .stops-subhead .tiny-muted{
+  grid-column:1 / -1;
+  white-space:normal;
+  line-height:1.25;
+  color:#6f6254;
+}
+#stopsTab .rich-stop-list{
+  max-height:clamp(300px, 46vh, 560px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:0 7px 8px 0;
+}
+#stopsTab .stop-result,
+#stopsTab .stop-result.has-photo,
+#stopsTab .stop-result.no-photo{
+  min-height:auto;
+  height:auto;
+  overflow:visible;
+  box-sizing:border-box;
+}
+#stopsTab .stop-result.has-photo{
+  grid-template-columns:92px minmax(0,1fr);
+  gap:10px;
+}
+#stopsTab .stop-photo.has-live-photo{
+  width:92px;
+  height:70px;
+  border-radius:12px;
+}
+#stopsTab .stop-result-main{
+  min-width:0;
+  overflow:hidden;
+}
+#stopsTab .stop-result-main strong{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  overflow-wrap:anywhere;
+}
+#stopsTab .stop-result-main p{
+  overflow-wrap:anywhere;
+}
+#stopsTab .stop-match-line{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-top:5px;
+}
+#stopsTab .stop-result-actions-inline{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  margin-top:7px;
+}
+#stopsTab .empty-stops{
+  border:1px dashed #d8c7aa;
+  background:#fffaf0;
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:12px;
+  color:#5f5447;
+}
+#stopsTab .empty-stops strong{
+  font-size:12.5px;
+  color:#1e2626;
+}
+#stopsTab .sticky-actions{
+  flex:0 0 auto;
+  margin-top:10px;
+  border-top:1px solid var(--line);
+}
+.suggestion-toggle.off{
+  background:#fff8ee;
+  border-color:#d8c7aa;
+  color:#8b660f;
+}
+@media(max-width:760px){
+  #stopsTab .rich-stop-list{
+    max-height:48vh;
+  }
+  #stopsTab .stop-result.has-photo{
+    grid-template-columns:82px minmax(0,1fr);
+  }
+  #stopsTab .stop-photo.has-live-photo{
+    width:82px;
+    height:62px;
+  }
+}

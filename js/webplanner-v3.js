@@ -151,6 +151,14 @@ const timelines = {
 };
 let map, routeLine, markers=[];
 let routeZoneMarkersVisible = true;
+function setRouteZoneMarkersVisible(visible){
+  routeZoneMarkersVisible = Boolean(visible);
+  if(!map || !Array.isArray(markers)) return;
+  markers.forEach(m=>{
+    if(routeZoneMarkersVisible){ if(!map.hasLayer(m)) m.addTo(map); }
+    else if(map.hasLayer(m)) map.removeLayer(m);
+  });
+}
 function initMap(){
   if(!window.L || map) return;
   map = L.map('roadoraMap',{zoomControl:false,scrollWheelZoom:true}).setView([48.4,8.8],5);
@@ -204,12 +212,12 @@ function renderRouteZoneMarkers(forceVisible=false){
   markers.forEach(m=>{ if(map.hasLayer(m)) map.removeLayer(m); });
   markers = markerData.map(m=>L.marker(m.coords,{icon:L.divIcon({className:'',html:`<div class="custom-marker m-${m.type}">${m.label}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).bindTooltip(m.title));
   if(forceVisible) routeZoneMarkersVisible = true;
-  if(routeZoneMarkersVisible) markers.forEach(m=>m.addTo(map));
+  setRouteZoneMarkersVisible(routeZoneMarkersVisible);
 }
 function updateMapRoute(){
   if(!map || !routeLine || !Array.isArray(routeCoords) || routeCoords.length<2) return;
   routeLine.setLatLngs(routeCoords);
-  renderRouteZoneMarkers(true);
+  renderRouteZoneMarkers(state.suggestions);
   fitMap();
 }
 function applyRouteZones(){
@@ -567,7 +575,7 @@ function renderStops(){
       : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
     ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category)).join('') : emptyHtml)
-    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Kies een categorie of gebruik Alles tonen om zelf op de kaart te zoeken.</span></div>`;
+    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Roadora-stopmarkers zijn verborgen. Kies een categorie en bekijk zelf de resultaten.</span></div>`;
   $('#allStops').innerHTML = selected.length ? selected.map((s,i)=>stopCardHtml(s,i,state.category,true)).join('') : emptyHtml;
   $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
@@ -651,14 +659,21 @@ function bind(){
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
   $('#addManualStop')?.addEventListener('click',()=>$('#addPlanStop')?.click());
-  $('#suggestionToggle')?.addEventListener('click',()=>{state.suggestions=!state.suggestions; if(!state.suggestions) state.view='all'; renderStops(); renderRouteZoneMarkers(true); toast(state.suggestions?'Roadora suggesties aan':'Zelf zoeken actief');});
+  $('#suggestionToggle')?.addEventListener('click',()=>{
+    state.suggestions=!state.suggestions;
+    state.view = state.suggestions ? 'recommended' : 'all';
+    $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
+    setRouteZoneMarkersVisible(state.suggestions);
+    renderStops();
+    toast(state.suggestions?'Roadora suggesties aan':'Zelf zoeken actief');
+  });
   $('#modalAddStop')?.addEventListener('click',()=>{if(state.activeStop){addStopToActiveDay(state.activeStop.cat,state.activeStop.index); closeStopDetail();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
   $('#chooseHotelZone')?.addEventListener('click',()=>{const plan=dayPlan(); const idx=plan.findIndex(r=>String(r[1]).toLowerCase().includes('hotel')); if(idx>=0){plan[idx]=[state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond'];} else {plan.push([state.arrival.split(' - ')[0]||'17:00','Zelf gekozen overnachting','Vul zelf plaats, regio of hotel in','Overnachten rond']);} renderTimeline(); toast('Overnachting handmatig gezet');});
   $('#recalculatePlan')?.addEventListener('click',async()=>{await loadRealRoute(); renderAll(); toast('Voorstel opnieuw berekend op basis van route en tijden');});
   $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
-  $('#mapToggleStops').onclick=()=>{routeZoneMarkersVisible=!routeZoneMarkersVisible; markers.forEach(m=>routeZoneMarkersVisible?m.addTo(map):map.removeLayer(m));};
+  $('#mapToggleStops').onclick=()=>setRouteZoneMarkersVisible(!routeZoneMarkersVisible);
   function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}
   $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>location.reload();
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
