@@ -992,3 +992,10 @@ button{cursor:pointer}
   .modal-why{margin:10px 0;padding:10px;}
   #allStopsPanel .tiny-muted{max-width:100%;text-align:left;}
 }
+
+/* v4.3 Roadora stopzone polish */
+.plan-row .plan-read-main em{display:inline-flex;width:max-content;margin-top:5px;padding:3px 8px;border:1px solid rgba(10,105,107,.18);border-radius:999px;background:rgba(10,105,107,.07);color:#0b6f71;font-size:11px;font-style:normal;font-weight:700}
+.stop-match-line span:last-child{background:rgba(212,151,18,.08);border-color:rgba(212,151,18,.22);color:#7f5a0d}
+@media (max-width: 760px){
+  .plan-row .plan-read-main em{font-size:10px;padding:2px 7px}
+}
