@@ -12,12 +12,12 @@ export default async function handler(req, res) {
 
   const q = req.query || {};
   const profile = sanitizeProfile(q.profile);
-  const start = parseCoord(q.start || '4.4777,51.9244');
-  const end = parseCoord(q.end || '11.4041,47.2692');
+  const start = parseCoord(q.start);
+  const end = parseCoord(q.end);
   const via = parseWaypoints(q.waypoints || q.via || '').slice(0, 9);
 
   if (!start || !end) {
-    return res.status(400).json({ ok:false, error:'Ongeldige start/eind coordinaten' });
+    return res.status(400).json({ ok:false, error:'Ongeldige of ontbrekende start/eindcoördinaten' });
   }
 
   const googleKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_DIRECTIONS_API_KEY;

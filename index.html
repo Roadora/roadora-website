@@ -36,17 +36,17 @@
         <article class="card card-pad">
           <div class="card-title">
             <h1>Eerste dagroute</h1>
-            <button id="resetDemo" class="mini-link" type="button">Reset</button>
+            <button id="resetDemo" class="mini-link" type="button">Wissen</button>
           </div>
           <p class="muted">Vul je eerste reisdag in. Roadora doet een voorstel, maar je kunt tijden, stops en overnachting volledig zelf aanpassen.</p>
           <div class="divider"></div>
           <div class="field">
             <label for="origin">Vertrekpunt</label>
-            <div class="input"><input id="origin" value="Amsterdam, Nederland" autocomplete="off"></div>
+            <div class="input"><input id="origin" value="" placeholder="Bijv. Amsterdam, Nederland" autocomplete="off"></div>
           </div>
           <div class="field">
             <label for="destination">Bestemming</label>
-            <div class="input"><input id="destination" value="Toscane, Italië" autocomplete="off"></div>
+            <div class="input"><input id="destination" value="" placeholder="Bijv. Toscane, Italië" autocomplete="off"></div>
           </div>
           <div class="two">
             <div class="field">
@@ -98,20 +98,20 @@
 
         <article class="card card-pad left-fold" data-left-fold>
           <div class="card-title left-fold-head">
-            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">Elektrisch · 325 km · CCS</p></div>
+            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">Auto · 650 km rijbereik</p></div>
             <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
           </div>
           <div class="left-fold-body">
             <div class="choice-grid vehicle-grid">
-              <button class="choice" data-vehicle="car" type="button">Auto</button>
-              <button class="choice active" data-vehicle="electric" type="button">Elektrisch</button>
+              <button class="choice active" data-vehicle="car" type="button">Auto</button>
+              <button class="choice" data-vehicle="electric" type="button">Elektrisch</button>
               <button class="choice" data-vehicle="camper" type="button">Camper</button>
               <button class="choice" data-vehicle="bus" type="button">Bus</button>
             </div>
             <div class="field" style="margin-top:12px">
               <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden op een volle accu?</label>
-              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" value="325"><strong>km</strong></div>
-              <p class="hint">Handmatig invullen, bijvoorbeeld 325 km.</p>
+              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" value="650"><strong>km</strong></div>
+              <p class="hint">Handmatig invullen, bijvoorbeeld 650 km.</p>
             </div>
             <div id="evFields" class="field">
               <label for="plug">Laadstekker</label>
@@ -154,8 +154,8 @@
         </div>
         <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
         <div class="map-summary">
-          <h3 id="mapRouteTitle">Amsterdam → Toscane</h3>
-          <div class="summary-row"><span>1.495 km</span><span>15 u 45 m</span><span id="chargeDetail">325 km rijbereik · CCS</span></div>
+          <h3 id="mapRouteTitle">Plan je route</h3>
+          <div class="summary-row"><span>Vul je route in</span><span>Roadora berekent afstand en tijd</span><span id="chargeDetail">650 km rijbereik</span></div>
           <div id="profileTags" class="tag-row"></div>
         </div>
       </div>
@@ -172,18 +172,18 @@
         <div class="panel-stack">
           <article class="card card-pad">
             <div class="card-title"><h2>Jouw roadtrip</h2><button id="saveRoute" class="btn" type="button">Bewaar</button></div>
-            <p id="summaryRoute" class="muted">Amsterdam → Toscane</p>
-            <div class="stats"><div class="stat"><span>Afstand</span><strong>1.495 km</strong></div><div class="stat"><span>Rijtijd</span><strong>15 u 45 m</strong></div><div class="stat"><span>Routebasis</span><strong>Demo-route</strong></div></div>
+            <p id="summaryRoute" class="muted">Nog geen route gepland</p>
+            <div class="stats"><div class="stat"><span>Afstand</span><strong>—</strong></div><div class="stat"><span>Rijtijd</span><strong>—</strong></div><div class="stat"><span>Routebasis</span><strong>Nog geen route</strong></div></div>
             <div class="route-dots"><span class="dot start">✓</span><span class="dash"></span><span class="dot one">1</span><span class="dash"></span><span class="dot two">2</span><span class="dash"></span><span class="dot three">3</span><span class="dash"></span><span class="dot four">4</span><span class="dash"></span><span class="dot end">B</span></div>
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">8 dagen</span></div>
             <div id="dayTabs" class="day-tabs"></div>
-            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · Amsterdam → overnachten rond</p>
+            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Nog geen dagroute berekend</p>
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
-            <p class="muted plan-note">Roadora gebruikt je route, vertrektijd, rijbereik en gewenste aankomst om logische stopmomenten te berekenen. Alles blijft aanpasbaar.</p>
+            <p class="muted plan-note">Roadora gebruikt je echte route, vertrektijd, rijbereik en gewenste aankomst om logische stopmomenten te berekenen. Alles blijft aanpasbaar.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
@@ -225,7 +225,7 @@
           <article class="card card-pad trip-overview-card">
             <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDaysPill" class="pill">8 dagen</span></div>
             <div class="trip-summary-box">
-              <strong id="tripOverviewTitle">Amsterdam → Toscane</strong>
+              <strong id="tripOverviewTitle">Nog geen route gepland</strong>
               <span id="tripOverviewMeta">8 dagen · 1.495 km · 15 u 45 m heenreis</span>
               <div id="tripOverviewTags" class="tag-row"></div>
             </div>
