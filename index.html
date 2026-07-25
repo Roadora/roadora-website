@@ -54,13 +54,17 @@
               <div class="input"><input id="date" type="date"></div>
             </div>
             <div class="field compact-field">
-              <div class="field-label-row"><label for="departTime">Vertrektijd</label><span class="soft-required">voor hotels</span></div>
-              <div class="input time-input-wrap"><input id="departTime" class="clean-time-input" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="09:00" readonly><button id="openDepartClock" class="clock-open-btn" type="button" aria-label="Vertrektijd kiezen">◷</button></div>
+              <label for="departTime">Vertrektijd</label>
+              <button id="openDepartClock" class="input time-input-wrap clock-field-btn" type="button" aria-label="Vertrektijd kiezen">
+                <span id="departTimeDisplay" class="time-display-text">09:00</span>
+                <input id="departTime" class="clean-time-input" type="hidden" autocomplete="off">
+                <span class="clock-icon" aria-hidden="true">◷</span>
+              </button>
             </div>
           </div>
           <div class="two">
             <div class="field compact-field hotel-arrival-field">
-              <div class="field-label-row"><label for="hotelArrival">Aankomsttijdvak hotel</label><span class="soft-required">voor hotels</span></div>
+              <label for="hotelArrival">Aankomsttijdvak hotel</label>
               <div class="input"><select id="hotelArrival">
                 <option value="" selected>Geen tijdvak gekozen</option>
                 <option value="12-14">12:00 - 14:00</option>
@@ -69,13 +73,13 @@
                 <option value="18-20">18:00 - 20:00</option>
                 <option value="20-22">20:00 - 22:00</option>
               </select></div>
-                <p class="hint">Hotels zoeken kan pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je route.</p>
             </div>
             <div class="field">
               <label for="tripDays">Aantal dagen</label>
               <div class="input"><input id="tripDays" type="number" min="1" max="21" value="1"><strong>dag(en)</strong></div>
             </div>
           </div>
+          <p class="hint hotel-helper-note">Hotels zoeken kan pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je route.</p>
           <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
         </article>
 
@@ -263,6 +267,31 @@
     </div>
   </footer>
 
+
+  <div id="departClockModal" class="clock-modal" aria-hidden="true">
+    <div class="clock-backdrop" data-clock-close></div>
+    <article class="clock-panel" role="dialog" aria-modal="true" aria-labelledby="departClockTitle">
+      <div class="clock-head">
+        <div>
+          <strong id="departClockTitle">Vertrektijd kiezen</strong>
+          <span>Tik eerst het uur aan, daarna eventueel de minuten.</span>
+        </div>
+        <button class="clock-close" type="button" data-clock-close aria-label="Sluiten">×</button>
+      </div>
+      <div id="clockDisplay" class="clock-display">09:00</div>
+      <div id="roundClock" class="round-clock" aria-label="Ronde klok voor uren"></div>
+      <div class="minute-row" aria-label="Minuten kiezen">
+        <button class="minute-chip" type="button" data-minute="00">00</button>
+        <button class="minute-chip" type="button" data-minute="15">15</button>
+        <button class="minute-chip" type="button" data-minute="30">30</button>
+        <button class="minute-chip" type="button" data-minute="45">45</button>
+      </div>
+      <div class="clock-actions">
+        <button id="clearDepartClock" class="btn" type="button">Wissen</button>
+        <button id="confirmDepartClock" class="btn primary" type="button">Klaar</button>
+      </div>
+    </article>
+  </div>
 
   <div id="stopDetailModal" class="stop-modal" aria-hidden="true">
     <div class="stop-modal-backdrop" data-close-stop-modal></div>

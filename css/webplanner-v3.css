@@ -1842,3 +1842,108 @@ button{cursor:pointer}
   .round-clock{width:220px;height:220px}
   .clock-hour{width:36px;height:36px}
 }
+
+/* v5.9: form audit polish - no helper pills + echte ronde klok */
+.left-panel .two{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.left-panel .two .field{
+  margin:0 0 12px;
+  min-width:0;
+}
+.left-panel .field label{
+  display:block;
+  min-height:18px;
+  margin:0 0 6px;
+  font-size:12px;
+  line-height:1.15;
+  font-weight:850;
+  color:#2b2117;
+}
+.left-panel .two .field label{
+  min-height:28px;
+  display:flex;
+  align-items:flex-end;
+}
+.left-panel .input,
+.clock-field-btn{
+  width:100%;
+  height:42px;
+  min-height:42px;
+  box-sizing:border-box;
+  border-radius:13px;
+}
+.field-label-row{display:block!important;min-height:auto!important}
+.soft-required{display:none!important}
+.hotel-arrival-field .hint{display:none!important}
+.hotel-helper-note{
+  margin:-3px 0 14px;
+  font-size:12px;
+  line-height:1.35;
+  color:#746958;
+}
+.clock-field-btn{
+  border:1px solid var(--line-2, #d9c8ad);
+  background:#fff;
+  padding:0 8px 0 13px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+  color:#2b2117;
+  font:inherit;
+  text-align:left;
+}
+.clock-field-btn:hover{border-color:#cfa866;background:#fffdf8}
+.time-display-text{
+  font-size:13px;
+  font-weight:650;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+}
+.time-display-text.is-placeholder{color:#8a7a66;font-weight:550}
+.clock-icon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#f4ecdF;
+  color:#0d6b6e;
+  font-size:18px;
+  flex:0 0 auto;
+}
+.clock-open-btn{display:none!important}
+.clean-time-input{display:none!important}
+.clock-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:18px}
+.clock-modal.open{display:flex}
+.clock-backdrop{position:absolute;inset:0;background:rgba(32,24,14,.34);backdrop-filter:blur(2px)}
+.clock-panel{position:relative;width:min(360px,calc(100vw - 28px));border:1px solid var(--line, #dfcfb8);border-radius:26px;background:#fffdf9;box-shadow:0 30px 90px rgba(29,20,8,.26);padding:16px;box-sizing:border-box}
+.clock-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.clock-head strong{display:block;font-size:16px;color:#111;line-height:1.2}
+.clock-head span{display:block;margin-top:3px;color:var(--muted, #7f7367);font-size:12px;line-height:1.3}
+.clock-close{width:34px;height:34px;border:1px solid var(--line, #dfcfb8);border-radius:999px;background:#fff;color:#5b5145;font-size:20px;line-height:1;cursor:pointer}
+.clock-display{height:48px;border-radius:16px;background:#f3eadb;color:#0b5a5d;display:grid;place-items:center;font-size:28px;font-weight:850;font-variant-numeric:tabular-nums;margin-bottom:14px;letter-spacing:.02em}
+.round-clock{position:relative;width:246px;height:246px;margin:0 auto;border-radius:999px;background:linear-gradient(180deg,#f7f0e6,#fffdf9);border:1px solid var(--line, #dfcfb8);box-shadow:inset 0 0 0 11px rgba(255,255,255,.62)}
+.clock-hour{position:absolute;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:999px;border:0;background:#fff;color:#4c4236;font-weight:850;box-shadow:0 4px 12px rgba(42,31,12,.10);cursor:pointer;display:grid;place-items:center}
+.clock-hour:hover{background:#edf8f7;color:#075b5e}
+.clock-hour.active{background:#0d6b6e;color:#fff}
+.clock-center{position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:999px;background:#0d6b6e;transform:translate(-50%,-50%);z-index:2}
+.clock-hand{position:absolute;left:50%;top:50%;width:3px;height:79px;background:#0d6b6e;transform-origin:50% 100%;border-radius:999px;z-index:1;transition:transform .12s ease}
+.minute-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 0}
+.minute-chip{height:36px;border-radius:999px;border:1px solid var(--line, #dfcfb8);background:#fff;color:#4d4337;font-weight:850;cursor:pointer}
+.minute-chip.active{background:#e9fbfb;border-color:#8acfd0;color:#075b5e}
+.clock-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+@media(max-width:760px){
+  .left-panel .two{gap:8px}
+  .left-panel .two .field label{min-height:30px;font-size:11.5px}
+  .hotel-helper-note{font-size:11.5px}
+  .clock-panel{border-radius:22px;padding:14px}
+  .round-clock{width:224px;height:224px}
+  .clock-hour{width:36px;height:36px;font-size:12px}
+  .clock-hand{height:72px}
+}

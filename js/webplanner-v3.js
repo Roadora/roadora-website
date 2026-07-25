@@ -51,6 +51,23 @@ function normalizeTimeValue(value){
   if(!Number.isFinite(h)||!Number.isFinite(m)||h<0||h>23||m<0||m>59) return '';
   return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
 }
+
+function updateDepartTimeDisplay(){
+  const hidden=$('#departTime');
+  const display=$('#departTimeDisplay');
+  if(!display) return;
+  const val=normalizeTimeValue(hidden?.value || state.depart || '');
+  display.textContent = val || 'Tijd kiezen';
+  display.classList.toggle('is-placeholder', !val);
+}
+function setDepartTime(value){
+  const val=normalizeTimeValue(value);
+  const input=$('#departTime');
+  if(input) input.value=val;
+  state.depart=val;
+  updateDepartTimeDisplay();
+  renderAll();
+}
 function activePrefLabels(){return $$('.pref.active').map(b=>b.textContent.trim());}
 function applySavedChoices(saved={}){
   if(saved.pet){ $$('.choice[data-pet]').forEach(b=>b.classList.toggle('active', b.dataset.pet===saved.pet)); }
@@ -73,11 +90,12 @@ function setFormFromState(){
   const adults=$('[name="adults"]'); if(adults) adults.value=state.adults || 2;
   const children=$('[name="children"]'); if(children) children.value=state.children || 0;
   applySavedChoices({pet:state.pet, vehicle:state.vehicle, prefs:state.prefs||[]});
+  updateDepartTimeDisplay();
 }
 function serializeDraft(){
   readForm();
   return {
-    version:'v5.8', savedAt:Date.now(),
+    version:'v5.9', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -1127,6 +1145,71 @@ function renderTrips(){
   $('#savedTrips').innerHTML = trips.length ? trips.map(t=>`<div class="trip-card"><strong>${t.name}</strong><span>${t.days} dagen · ${t.route} · ${t.created}</span></div>`).join('') : '<p class="muted">Nog geen opgeslagen roadtrips. Bewaar je planning om hem later via je account naar de app te sturen.</p>';
 }
 function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80); scheduleAutosave();}
+
+function clockParts(value){
+  const val=normalizeTimeValue(value) || '09:00';
+  const [hh,mm]=val.split(':').map(Number);
+  return {hour:Number.isFinite(hh)?hh:9, minute:Number.isFinite(mm)?mm:0};
+}
+function buildRoundClock(selectedHour){
+  const face=$('#roundClock');
+  if(!face) return;
+  const radius=98;
+  const center=123;
+  let html='<div id="clockHand" class="clock-hand"></div><div class="clock-center"></div>';
+  for(let hour=0; hour<24; hour++){
+    const label=String(hour).padStart(2,'0');
+    const angle=((hour % 12) / 12) * Math.PI * 2 - Math.PI/2;
+    const ring = hour < 12 ? radius : 67;
+    const x=center + Math.cos(angle)*ring;
+    const y=center + Math.sin(angle)*ring;
+    html += `<button class="clock-hour${hour===selectedHour?' active':''}" type="button" data-clock-hour="${hour}" style="left:${x}px;top:${y}px">${label}</button>`;
+  }
+  face.innerHTML=html;
+  updateClockHand(selectedHour);
+}
+function updateClockHand(hour){
+  const hand=$('#clockHand');
+  if(!hand) return;
+  const angle=((Number(hour)||0)%12)*30;
+  hand.style.transform=`translate(-50%,-100%) rotate(${angle}deg)`;
+}
+function openClockPicker(){
+  const modal=$('#departClockModal');
+  if(!modal) return;
+  let {hour,minute}=clockParts(state.depart || $('#departTime')?.value || '09:00');
+  const sync=()=>{
+    const val=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
+    const display=$('#clockDisplay');
+    if(display) display.textContent=val;
+    $$('.minute-chip').forEach(b=>b.classList.toggle('active', Number(b.dataset.minute)===minute));
+    $$('.clock-hour').forEach(b=>b.classList.toggle('active', Number(b.dataset.clockHour)===hour));
+    updateClockHand(hour);
+  };
+  buildRoundClock(hour);
+  sync();
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  const onClick=(e)=>{
+    const h=e.target.closest('[data-clock-hour]');
+    if(h){ hour=Number(h.dataset.clockHour); sync(); return; }
+    const m=e.target.closest('[data-minute]');
+    if(m){ minute=Number(m.dataset.minute); sync(); return; }
+    if(e.target.closest('#confirmDepartClock')){ setDepartTime(`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`); close(); return; }
+    if(e.target.closest('#clearDepartClock')){ setDepartTime(''); close(); return; }
+    if(e.target.closest('[data-clock-close]')){ close(); return; }
+  };
+  const onKey=(e)=>{ if(e.key==='Escape') close(); };
+  function close(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    modal.removeEventListener('click',onClick);
+    document.removeEventListener('keydown',onKey);
+  }
+  modal.addEventListener('click',onClick);
+  document.addEventListener('keydown',onKey);
+}
+
 function bind(){
   $$('.tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
   document.addEventListener('click',e=>{
@@ -1196,11 +1279,9 @@ function bind(){
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
   $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
-  ['origin','destination','date','departTime','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
-  $('#departTime')?.addEventListener('blur',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
-  $('#departTime')?.addEventListener('change',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
-  $('#departTime')?.addEventListener('click',()=>openClockPicker());
+  ['origin','destination','date','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $('#openDepartClock')?.addEventListener('click',()=>openClockPicker());
+  updateDepartTimeDisplay();
   $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); });
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
@@ -1224,4 +1305,4 @@ function bind(){
   $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=resetPlanner;
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
 }
-document.addEventListener('DOMContentLoaded',()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); restoreDraft(); bind();applyRouteZones();renderAll();setTimeout(()=>{initMap(); if(hasRoute()){setTimeout(()=>{updateMapRoute(); fitMap();},250);}},250); });
+document.addEventListener('DOMContentLoaded',()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); restoreDraft(); bind(); updateDepartTimeDisplay(); applyRouteZones();renderAll();setTimeout(()=>{initMap(); if(hasRoute()){setTimeout(()=>{updateMapRoute(); fitMap();},250);}},250); });
