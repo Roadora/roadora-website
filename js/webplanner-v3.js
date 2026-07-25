@@ -5,7 +5,7 @@ function hasRoute(){ return ['google','ors','external-route'].includes(state.rou
 function effectiveRangeKm(){ if(Number(state.range)>0) return Number(state.range); if(state.vehicle==='electric') return 325; if(state.vehicle==='camper') return 500; if(state.vehicle==='bus') return 600; if(state.vehicle==='car') return 650; return 650; }
 const state = {
   origin:'', destination:'', date:todayISO(), depart:'', arrival:'16:30 - 18:00', days:1,
-  adults:2, children:0, pet:'none', vehicle:'', range:0, plug:'CCS', maxDetour:20, activeDay:1, view:'recommended', category:'hotels', suggestions:true, activeStop:null,
+  adults:2, children:0, pet:'none', vehicle:'', range:0, plug:'CCS', maxDetour:20, activeDay:1, view:'all', category:'', suggestions:false, activeStop:null,
   routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}
 };
 const editingPlanRows = new Set();
@@ -144,9 +144,17 @@ const timelines = {
   1:[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']]
 };
 let map, routeLine, markers=[], placeMarkers=[];
-let routeZoneMarkersVisible = true;
+let routeZoneMarkersVisible = false;
 function setRouteZoneMarkersVisible(visible){
   routeZoneMarkersVisible = Boolean(visible);
+  const legend=$('.legend');
+  if(legend) legend.classList.toggle('hidden', !routeZoneMarkersVisible);
+  const toggle=$('#mapToggleStops');
+  if(toggle){
+    toggle.classList.toggle('active', routeZoneMarkersVisible);
+    toggle.setAttribute('aria-pressed', String(routeZoneMarkersVisible));
+    toggle.title = routeZoneMarkersVisible ? 'Stopmomenten verbergen' : 'Stopmomenten tonen';
+  }
   if(!map || !Array.isArray(markers)) return;
   markers.forEach(m=>{
     if(routeZoneMarkersVisible){ if(!map.hasLayer(m)) m.addTo(map); }
@@ -164,6 +172,7 @@ function placeMarkerHtml(cat,index){
   return `<div class="place-marker place-marker-${cat}">${letter}</div>`;
 }
 function displayedPlacesForMap(){
+  if(!state.category) return [];
   const list = currentDisplayedStopsForMap();
   if(!Array.isArray(list) || !list.length) return [];
   const max = state.suggestions && state.view === 'recommended' ? (isEnergyCategory(state.category) ? 10 : (state.category === 'hotels' ? 3 : 4)) : 40;
@@ -291,7 +300,7 @@ function updateMapRoute(){
   if(!map || !routeLine) return;
   if(!Array.isArray(routeCoords) || routeCoords.length<2){ routeLine.setLatLngs([]); markerData=[]; renderRouteZoneMarkers(false); fitMap(); return; }
   routeLine.setLatLngs(routeCoords);
-  renderRouteZoneMarkers(state.suggestions);
+  renderRouteZoneMarkers(false);
   fitMap();
 }
 function applyRouteZones(){
@@ -406,6 +415,7 @@ function recommendedEnergyStops(list){
   return chosen.map(x=>x.item);
 }
 function currentDisplayedStopsForMap(){
+  if(!state.category) return [];
   const list=(stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
   if(state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) return recommendedEnergyStops(list);
   if(state.suggestions && state.view==='recommended') return list.slice(0,state.category==='hotels'?3:4);
@@ -485,9 +495,11 @@ async function loadRealRoute(){
     toast('Vul vertrekpunt en bestemming in');
     return false;
   }
-  resetLiveCategory('hotels','loading');
-  if(state.vehicle==='electric') resetLiveCategory('laden','loading');
-  else if(state.vehicle) resetLiveCategory('tanken','loading');
+  state.category='';
+  clearPlaceMarkers();
+  cats.forEach(([cat])=>{ stops[cat]=[]; });
+  ['hotels','laden','tanken'].forEach(cat=>setPlaceStatus(cat,'idle','Zet deze categorie aan om live resultaten langs je route te laden.'));
+  ['restaurants','uitjes','wc'].forEach(cat=>setPlaceStatus(cat,'empty','Deze categorie staat standaard uit en wordt later live gekoppeld. Kies voorlopig hotels, laden of tanken voor live kaartresultaten.'));
   try{
     toast('Plaatsen zoeken…');
     const [startGeo,endGeo]=await Promise.all([geocodePlace(state.origin), geocodePlace(state.destination)]);
@@ -515,10 +527,8 @@ async function loadRealRoute(){
     updateTexts();
     renderTimeline();
     toast(state.routeSource==='google' ? 'Google route geladen' : 'Route geladen via fallback');
-    const liveLoads=[loadLivePlacesFor('hotels')];
-    if(state.vehicle==='electric') liveLoads.push(loadLivePlacesFor('laden'));
-    else if(state.vehicle) liveLoads.push(loadLivePlacesFor('tanken'));
-    await Promise.allSettled(liveLoads);
+    clearPlaceMarkers();
+    renderStops();
     return true;
   }catch(err){
     console.warn('Roadora route error:',err);
@@ -776,16 +786,29 @@ function stopCardHtml(item, index, cat, compact=false, originalIndex=index){
 function renderStops(){
   if(!state.suggestions && state.view !== 'all') state.view = 'all';
   $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
-  $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
+  $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button" aria-pressed="${id===state.category?'true':'false'}">${label}</button>`).join('');
+  $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Roadora suggesties uit';
+  $('#suggestionToggle').setAttribute('aria-pressed', String(state.suggestions));
+  $('#suggestionToggle').classList.toggle('off', !state.suggestions);
   if(!hasRoute()){
-    $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Zelf zoeken actief';
     $('#recommendTitle').textContent = 'Plan eerst je route';
     $('#allStopsTitle').textContent = 'Nog geen stops geladen';
-    const empty = `<div class="empty-stops"><strong>Plan eerst je dagroute.</strong><span>Vul vertrekpunt en bestemming in. Daarna haalt Roadora hotels en stops langs je echte route op.</span></div>`;
+    const empty = `<div class="empty-stops"><strong>Plan eerst je dagroute.</strong><span>Vul vertrekpunt en bestemming in. Daarna kun je handmatig Hotels, Restaurants, Laden, Tanken, Uitjes of WC aanzetten.</span></div>`;
     $('#recommendations').innerHTML = empty;
     $('#allStops').innerHTML = empty;
-    $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
-    $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
+    $('#recommendPanel').classList.add('hidden');
+    $('#allStopsPanel').classList.remove('hidden');
+    clearPlaceMarkers();
+    return;
+  }
+  if(!state.category){
+    $('#recommendTitle').textContent = 'Geen categorie geselecteerd';
+    $('#allStopsTitle').textContent = 'Zet een stopcategorie aan';
+    const empty = `<div class="empty-stops"><strong>Stops staan uit.</strong><span>Kies handmatig een categorie hierboven. Pas dan haalt Roadora live locaties op en verschijnen pins op de kaart.</span></div>`;
+    $('#recommendations').innerHTML = empty;
+    $('#allStops').innerHTML = empty;
+    $('#recommendPanel').classList.add('hidden');
+    $('#allStopsPanel').classList.remove('hidden');
     clearPlaceMarkers();
     return;
   }
@@ -813,7 +836,7 @@ function renderStops(){
       : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
     ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category,false,s?.[2]?.__stopIndex ?? i)).join('') : emptyHtml)
-    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Je zoekt vrij rond je route. De gevonden locaties blijven als pins zichtbaar op de kaart.</span></div>`;
+    : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Gebruik de categorieknoppen om zelf te bepalen welke stops op kaart komen.</span></div>`;
   $('#allStops').innerHTML = rawSelected.length ? rawSelected.map((s,i)=>stopCardHtml(s,i,state.category,true,s?.[2]?.__stopIndex ?? i)).join('') : emptyHtml;
   $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
   $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
@@ -868,7 +891,22 @@ function bind(){
     if(addStop){addStopToActiveDay(addStop.dataset.stopCat, Number(addStop.dataset.addStop)); return;}
     const close=e.target.closest('[data-close-stop-modal]');
     if(close){closeStopDetail(); return;}
-    const cat=e.target.closest('[data-cat]'); if(cat){state.category=cat.dataset.cat; renderStops();}
+    const cat=e.target.closest('[data-cat]'); if(cat){
+      const next=cat.dataset.cat;
+      if(state.category===next){ state.category=''; clearPlaceMarkers(); renderStops(); toast('Categorie uitgezet'); return; }
+      state.category=next;
+      if(hasRoute()){
+        if(next==='hotels' || next==='laden' || next==='tanken'){
+          if(!['live','loading'].includes(state.placeStatus[next])){ resetLiveCategory(next,'loading'); loadLivePlacesFor(next); }
+        } else {
+          stops[next]=[];
+          setPlaceStatus(next,'empty','Deze categorie staat standaard uit en wordt later live gekoppeld.');
+        }
+      }
+      renderStops();
+      toast(`${categoryLabel(next)} aan`);
+      return;
+    }
     const mode=e.target.closest('[data-view]');
     if(mode){
       state.view=mode.dataset.view;
@@ -908,9 +946,9 @@ function bind(){
     state.suggestions=!state.suggestions;
     state.view = state.suggestions ? 'recommended' : 'all';
     $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
-    setRouteZoneMarkersVisible(state.suggestions);
+    setRouteZoneMarkersVisible(false);
     renderStops();
-    toast(state.suggestions?'Roadora suggesties aan':'Zelf zoeken actief');
+    toast(state.suggestions?'Roadora suggesties aan':'Roadora suggesties uit');
   });
   $('#modalAddStop')?.addEventListener('click',()=>{if(state.activeStop){addStopToActiveDay(state.activeStop.cat,state.activeStop.index); closeStopDetail();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
