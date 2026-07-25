@@ -60,8 +60,8 @@
           </div>
           <div class="two">
             <div class="field">
-              <label for="hotelArrival">Aankomst hotel rond</label>
-              <div class="input"><select id="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen overnachting vandaag</option></select></div>
+              <label for="hotelArrival">Overnachting</label>
+              <div class="input"><select id="hotelArrival"><option value="" selected>Geen overnachting gepland</option><option value="manual">Zelf later hotel kiezen</option></select></div>
             </div>
             <div class="field">
               <label for="tripDays">Aantal dagen</label>
@@ -183,7 +183,7 @@
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
-            <p class="muted plan-note">Roadora gebruikt je route, vertrektijd, rijbereik en gewenste aankomst om logische stopmomenten te berekenen. Alles blijft aanpasbaar.</p>
+            <p class="muted plan-note">Roadora gebruikt je route en eventuele keuzes om logische stopmomenten te berekenen. Hotels staan standaard uit en kies je zelf.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
@@ -209,11 +209,11 @@
           </div>
           <div id="categoryTabs" class="category-grid stops-cats"></div>
           <div id="recommendPanel" class="stops-results-panel">
-            <div class="card-title stops-subhead"><h3 id="recommendTitle">Aanbevolen overnachtingen rond je stopmoment</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
+            <div class="card-title stops-subhead"><h3 id="recommendTitle">Stops die je zelf aanzet</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
             <div id="recommendations" class="stop-list rich-stop-list"></div>
           </div>
           <div id="allStopsPanel" class="hidden stops-results-panel">
-            <div class="card-title stops-subhead"><h3 id="allStopsTitle">Alle overnachtingen rond je stopmoment</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
+            <div class="card-title stops-subhead"><h3 id="allStopsTitle">Nog geen categorie gekozen</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
             <div id="allStops" class="stop-list rich-stop-list"></div>
           </div>
           <div class="sticky-actions"><button id="addManualStop" class="btn primary" type="button">Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
