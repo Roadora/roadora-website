@@ -7,22 +7,22 @@ export const CONFIG = {
     consent: 'roadora.cookie-consent.v1'
   },
   defaults: {
-    origin: 'Amsterdam, Nederland',
-    destination: 'Toscane, Italië',
-    date: '2026-05-26',
-    departTime: '08:30',
+    origin: '',
+    destination: '',
+    date: '',
+    departTime: '',
     hotelArrival: '16:30 - 18:00',
     adults: 2,
-    children: 3,
-    pet: 'dog',
-    vehicle: 'electric',
-    vehicleRangeKm: 325,
+    children: 0,
+    pet: 'none',
+    vehicle: '',
+    vehicleRangeKm: 0,
     plug: 'CCS',
     maxDetour: 20,
-    tripDays: 8,
+    tripDays: 1,
     activeDay: 1,
     stopViewMode: 'recommended',
     activeStopCategory: 'hotels',
-    preferences: ['family','pets','kids','parking','charging','breakfast']
+    preferences: []
   }
 };

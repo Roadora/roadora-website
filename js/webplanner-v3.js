@@ -1,43 +1,114 @@
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
-const DEFAULTS = {
-  vehicle: 'car',
-  range: { car: 650, electric: 325, camper: 500, bus: 600 },
-  depart: '08:30',
-  arrival: '16:30 - 18:00'
-};
-
+function todayISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function hasRoute(){ return ['ors','external-route'].includes(state.routeSource) && Array.isArray(routeCoords) && routeCoords.length > 1; }
+function effectiveRangeKm(){ if(Number(state.range)>0) return Number(state.range); if(state.vehicle==='electric') return 325; if(state.vehicle==='camper') return 500; if(state.vehicle==='bus') return 600; if(state.vehicle==='car') return 650; return 650; }
 const state = {
-  origin:'', destination:'', date:'', depart:DEFAULTS.depart, arrival:DEFAULTS.arrival, days:1,
-  adults:2, children:0, pet:'none', vehicle:DEFAULTS.vehicle, range:DEFAULTS.range.car, plug:'CCS', maxDetour:20, activeDay:1, view:'recommended', category:'hotels', suggestions:true, activeStop:null,
-  routeSource:'idle', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}, hasRoute:false
+  origin:'', destination:'', date:todayISO(), depart:'', arrival:'16:30 - 18:00', days:1,
+  adults:2, children:0, pet:'none', vehicle:'', range:0, plug:'CCS', maxDetour:20, activeDay:1, view:'recommended', category:'hotels', suggestions:true, activeStop:null,
+  routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}
 };
-
 const editingPlanRows = new Set();
 let routeCoords = [];
 let markerData = [];
-
-// Geen demo-resultaten in actieve plannerlogica.
-// Live locaties worden pas gevuld nadat een echte route is berekend.
-const recs = [];
-const stops = { hotels:[], restaurants:[], laden:[], tanken:[], uitjes:[], wc:[] };
-const timelines = {
-  1:[[DEFAULTS.depart,'Maak eerst je dagroute','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Start']]
+const recs = [
+  ['Hotels rond je overnachting','Overnachten rond je stopmoment · parkeren · weinig omrijden'],
+  ['Restaurants rond je stopmoment','Dicht bij route · parkeren · snel verder'],
+  ['Laden of tanken','Binnen jouw rijbereik · combineren met pauze of lunch'],
+  ['Uitjes en korte stops','Korte wandeling · speeltuin · uitzichtpunt · rustig aankomen'],
+  ['WC en pauzeplekken','Praktisch onderweg · koffie · parkeren · snel verder'],
+  ['Camper/parkeren','Ruime plekken · makkelijk keren · geschikt voor langere voertuigen']
+];
+const stops = {
+  hotels:[
+    ['Hotel Alpenblick','Beste match · parkeren · +8 min omrijden'],
+    ['Gasthof Route Süd','Goed alternatief · parkeren · +5 min omrijden'],
+    ['City Hotel Ulm','Past deels · snel bereikbaar · +3 min omrijden'],
+    ['Hotel Am Park','Rustige locatie · ontbijt · +11 min omrijden'],
+    ['Familiehotel Tirol','Ruime kamers · laadpunt dichtbij · +14 min omrijden'],
+    ['Routehotel Donau','Parkeren · ontbijt mogelijk · +6 min omrijden'],
+    ['Hotel Waldruhe','Rustige ligging · goed bereikbaar · +12 min omrijden'],
+    ['Aparthotel Zuid-Duitsland','Ruime kamer · keukenhoek · rustig gelegen'],
+    ['Hotel bij afrit A8','Snel bereikbaar · ontbijt · +4 min omrijden'],
+    ['Pension Alpenroute','Eenvoudig · ontbijt mogelijk · +9 min omrijden'],
+    ['Hotel met laadpunt','Laadpunt dichtbij · parkeren · +10 min omrijden'],
+    ['Familie Gasthof','Restaurant aanwezig · +7 min omrijden']
+  ],
+  restaurants:[
+    ['Raststätte Frankenhöhe','Lunch langs route · WC · parkeren'],
+    ['Trattoria Al Lago','Italiaans · geschikt voor gezin · terras'],
+    ['Bistro Route Süd','Korte omweg · terras · parkeren'],
+    ['Gasthof Waldblick','Rustige lunchplek · +7 min omrijden'],
+    ['Familierestaurant A8','Kinderstoelen · snelle bediening · +5 min'],
+    ['Autohof Restaurant','Ruim parkeren · WC · tanken mogelijk'],
+    ['Lunch bij stadspark','Korte wandeling erbij · kindvriendelijk'],
+    ['Pizzeria langs route','Snel eten · geschikt voor kinderen'],
+    ['Café bij laadplein','Koffie · broodjes · laadpunt naast de deur'],
+    ['Restaurant Overnachten rond','Handig rond aankomst · parkeren bij deur']
+  ],
+  laden:[
+    ['IONITY Ulm-West','Snelladen · lunch dichtbij · binnen rijbereik'],
+    ['Fastned Augsburg','Snelladen · WC · koffie'],
+    ['EnBW Park','Laadplein · meerdere punten · weinig omrijden'],
+    ['Hotelcharger Alpenblick','Laadpunt bij hotel · handig bij overnachting'],
+    ['Aral Pulse Autohof','Snelladen · tanken · restaurant'],
+    ['Tesla Supercharger route','Snel laden · eten dichtbij'],
+    ['ChargePoint centrum','Laadpunt + korte wandeling'],
+    ['Laadplein rond overnachting','Goed moment vóór inchecken'],
+    ['Shell Recharge A8','Laadstop combineren met WC en koffie'],
+    ['Snellader bij outlet','Laden + korte pauze of uitje']
+  ],
+  tanken:[
+    ['Shell Route Süd','Langs route · weinig omrijden'],
+    ['Aral Autohof','Ruim parkeren · WC'],
+    ['TotalEnergies A8','Goede tankstop voor je overnachting'],
+    ['OMV Tirol','Voor aankomst bij je overnachting'],
+    ['Esso Raststätte','Tanken · koffie · snel verder'],
+    ['BP Autohof Zuid','Ruime pomp · restaurant naast station'],
+    ['Avia Routepunt','Goed alternatief · +4 min omrijden'],
+    ['Tankstation bij overnachting','Handig voor vertrek volgende dag'],
+    ['Shell grensroute','Goed moment vóór grensovergang'],
+    ['Total Truckstop','Ruim parkeren · camper/bus geschikt']
+  ],
+  uitjes:[
+    ['Korte wandeling Donau','Rustige stop · korte wandeling'],
+    ['Speeltuin stadspark','Korte pauze · 15 min'],
+    ['Uitzichtpunt Alpenroute','Korte foto-stop · weinig omrijden'],
+    ['Zwembad bij overnachting','Voor avond na aankomst'],
+    ['Historisch centrum Ulm','Korte wandeling · eten dichtbij'],
+    ['Natuurpad langs route','Even bewegen · korte stop'],
+    ['Outlet stop','Korte tussenstop · parkeren makkelijk'],
+    ['Meer bij overnachting','Rustig aankomen · wandelen'],
+    ['Kindermuseum omgeving','Voor langere pauze of vrije dag'],
+    ['Panorama parkeerplaats','Foto-stop · 20 minuten']
+  ],
+  wc:[
+    ['Raststätte Keulen Süd','WC · koffie · weinig omrijden'],
+    ['Autohof Ulm','WC · parkeren · eten'],
+    ['Pauzeplek A8','Snel en praktisch'],
+    ['Servicepunt rond overnachting','Vlak voor aankomst'],
+    ['Tankstation met WC','Direct langs route · korte stop'],
+    ['Familie pauzeplek','WC · speeltuin · picknicktafel'],
+    ['Laadplein met sanitair','WC tijdens laden'],
+    ['Restaurantstop met WC','Lunch combineren met pauze'],
+    ['Parkeerplaats met voorzieningen','Snel uitstappen · korte pauze'],
+    ['Autohof grensroute','WC · tanken · koffie']
+  ]
 };
 const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const categorySpecs = {
   hotels: {
     singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je stopmoment',
     recommended:'Aanbevolen overnachtingen rond je stopmoment', all:'Alle overnachtingen rond je stopmoment',
-    sort:'Beste match op gezin, hond, parkeren en omrijtijd',
-    match:['Overnachten rond', 'Familiekamer', 'Hond/parkeren'],
+    sort:'Beste match op route, tijdvenster en weinig omrijden',
+    match:['Overnachten rond', 'Weinig omrijden', 'Past bij route'],
     why:['Binnen je gewenste aankomsttijd', 'Past bij je reisprofiel', 'Logisch vanaf de route']
   },
   restaurants: {
     singular:'restaurant', action:'Bekijk locatie', type:'restaurant langs je route',
     recommended:'Aanbevolen restaurants rond je pauzes', all:'Alle restaurants langs je route',
-    sort:'Beste match op lunchmoment, gezin/hond en weinig omrijden',
-    match:['Lunchmoment', 'Gezin/hond', 'Weinig omrijden'],
+    sort:'Beste match op lunchmoment, route en weinig omrijden',
+    match:['Lunchmoment', 'Route', 'Weinig omrijden'],
     why:['Past rond je lunch- of aankomstmoment', 'Praktisch met parkeren en WC', 'Niet te ver van de route']
   },
   laden: {
@@ -57,8 +128,8 @@ const categorySpecs = {
   uitjes: {
     singular:'uitje', action:'Bekijk locatie', type:'uitje of korte stop onderweg',
     recommended:'Aanbevolen uitjes en korte stops', all:'Alle uitjes en korte stops',
-    sort:'Beste match op tijd, kinderen/hond en afstand vanaf route',
-    match:['Korte stop', 'Kind/hond', 'Rustmoment'],
+    sort:'Beste match op tijd, route en afstand vanaf route',
+    match:['Korte stop', 'Route', 'Rustmoment'],
     why:['Geschikt als korte onderbreking', 'Past bij je reisgezelschap', 'Goed te combineren met pauze of aankomst']
   },
   wc: {
@@ -66,8 +137,11 @@ const categorySpecs = {
     recommended:'Aanbevolen WC- en pauzeplekken', all:'Alle WC- en pauzeplekken',
     sort:'Beste match op snel bereikbaar, voorzieningen en routeafstand',
     match:['Snel', 'WC', 'Koffie/parkeren'],
-    why:['Snelste praktische stop onderweg', 'Handig met kinderen of hond', 'Zo min mogelijk omrijden']
+    why:['Snelste praktische stop onderweg', 'Praktisch onderweg', 'Zo min mogelijk omrijden']
   }
+};
+const timelines = {
+  1:[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']]
 };
 let map, routeLine, markers=[], placeMarkers=[];
 let routeZoneMarkersVisible = true;
@@ -157,38 +231,16 @@ function renderPlaceMarkers(){
   placeMarkers.forEach(m=>m.addTo(map));
 }
 
-
-function defaultRange(vehicle){ return DEFAULTS.range[vehicle] || DEFAULTS.range.car; }
-function routeIsLive(){ return state.hasRoute && ['google-directions','openrouteservice','ors','external-route'].includes(state.routeSource); }
-function resetLivePlaces(status='empty', message='Bereken eerst een route om live resultaten te laden.'){
-  Object.keys(stops).forEach(cat=>{ stops[cat]=[]; state.placeStatus[cat]=status; state.placeStatus[`${cat}Message`]=message; });
-  clearPlaceMarkers();
-}
-function routeSourceLabel(){
-  if(state.routeSource === 'google-directions') return 'Google route';
-  if(state.routeSource === 'openrouteservice' || state.routeSource === 'ors') return 'Echte route';
-  if(state.routeSource === 'external-route') return 'Echte route';
-  if(state.routeSource === 'route_error') return 'Routefout';
-  if(state.routeSource === 'loading') return 'Route laden';
-  return 'Nog geen route';
-}
 function initMap(){
   if(!window.L || map) return;
   map = L.map('roadoraMap',{zoomControl:false,scrollWheelZoom:true}).setView([48.4,8.8],5);
   L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
-  routeLine = L.polyline(routeCoords,{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
+  routeLine = L.polyline(routeCoords || [],{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
   renderRouteZoneMarkers(true);
   renderPlaceMarkers();
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
 }
-function fitMap(){
-  if(!map) return;
-  if(routeLine && Array.isArray(routeCoords) && routeCoords.length>1){
-    const bounds = routeLine.getBounds();
-    if(bounds && bounds.isValid && bounds.isValid()) return map.fitBounds(bounds,{padding:[45,45]});
-  }
-  map.setView([50.5, 8.5], 5);
-}
+function fitMap(){ if(map && routeLine && routeCoords.length>1) map.fitBounds(routeLine.getBounds(),{padding:[45,45]}); else if(map) map.setView([48.4,8.8],5); }
 
 function durationLabel(mins){
   const m = Math.max(0, Math.round(Number(mins)||0));
@@ -197,8 +249,8 @@ function durationLabel(mins){
   return h ? `${h}u ${String(r).padStart(2,'0')}m` : `${r} min`;
 }
 function parseTimeToMinutes(value){
-  const m=String(value||'08:30').match(/(\d{1,2}):(\d{2})/);
-  if(!m) return 510;
+  const m=String(value||'').match(/(\d{1,2}):(\d{2})/);
+  if(!m) return null;
   return Math.max(0, Math.min(1439, Number(m[1])*60+Number(m[2])));
 }
 function minutesToTime(value){
@@ -236,42 +288,49 @@ function renderRouteZoneMarkers(forceVisible=false){
   setRouteZoneMarkersVisible(routeZoneMarkersVisible);
 }
 function updateMapRoute(){
-  if(!map || !routeLine || !Array.isArray(routeCoords) || routeCoords.length<2) return;
+  if(!map || !routeLine) return;
+  if(!Array.isArray(routeCoords) || routeCoords.length<2){ routeLine.setLatLngs([]); markerData=[]; renderRouteZoneMarkers(false); fitMap(); return; }
   routeLine.setLatLngs(routeCoords);
   renderRouteZoneMarkers(state.suggestions);
   fitMap();
 }
 function applyRouteZones(){
   readForm();
-  if(!state.hasRoute || !Array.isArray(routeCoords) || routeCoords.length < 2 || !Number(state.routeDistanceKm) || !Number(state.routeDurationMin)){
-    state.routeZones = [];
-    markerData = [];
-    timelines[1] = [[state.depart || DEFAULTS.depart,'Maak eerst je dagroute','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Start']];
+  if(!hasRoute()){
+    state.routeZones=[];
+    markerData=[];
+    timelines[1]=[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']];
     updateMapRoute();
     return;
   }
-  const departMin = parseTimeToMinutes(state.depart);
-  const distanceKm = Number(state.routeDistanceKm);
-  const durationMin = Number(state.routeDurationMin);
+  const hasDepart=Boolean(state.depart);
+  const departMin = parseTimeToMinutes(state.depart) ?? 540;
+  const distanceKm = Number(state.routeDistanceKm)||1;
+  const durationMin = Number(state.routeDurationMin)||1;
   const drivePerKmMin = durationMin / Math.max(1,distanceKm);
-  const arrivalStart = parseTimeToMinutes(state.arrival.split('-')[0]||state.arrival||'17:00');
-  const safeRangeKm = Math.max(80, Math.round((Number(state.range)||defaultRange(state.vehicle)) * (state.vehicle==='electric' ? 0.72 : 0.78)));
+  const arrivalStart = parseTimeToMinutes((state.arrival||'').split('-')[0]||state.arrival) ?? (departMin + Math.min(durationMin, 480));
+  const energyCategory = state.vehicle==='electric' ? 'laden' : (state.vehicle ? 'tanken' : 'wc');
+  const energyLabel = state.vehicle==='electric' ? 'Laadstop' : (state.vehicle ? 'Tankstop' : 'Stop onderweg');
+  const range = effectiveRangeKm();
+  const safeRangeKm = Math.max(80, Math.round(range * (state.vehicle==='electric' ? 0.72 : 0.78)));
+  const timeLabel=(mins)=>hasDepart ? minutesToTime(mins) : 'tijd later';
+  const startTitle = `${state.depart || 'Vertrek'} Vertrek`;
   const moments = [
-    {type:'start', category:'start', label:'A', title:`${state.depart} Vertrek`, time:state.depart, distanceKm:0, progress:0},
-    {type:'pause', category:'wc', label:'1', title:`${minutesToTime(departMin+150)} Pauze`, time:minutesToTime(departMin+150), distanceKm:Math.round(150/drivePerKmMin), progress:Math.min(.28,(150/drivePerKmMin)/distanceKm)},
-    {type:'lunch', category:'restaurants', label:'2', title:`${minutesToTime(departMin+285)} Lunch`, time:minutesToTime(departMin+285), distanceKm:Math.round(285/drivePerKmMin), progress:Math.min(.52,(285/drivePerKmMin)/distanceKm)},
-    {type:'charge', category:state.vehicle==='electric'?'laden':'tanken', label:'3', title:`${minutesToTime(departMin+(safeRangeKm*drivePerKmMin))} ${state.vehicle==='electric'?'Laadstop':'Tankstop'}`, time:minutesToTime(departMin+(safeRangeKm*drivePerKmMin)), distanceKm:Math.min(Math.round(distanceKm*.72),safeRangeKm), progress:Math.min(.82,safeRangeKm/distanceKm)},
-    {type:'hotel', category:'hotels', label:'H', title:`${state.arrival} Overnachten rond`, time:state.arrival, distanceKm:Math.round(((arrivalStart-departMin)*.88)/drivePerKmMin), progress:Math.min(.9,Math.max(.35,(((arrivalStart-departMin)*.88)/drivePerKmMin)/distanceKm))},
-    {type:'end', category:'end', label:'B', title:state.destination.split(',')[0], time:'Aankomst', distanceKm:distanceKm, progress:1}
+    {type:'start', category:'start', label:'A', title:startTitle, time:state.depart || 'tijd later', distanceKm:0, progress:0},
+    {type:'pause', category:'wc', label:'1', title:`${timeLabel(departMin+150)} Pauze`, time:timeLabel(departMin+150), distanceKm:Math.round(150/drivePerKmMin), progress:Math.min(.28,(150/drivePerKmMin)/distanceKm)},
+    {type:'lunch', category:'restaurants', label:'2', title:`${timeLabel(departMin+285)} Lunch`, time:timeLabel(departMin+285), distanceKm:Math.round(285/drivePerKmMin), progress:Math.min(.52,(285/drivePerKmMin)/distanceKm)},
+    {type:'charge', category:energyCategory, label:'3', title:`${timeLabel(departMin+(safeRangeKm*drivePerKmMin))} ${energyLabel}`, time:timeLabel(departMin+(safeRangeKm*drivePerKmMin)), distanceKm:Math.min(Math.round(distanceKm*.72),safeRangeKm), progress:Math.min(.82,safeRangeKm/distanceKm)},
+    {type:'hotel', category:'hotels', label:'H', title:`${state.arrival || 'Aankomst later'} Overnachten rond`, time:state.arrival || 'aankomst later', distanceKm:Math.round(((arrivalStart-departMin)*.88)/drivePerKmMin), progress:Math.min(.9,Math.max(.35,(((arrivalStart-departMin)*.88)/drivePerKmMin)/distanceKm))},
+    {type:'end', category:'end', label:'B', title:(state.destination||'Bestemming').split(',')[0], time:'Aankomst', distanceKm:distanceKm, progress:1}
   ];
   state.routeZones = moments.filter(m=>!['start','end'].includes(m.category));
-  markerData = moments.map(m=>({type:m.type,label:m.label,coords:sampleRouteAtProgress(m.progress)||routeCoords[0],title:m.title}));
+  markerData = moments.map(m=>({type:m.type,label:m.label,coords:sampleRouteAtProgress(m.progress)||routeCoords[0],title:m.title})).filter(m=>m.coords);
   timelines[1]=[
-    [state.depart,`Vertrek ${state.origin.split(',')[0]}`,'Start van je roadtrip','Vertrek'],
-    [moments[1].time,'Rustige pauze','WC · koffie · hond uitlaten','Pauze'],
-    [moments[2].time,'Lunchstop','Gezinsvriendelijk · weinig omrijden','Lunch'],
-    [moments[3].time,state.vehicle==='electric'?'Laadstop':'Tankstop',`${state.range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}`,'Laden/tanken'],
-    [state.arrival.split(' - ')[0]||moments[4].time,'Overnachten rond','Aanbevolen overnachtingen rond je stopmoment','Overnachten rond']
+    [state.depart || '—',`Vertrek ${(state.origin||'vertrekpunt').split(',')[0]}`,'Start van je roadtrip','Vertrek'],
+    [moments[1].time,'Rustige pauze','WC · koffie · even bewegen','Pauze'],
+    [moments[2].time,'Lunchstop','Weinig omrijden · logisch onderweg','Lunch'],
+    [moments[3].time,energyLabel,state.vehicle ? `${range} km rijbereik · ${state.vehicle==='electric'?state.plug:'volle tank'}` : 'Voertuig later kiezen','Laden/tanken'],
+    [(state.arrival||'').split(' - ')[0]||moments[4].time,'Overnachten rond','Aanbevolen overnachtingen rond je stopmoment','Overnachten rond']
   ];
   updateMapRoute();
 }
@@ -303,7 +362,7 @@ function routePointAtDistanceKm(distanceKm,index=0){
 function isEnergyCategory(cat){ return cat==='tanken' || cat==='laden'; }
 function rangeZone(){
   const total=Math.max(1,Number(state.routeDistanceKm)||1);
-  const range=Math.max(80,Number(state.range)||defaultRange(state.vehicle));
+  const range=Math.max(80,effectiveRangeKm());
   const factor=state.vehicle==='electric' ? 0.78 : 0.88;
   const target=Math.min(Math.max(60,range*factor),Math.max(60,total-35));
   const low=Math.max(20,target-(range*(state.vehicle==='electric'?0.18:0.16)));
@@ -418,14 +477,17 @@ async function loadLivePlacesFor(cat){
 }
 async function loadRealRoute(){
   readForm();
-  if(!state.origin.trim() || !state.destination.trim()){
-    state.routeSource='idle'; state.hasRoute=false;
-    toast('Vul eerst vertrekpunt en bestemming in');
-    renderAll();
+  clearPlaceMarkers();
+  if(!state.origin || !state.destination){
+    state.routeSource='empty';
+    setPlaceStatus('hotels','empty','Vul eerst vertrekpunt en bestemming in.');
+    updateTexts(); renderStops();
+    toast('Vul vertrekpunt en bestemming in');
     return false;
   }
-  state.routeSource='loading';
-  resetLivePlaces('loading','Roadora zoekt live resultaten rond je route.');
+  resetLiveCategory('hotels','loading');
+  if(state.vehicle==='electric') resetLiveCategory('laden','loading');
+  else if(state.vehicle) resetLiveCategory('tanken','loading');
   try{
     toast('Plaatsen zoeken…');
     const [startGeo,endGeo]=await Promise.all([geocodePlace(state.origin), geocodePlace(state.destination)]);
@@ -439,22 +501,25 @@ async function loadRealRoute(){
     const summary=feature.properties?.summary||{};
     state.routeDistanceKm=Math.max(1,Math.round(Number(summary.distance||0)/1000));
     state.routeDurationMin=Math.max(1,Math.round(Number(summary.duration||0)/60));
-    state.routeSource=feature.properties?.roadora?.provider || data.roadora?.provider || 'google-directions';
-    state.hasRoute=true;
+    state.routeSource='ors';
     state.originResolved=startGeo.formattedAddress||state.origin;
     state.destinationResolved=endGeo.formattedAddress||state.destination;
     applyRouteZones();
     updateTexts();
     renderTimeline();
     toast('Echte route geladen');
-    await Promise.allSettled([loadLivePlacesFor('hotels'), loadLivePlacesFor(state.vehicle==='electric'?'laden':'tanken')]);
+    const liveLoads=[loadLivePlacesFor('hotels')];
+    if(state.vehicle==='electric') liveLoads.push(loadLivePlacesFor('laden'));
+    else if(state.vehicle) liveLoads.push(loadLivePlacesFor('tanken'));
+    await Promise.allSettled(liveLoads);
     return true;
   }catch(err){
     console.warn('Roadora route error:',err);
     state.routeSource='route_error';
-    state.hasRoute=false;
+    routeCoords=[]; markerData=[]; updateMapRoute();
     setPlaceStatus('hotels','error','Route of geocoding niet geladen; live hotels zijn daarom niet opgehaald.');
     setPlaceStatus('tanken','error','Route of geocoding niet geladen; live tankstations zijn daarom niet opgehaald.');
+    setPlaceStatus('laden','error','Route of geocoding niet geladen; live laadpunten zijn daarom niet opgehaald.');
     updateTexts();
     renderStops();
     toast('Route niet geladen: controleer API-instellingen');
@@ -470,72 +535,91 @@ window.RoadoraPlanner.setGoogleRoute = function(routeData){
       if(summary.distance) state.routeDistanceKm=Math.round(Number(summary.distance)/1000);
       if(summary.duration) state.routeDurationMin=Math.round(Number(summary.duration)/60);
       state.routeSource='external-route';
-      state.hasRoute=true;
       applyRouteZones(); renderAll(); updateMapRoute();
     }
   }catch(err){console.warn('setGoogleRoute fout:',err);}
 };
 function toast(msg){ const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
 function readForm(){
-  state.origin=$('#origin')?.value?.trim() || '';
-  state.destination=$('#destination')?.value?.trim() || '';
-  state.date=$('#date')?.value || '';
-  state.depart=$('#departTime')?.value || DEFAULTS.depart;
-  state.arrival=$('#hotelArrival')?.value || DEFAULTS.arrival;
+  state.origin=($('#origin')?.value||'').trim();
+  state.destination=($('#destination')?.value||'').trim();
+  state.date=$('#date')?.value || todayISO();
+  state.depart=$('#departTime')?.value || '';
+  state.arrival=$('#hotelArrival')?.value || '16:30 - 18:00';
   state.days=Math.max(1,Math.min(21,Number($('#tripDays')?.value)||1));
-  state.range=Number($('#vehicleRangeKm')?.value)||defaultRange(state.vehicle);
+  state.range=Number($('#vehicleRangeKm')?.value)||0;
   state.plug=$('#plug')?.value || 'CCS';
   state.adults=Number($('[name="adults"]')?.value)||1;
   state.children=Number($('[name="children"]')?.value)||0;
   state.maxDetour=Number($('#maxDetour')?.value)||20;
 }
-function vehicleLabel(){return {car:'Auto',electric:'Elektrisch',camper:'Camper',bus:'Bus'}[state.vehicle]||'Auto'}
+function vehicleLabel(){return {car:'Auto',electric:'Elektrisch',camper:'Camper',bus:'Bus'}[state.vehicle]||'Geen voertuig gekozen'}
 function setText(id, value){ const el=$(id); if(el) el.textContent=value; }
+function routeTitleLabel(){
+  const origin=(state.origin||'').split(',')[0].trim();
+  const dest=(state.destination||'').split(',')[0].trim();
+  if(origin && dest) return `${origin} → ${dest}`;
+  return 'Nog geen route gepland';
+}
+function routeSourceLabel(){
+  if(state.routeSource==='ors' || state.routeSource==='external-route') return 'Echte route';
+  if(state.routeSource==='route_error') return 'Routefout';
+  return 'Nog geen route';
+}
 function updateTexts(){
   readForm();
-  const simpleOrigin=state.origin ? state.origin.split(',')[0] : 'Vertrekpunt';
-  const simpleDest=state.destination ? state.destination.split(',')[0] : 'Bestemming';
-  const hasRoute = routeIsLive();
-  const title = state.origin && state.destination ? `${simpleOrigin} → ${simpleDest}` : 'Plan je route';
+  const simpleOrigin=(state.origin||'').split(',')[0].trim();
+  const simpleDest=(state.destination||'').split(',')[0].trim();
+  const title=routeTitleLabel();
   ['#summaryRoute','#routeTitle','#mapRouteTitle','#tripOverviewTitle'].forEach(id=>setText(id,title));
-  setText('#sideDepart',`${state.date || 'datum later'} · ${state.depart}`);
-  setText('#sideHotel',state.arrival);
-  setText('#sideVehicle',`${vehicleLabel()} (${state.range} km)`);
+  setText('#sideDepart',`${state.date || todayISO()} · ${state.depart || 'vertrektijd later'}`);
+  setText('#sideHotel',state.arrival || 'aankomst later');
+  const vehicleText = vehicleLabel();
+  setText('#sideVehicle',state.vehicle ? `${vehicleText}${state.range?` (${state.range} km)`:''}` : 'Nog geen voertuig gekozen');
   setText('#sideTravelers',`${state.adults} volwassenen, ${state.children} kinderen${state.pet!=='none'?', hond':''}`);
   const petText = state.pet==='none' ? 'geen hond' : (state.pet==='multiple' ? 'meerdere honden' : 'hond mee');
-  const vehicleText = vehicleLabel();
   const prefTexts = $$('.pref.active').map(b=>b.textContent.trim());
-  if($('#profileSummary')) $('#profileSummary').textContent = `${state.adults} volwassenen · ${state.children} kinderen · ${petText}`;
-  if($('#vehicleSummary')) $('#vehicleSummary').textContent = state.vehicle==='electric' ? `${vehicleText} · ${state.range} km · ${state.plug}` : `${vehicleText} · ${state.range} km rijbereik`;
+  if($('#profileSummary')) $('#profileSummary').textContent = `${state.adults} volwassenen · ${state.children ? state.children + ' kinderen' : 'geen kinderen'} · ${petText}`;
+  if($('#vehicleSummary')) $('#vehicleSummary').textContent = state.vehicle ? (state.vehicle==='electric' ? `${vehicleText}${state.range?` · ${state.range} km`:''} · ${state.plug}` : `${vehicleText}${state.range?` · ${state.range} km rijbereik`:''}`) : 'geen voertuig gekozen';
   if($('#prefSummary')) $('#prefSummary').textContent = prefTexts.length ? prefTexts.slice(0,4).join(' · ') + (prefTexts.length>4 ? ' +' + (prefTexts.length-4) : '') : 'geen voorkeuren gekozen';
   const detourValue = $('#maxDetour')?.closest('.range-row')?.querySelector('strong'); if(detourValue) detourValue.textContent = `${state.maxDetour} min`;
-  setText('#rangeLabel', state.vehicle==='electric' ? 'Hoe ver kun je ongeveer rijden op een volle accu?' : 'Hoe ver kun je ongeveer rijden op een volle tank?');
-  $('#evFields')?.classList.toggle('hidden', state.vehicle!=='electric'); setText('#chargeLabel', state.vehicle==='electric'?'Laadstop':'Tankstop');
-  setText('#chargeDetail', state.vehicle==='electric'?`${state.range} km rijbereik · ${state.plug}`:`${state.range} km rijbereik · tankstop`);
+  setText('#rangeLabel', state.vehicle==='electric' ? 'Hoe ver kun je ongeveer rijden op een volle accu?' : (state.vehicle ? 'Hoe ver kun je ongeveer rijden op een volle tank?' : 'Hoe ver kun je ongeveer rijden?'));
+  $('#evFields')?.classList.toggle('hidden', state.vehicle!=='electric');
+  setText('#chargeLabel', state.vehicle==='electric'?'Laadstop':(state.vehicle?'Tankstop':'Stop onderweg'));
+  const chargeText = state.vehicle ? (state.vehicle==='electric' ? `${state.range||effectiveRangeKm()} km rijbereik · ${state.plug}` : `${state.range||effectiveRangeKm()} km rijbereik · tankstop`) : 'voertuig later kiezen';
+  setText('#chargeDetail', chargeText);
   const stats = $$('.stats .stat strong');
-  if(stats[0]) stats[0].textContent = hasRoute ? `${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km` : '—';
-  if(stats[1]) stats[1].textContent = hasRoute ? durationLabel(state.routeDurationMin) : '—';
+  if(stats[0]) stats[0].textContent = hasRoute() ? `${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km` : '— km';
+  if(stats[1]) stats[1].textContent = hasRoute() ? durationLabel(state.routeDurationMin) : '—';
   if(stats[2]) stats[2].textContent = routeSourceLabel();
   const mapSummary = $('.map-summary .summary-row');
-  if(mapSummary) mapSummary.innerHTML = hasRoute
-    ? `<span>${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km</span><span>${durationLabel(state.routeDurationMin)}</span><span id="chargeDetail">${state.vehicle==='electric'?`${state.range} km rijbereik · ${state.plug}`:`${state.range} km rijbereik · tankstop`}</span>`
-    : `<span>Vul je route in</span><span>Roadora berekent daarna afstand en tijd</span><span id="chargeDetail">${state.range} km rijbereik</span>`;
-  setText('#dayCountPill',`${state.days} dagen`); setText('#overviewDayPill',`Dag ${state.activeDay}`); setText('#overviewDaysPill',`${state.days} dagen`);
-  setText('#activeDaySummary', hasRoute ? `Dag ${state.activeDay} · ${dayRouteLabel(state.activeDay, simpleOrigin, simpleDest)}` : 'Nog geen dagroute berekend');
-  setText('#tripOverviewMeta', hasRoute ? `${state.days} dagen · ${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km · ${durationLabel(state.routeDurationMin)} heenreis` : 'Nog geen route berekend');
-  const tags = [`${state.children} kinderen`, state.pet==='none'?'geen hond':'hond mee', `${state.range} km rijbereik`, 'familiekamers', state.vehicle==='electric'?'laden':'tanken'];
-  if($('#profileTags')) $('#profileTags').innerHTML = tags.map(t=>`<span class="tag">${t}</span>`).join(''); if($('#tripOverviewTags')) $('#tripOverviewTags').innerHTML = tags.slice(0,4).map(t=>`<span class="tag">${t}</span>`).join('');
+  if(mapSummary) mapSummary.innerHTML = hasRoute()
+    ? `<span>${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km</span><span>${durationLabel(state.routeDurationMin)}</span><span id="chargeDetail">${chargeText}</span>`
+    : `<span>— km</span><span>—</span><span id="chargeDetail">Vul je route in</span>`;
+  setText('#dayCountPill',`${state.days} ${state.days===1?'dag':'dagen'}`);
+  setText('#overviewDayPill',`Dag ${state.activeDay}`);
+  setText('#overviewDaysPill',`${state.days} ${state.days===1?'dag':'dagen'}`);
+  setText('#activeDaySummary', hasRoute() ? `Dag ${state.activeDay} · ${dayRouteLabel(state.activeDay, simpleOrigin, simpleDest)}` : 'Dag 1 · nog niet gepland');
+  setText('#tripOverviewMeta', hasRoute() ? `${state.days} ${state.days===1?'dag':'dagen'} · ${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km · ${durationLabel(state.routeDurationMin)} heenreis` : 'Vul je route in om een roadtrip te maken');
+  const tags = [];
+  if(state.children>0) tags.push(`${state.children} kinderen`);
+  if(state.pet!=='none') tags.push(state.pet==='multiple'?'meerdere honden':'hond mee');
+  if(state.range>0) tags.push(`${state.range} km rijbereik`);
+  prefTexts.slice(0,3).forEach(p=>tags.push(p.toLowerCase()));
+  if(state.vehicle==='electric') tags.push('laden'); else if(state.vehicle) tags.push('tanken');
+  if($('#profileTags')) $('#profileTags').innerHTML = tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
+  if($('#tripOverviewTags')) $('#tripOverviewTags').innerHTML = tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
 }
 function renderDays(){
   const tabs=$('#dayTabs'); tabs.innerHTML='';
   for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();}; tabs.appendChild(b);}
 }
 function dayRouteLabel(day, origin=state.origin.split(',')[0], dest=state.destination.split(',')[0]){
-  if(day===1) return `${origin} → overnachten rond`;
-  if(day===2) return `overnachting → ${dest}`;
-  if(day===state.days && state.days>3) return `${dest} → ${origin}`;
-  if(day===state.days-1 && state.days>4) return `${dest} → tussenstop`;
-  return `${dest} omgeving`;
+  if(day===1) return origin ? `${origin} → overnachten rond` : 'nog niet gepland';
+  if(day===2) return dest ? `overnachting → ${dest}` : 'overnachting → bestemming';
+  if(day===state.days && state.days>3) return (dest && origin) ? `${dest} → ${origin}` : 'terugreis';
+  if(day===state.days-1 && state.days>4) return dest ? `${dest} → tussenstop` : 'tussenstop';
+  return dest ? `${dest} omgeving` : 'dagroute';
 }
 function dayStatus(day){
   if(timelines[day]) return day===1?'gepland':'voorgesteld';
@@ -584,10 +668,7 @@ function renderTripOverview(){
   }
 }
 function dayPlan(){
-  if(!routeIsLive() && state.activeDay===1){
-    timelines[1] = [[state.depart || DEFAULTS.depart,'Maak eerst je dagroute','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Start']];
-  }
-  if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen','Zelf ingevuld'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk','Pauze'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips','Overnachten rond']];
+  if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],[state.arrival.split(' - ')[0]||'17:00','Terug naar verblijf','Overzicht bewaren in Mijn roadtrips']];
   return timelines[state.activeDay];
 }
 function inferType(title=''){
@@ -684,6 +765,18 @@ function renderStops(){
   if(!state.suggestions && state.view !== 'all') state.view = 'all';
   $$('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===state.view));
   $('#categoryTabs').innerHTML = cats.map(([id,label])=>`<button class="category-btn ${id===state.category?'active':''}" data-cat="${id}" type="button">${label}</button>`).join('');
+  if(!hasRoute()){
+    $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Zelf zoeken actief';
+    $('#recommendTitle').textContent = 'Plan eerst je route';
+    $('#allStopsTitle').textContent = 'Nog geen stops geladen';
+    const empty = `<div class="empty-stops"><strong>Plan eerst je dagroute.</strong><span>Vul vertrekpunt en bestemming in. Daarna haalt Roadora hotels en stops langs je echte route op.</span></div>`;
+    $('#recommendations').innerHTML = empty;
+    $('#allStops').innerHTML = empty;
+    $('#recommendPanel').classList.toggle('hidden', state.view!=='recommended');
+    $('#allStopsPanel').classList.toggle('hidden', state.view!=='all');
+    clearPlaceMarkers();
+    return;
+  }
   const rawSelected = (stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
   const selected = (state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) ? recommendedEnergyStops(rawSelected) : rawSelected;
   const recommended = state.suggestions
@@ -699,13 +792,13 @@ function renderStops(){
   $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Zelf zoeken actief';
   $('#suggestionToggle').setAttribute('aria-pressed', String(state.suggestions));
   $('#suggestionToggle').classList.toggle('off', !state.suggestions);
-  const status = state.placeStatus[state.category] || (selected.length ? 'live' : 'empty');
+  const status = state.placeStatus[state.category] || (selected.length ? 'demo' : 'empty');
   const statusMessage = state.placeStatus[`${state.category}Message`] || '';
   const emptyHtml = status==='loading'
     ? `<div class="empty-stops"><strong>Live resultaten laden…</strong><span>Roadora zoekt nu rond je routezone.</span></div>`
     : status==='error'
       ? `<div class="empty-stops error"><strong>Live resultaten niet geladen.</strong><span>${escapeHtml(statusMessage || 'Controleer je API-key, Vercel env vars of Network-tab.')}</span></div>`
-      : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || (routeIsLive() ? 'Probeer een grotere regio of bereken de route opnieuw.' : 'Bereken eerst je route. Daarna zoekt Roadora live locaties rond je route.'))}</span></div>`;
+      : `<div class="empty-stops"><strong>Nog geen live resultaten gevonden.</strong><span>${escapeHtml(statusMessage || 'Probeer een grotere regio of bereken de route opnieuw.')}</span></div>`;
   $('#recommendations').innerHTML = state.suggestions
     ? (recommended.length ? recommended.map((s,i)=>stopCardHtml(s,i,state.category,false,s?.[2]?.__stopIndex ?? i)).join('') : emptyHtml)
     : `<div class="empty-stops"><strong>Roadora suggesties staan uit.</strong><span>Je zoekt vrij rond je route. De gevonden locaties blijven als pins zichtbaar op de kaart.</span></div>`;
@@ -725,13 +818,13 @@ function openStopDetail(cat,index){
   if(whyEl) whyEl.innerHTML = stopWhyList(cat).map(x=>`<li>${escapeHtml(x)}</li>`).join('');
   $('#stopModalDetour').textContent=(desc.match(/\+\d+\s*min/)||['weinig omrijden'])[0];
   $('#stopModalWindow').textContent=stopWindow(cat);
-  $('#stopModalProfile').textContent=`${state.children} kinderen · ${state.pet==='dog'?'hond mee':'geen hond'} · ${state.range} km`;
+  $('#stopModalProfile').textContent=[state.children>0?`${state.children} kinderen`:'geen kinderen', state.pet==='dog'?'hond mee':'geen hond', state.range>0?`${state.range} km`:'rijbereik niet ingevuld'].join(' · ');
   const meta = item[2] || {};
   const modalPhotoUrl = meta.photoUrl || (Array.isArray(meta.photoUrls) ? meta.photoUrls[0] : null);
   $('#stopModalPhoto').className = modalPhotoUrl ? 'stop-modal-photo has-live-photo' : 'stop-modal-photo no-live-photo';
   if(modalPhotoUrl) $('#stopModalPhoto').style.backgroundImage = `url('${modalPhotoUrl}')`;
   else $('#stopModalPhoto').style.backgroundImage = '';
-  const tags = [categorySingular(cat), state.children>0?'kindvriendelijk':null, state.pet==='dog'?'hond mee':null, `${state.range} km rijbereik`, meta.provider || null].filter(Boolean);
+  const tags = [categorySingular(cat), state.children>0?'kindvriendelijk':null, state.pet==='dog'?'hond mee':null, state.range>0?`${state.range} km rijbereik`:null, meta.provider || null].filter(Boolean);
   $('#stopModalTags').innerHTML = tags.map(t=>`<span>${escapeHtml(t)}</span>`).join('');
   const modal=$('#stopDetailModal'); modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
 }
@@ -790,11 +883,11 @@ function bind(){
     const row=e.target.closest('[data-plan-index]'); if(!row || !e.target.classList.contains('plan-type')) return;
     const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(plan[i]) plan[i][3]=e.target.value;
   });
-  $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; const r=$('#vehicleRangeKm'); if(r) r.value=defaultRange(state.vehicle); state.range=defaultRange(state.vehicle); resetLivePlaces('empty','Voertuig gewijzigd. Bereken de route opnieuw voor passende locaties.'); renderAll();});
+  $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; renderAll();});
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
   $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
-  ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',()=>{ if(['origin','destination','vehicleRangeKm','plug'].includes(id)){ state.hasRoute=false; state.routeSource='idle'; resetLivePlaces('empty','Route of voorkeuren gewijzigd. Bereken opnieuw voor live resultaten.'); } renderAll(); }));
+  ['origin','destination','date','departTime','hotelArrival','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
@@ -815,7 +908,7 @@ function bind(){
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
   $('#mapToggleStops').onclick=()=>setRouteZoneMarkersVisible(!routeZoneMarkersVisible);
   function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}
-  $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>{ localStorage.removeItem('roadoraTripsV3'); location.reload(); };
+  $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>location.reload();
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
 }
-document.addEventListener('DOMContentLoaded',()=>{bind();resetLivePlaces('empty','Bereken eerst je route. Daarna zoekt Roadora live locaties rond je route.');renderAll();setTimeout(initMap,250);});
+document.addEventListener('DOMContentLoaded',()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); bind();applyRouteZones();renderAll();setTimeout(initMap,250); });

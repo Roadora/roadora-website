@@ -1,14 +1,17 @@
-
-// Roadora route API — Google first, ORS fallback
-// Frontend blijft hetzelfde endpoint gebruiken: /api/route?start=lng,lat&end=lng,lat
-// Als GOOGLE_MAPS_API_KEY aanwezig is, gebruiken we Google Directions voor de echte route.
-// Als alleen ORS_API_KEY aanwezig is, gebruiken we de bestaande ORS-flow.
+// Roadora v6.9.0 — Future proof ORS route API
+// Doel:
+// - echte ORS route blijven laden, ook als een tussenstop lastig te snappen is
+// - nooit meteen 406 teruggeven bij een foute stop; eerst herstellen
+// - Maps-export ongemoeid laten: dit endpoint is alleen voor de Roadora-kaartlijn
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
   if (req.method === 'OPTIONS') return res.status(204).end();
+
+  const key = process.env.ORS_API_KEY || process.env.OPENROUTESERVICE_API_KEY || process.env.OPEN_ROUTE_SERVICE_API_KEY;
+  if (!key) return res.status(500).json({ ok:false, error:'ORS_API_KEY ontbreekt in Vercel env' });
 
   const q = req.query || {};
   const profile = sanitizeProfile(q.profile);
@@ -17,30 +20,7 @@ export default async function handler(req, res) {
   const via = parseWaypoints(q.waypoints || q.via || '').slice(0, 9);
 
   if (!start || !end) {
-    return res.status(400).json({ ok:false, error:'Ongeldige of ontbrekende start/eindcoördinaten' });
-  }
-
-  const googleKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_DIRECTIONS_API_KEY;
-  const orsKey = process.env.ORS_API_KEY || process.env.OPENROUTESERVICE_API_KEY || process.env.OPEN_ROUTE_SERVICE_API_KEY;
-
-  // Primair Google gebruiken, omdat de rest van Roadora ook Google gebruikt voor geocoding/places/photos.
-  if (googleKey) {
-    const google = await tryGoogleDirections({ key: googleKey, start, end, via, profile });
-    if (google.ok) return res.status(200).json(google.data);
-
-    // Als Google faalt maar ORS beschikbaar is, proberen we ORS als herstel.
-    if (!orsKey) {
-      return res.status(google.status || 502).json({
-        ok:false,
-        error:'Google route fout',
-        status: google.status || 502,
-        detail: google.detail || null
-      });
-    }
-  }
-
-  if (!orsKey) {
-    return res.status(500).json({ ok:false, error:'GOOGLE_MAPS_API_KEY of ORS_API_KEY ontbreekt in Vercel env' });
+    return res.status(400).json({ ok:false, error:'Ongeldige start/eind coordinaten' });
   }
 
   const requestedCoordinates = compactCoords([start, ...via, end]);
@@ -49,10 +29,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    let route = await tryOrsRoute({ key: orsKey, profile, coordinates: requestedCoordinates, radiusesMode:'wide' });
+    // 1) Normale volledige roadtrip-route via alle stops.
+    let route = await tryOrsRoute({ key, profile, coordinates: requestedCoordinates, radiusesMode:'wide' });
     if (route.ok) {
       return res.status(200).json(addRoadoraMeta(route.data, {
-        provider:'openrouteservice',
         mode:'full-waypoints',
         requestedWaypoints: via.length,
         usedWaypoints: via.length,
@@ -60,10 +40,10 @@ export default async function handler(req, res) {
       }));
     }
 
-    route = await tryOrsRoute({ key: orsKey, profile, coordinates: requestedCoordinates, radiusesMode:'unlimited' });
+    // 2) Zelfde route, maar met onbeperkt/sneller snappen. Dit vangt stops af die net naast de weg liggen.
+    route = await tryOrsRoute({ key, profile, coordinates: requestedCoordinates, radiusesMode:'unlimited' });
     if (route.ok) {
       return res.status(200).json(addRoadoraMeta(route.data, {
-        provider:'openrouteservice',
         mode:'full-waypoints-unlimited-snap',
         requestedWaypoints: via.length,
         usedWaypoints: via.length,
@@ -71,15 +51,17 @@ export default async function handler(req, res) {
       }));
     }
 
+    // 3) Segment-herstel: routeer start -> stop -> stop -> eind per stuk.
+    // Als één stop ORS breekt, slaan we alleen die stop over en houden we de rest van de route echt.
     if (via.length) {
-      const segmented = await buildSegmentedRoute({ key: orsKey, profile, start, end, via });
+      const segmented = await buildSegmentedRoute({ key, profile, start, end, via });
       if (segmented.ok) return res.status(200).json(segmented.data);
     }
 
-    const direct = await tryOrsRoute({ key: orsKey, profile, coordinates:[start, end], radiusesMode:'unlimited' });
+    // 4) Laatste herstel: gewone A→B ORS route. Dus liever echte hoofdroute dan statische fallback in de app.
+    const direct = await tryOrsRoute({ key, profile, coordinates:[start, end], radiusesMode:'unlimited' });
     if (direct.ok) {
       return res.status(200).json(addRoadoraMeta(direct.data, {
-        provider:'openrouteservice',
         mode:'direct-recovery',
         requestedWaypoints: via.length,
         usedWaypoints: 0,
@@ -96,107 +78,6 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ ok:false, error: err?.message || 'Route API fout' });
   }
-}
-
-async function tryGoogleDirections({ key, start, end, via, profile }) {
-  try {
-    const origin = coordToGoogleLatLng(start);
-    const destination = coordToGoogleLatLng(end);
-    const params = new URLSearchParams({
-      origin,
-      destination,
-      key,
-      language:'nl',
-      units:'metric',
-      mode: googleMode(profile)
-    });
-    if (Array.isArray(via) && via.length) {
-      params.set('waypoints', via.map(coordToGoogleLatLng).join('|'));
-    }
-
-    const response = await fetch(`https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return { ok:false, status:response.status, detail:data };
-    if (data.status !== 'OK') return { ok:false, status:502, detail:{ status:data.status, message:data.error_message || null } };
-
-    const route = Array.isArray(data.routes) ? data.routes[0] : null;
-    const encoded = route?.overview_polyline?.points;
-    const coordsLatLng = decodeGooglePolyline(encoded);
-    if (!coordsLatLng.length) return { ok:false, status:502, detail:'Google route zonder polyline' };
-
-    const legs = Array.isArray(route?.legs) ? route.legs : [];
-    const distance = legs.reduce((sum, leg) => sum + Number(leg?.distance?.value || 0), 0);
-    const duration = legs.reduce((sum, leg) => sum + Number(leg?.duration?.value || 0), 0);
-    const lngLat = coordsLatLng.map(([lat, lng]) => [round6(lng), round6(lat)]);
-
-    const featureCollection = {
-      ok:true,
-      type:'FeatureCollection',
-      bbox:bboxOf(lngLat),
-      features:[{
-        type:'Feature',
-        properties:{
-          summary:{ distance, duration },
-          roadora:{
-            provider:'google-directions',
-            mode: via?.length ? 'google-waypoints' : 'google-direct',
-            requestedWaypoints: via?.length || 0,
-            usedWaypoints: via?.length || 0,
-            skippedWaypoints: []
-          }
-        },
-        geometry:{ type:'LineString', coordinates:lngLat }
-      }],
-      roadora:{
-        provider:'google-directions',
-        mode: via?.length ? 'google-waypoints' : 'google-direct',
-        requestedWaypoints: via?.length || 0,
-        usedWaypoints: via?.length || 0,
-        skippedWaypoints: []
-      }
-    };
-    return { ok:true, status:200, data:featureCollection };
-  } catch (err) {
-    return { ok:false, status:500, detail:String(err?.message || err) };
-  }
-}
-
-function coordToGoogleLatLng(coord) {
-  return `${coord[1]},${coord[0]}`; // input is [lng,lat], Google expects lat,lng
-}
-
-function googleMode(profile) {
-  if (profile === 'cycling-regular') return 'bicycling';
-  if (profile === 'foot-walking') return 'walking';
-  return 'driving';
-}
-
-function decodeGooglePolyline(str) {
-  if (!str) return [];
-  let index = 0, lat = 0, lng = 0, coordinates = [];
-  while (index < str.length) {
-    let b, shift = 0, result = 0;
-    do {
-      b = str.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20 && index < str.length);
-    const dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lat += dlat;
-
-    shift = 0;
-    result = 0;
-    do {
-      b = str.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20 && index < str.length);
-    const dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lng += dlng;
-
-    coordinates.push([lat / 1e5, lng / 1e5]);
-  }
-  return coordinates;
 }
 
 function sanitizeProfile(value) {

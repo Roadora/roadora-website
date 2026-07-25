@@ -36,36 +36,36 @@
         <article class="card card-pad">
           <div class="card-title">
             <h1>Eerste dagroute</h1>
-            <button id="resetDemo" class="mini-link" type="button">Wissen</button>
+            <button id="resetDemo" class="mini-link" type="button">Reset</button>
           </div>
           <p class="muted">Vul je eerste reisdag in. Roadora doet een voorstel, maar je kunt tijden, stops en overnachting volledig zelf aanpassen.</p>
           <div class="divider"></div>
           <div class="field">
             <label for="origin">Vertrekpunt</label>
-            <div class="input"><input id="origin" value="" placeholder="Bijv. Amsterdam, Nederland" autocomplete="off"></div>
+            <div class="input"><input id="origin" placeholder="Bijv. Amsterdam, Nederland" autocomplete="off"></div>
           </div>
           <div class="field">
             <label for="destination">Bestemming</label>
-            <div class="input"><input id="destination" value="" placeholder="Bijv. Toscane, Italië" autocomplete="off"></div>
+            <div class="input"><input id="destination" placeholder="Bijv. Toscane, Italië" autocomplete="off"></div>
           </div>
           <div class="two">
             <div class="field">
               <label for="date">Vertrekdatum</label>
-              <div class="input"><input id="date" type="date" value="2026-05-26"></div>
+              <div class="input"><input id="date" type="date"></div>
             </div>
             <div class="field">
               <label for="departTime">Vertrektijd</label>
-              <div class="input"><input id="departTime" type="time" value="08:30"></div>
+              <div class="input"><input id="departTime" type="time"></div>
             </div>
           </div>
           <div class="two">
             <div class="field">
               <label for="hotelArrival">Aankomst hotel rond</label>
-              <div class="input"><select id="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen hotel vandaag</option></select></div>
+              <div class="input"><select id="hotelArrival"><option>15:30 - 17:00</option><option selected>16:30 - 18:00</option><option>17:30 - 19:00</option><option>Geen overnachting vandaag</option></select></div>
             </div>
             <div class="field">
               <label for="tripDays">Aantal dagen</label>
-              <div class="input"><input id="tripDays" type="number" min="1" max="21" value="8"><strong>dagen</strong></div>
+              <div class="input"><input id="tripDays" type="number" min="1" max="21" value="1"><strong>dag(en)</strong></div>
             </div>
           </div>
           <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
@@ -73,7 +73,7 @@
 
         <article class="card card-pad left-fold" data-left-fold>
           <div class="card-title left-fold-head">
-            <div><h2>Reisprofiel</h2><p id="profileSummary" class="fold-summary">2 volwassenen · 3 kinderen · hond mee</p></div>
+            <div><h2>Reisprofiel</h2><p id="profileSummary" class="fold-summary">2 volwassenen · geen kinderen · geen hond</p></div>
             <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
           </div>
           <div class="left-fold-body">
@@ -81,14 +81,14 @@
               <label>Met wie reis je?</label>
               <div class="two">
                 <div class="input"><input name="adults" type="number" min="1" value="2"><strong>volw.</strong></div>
-                <div class="input"><input name="children" type="number" min="0" value="3"><strong>kinderen</strong></div>
+                <div class="input"><input name="children" type="number" min="0" value="0"><strong>kinderen</strong></div>
               </div>
             </div>
             <div class="field">
               <label>Huisdieren</label>
               <div class="choice-grid">
-                <button class="choice" data-pet="none" type="button">Geen</button>
-                <button class="choice active" data-pet="dog" type="button">Hond</button>
+                <button class="choice active" data-pet="none" type="button">Geen</button>
+                <button class="choice" data-pet="dog" type="button">Hond</button>
                 <button class="choice" data-pet="multiple" type="button">Meerdere</button>
               </div>
             </div>
@@ -98,22 +98,22 @@
 
         <article class="card card-pad left-fold" data-left-fold>
           <div class="card-title left-fold-head">
-            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">Auto · 650 km rijbereik</p></div>
+            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">geen voertuig gekozen</p></div>
             <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
           </div>
           <div class="left-fold-body">
             <div class="choice-grid vehicle-grid">
-              <button class="choice active" data-vehicle="car" type="button">Auto</button>
+              <button class="choice" data-vehicle="car" type="button">Auto</button>
               <button class="choice" data-vehicle="electric" type="button">Elektrisch</button>
               <button class="choice" data-vehicle="camper" type="button">Camper</button>
               <button class="choice" data-vehicle="bus" type="button">Bus</button>
             </div>
             <div class="field" style="margin-top:12px">
-              <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden op een volle accu?</label>
-              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" value="650"><strong>km</strong></div>
-              <p class="hint">Handmatig invullen, bijvoorbeeld 650 km.</p>
+              <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden?</label>
+              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" placeholder="Bijv. 650"><strong>km</strong></div>
+              <p class="hint">Optioneel. Roadora gebruikt dit later voor tank- of laadmomenten.</p>
             </div>
-            <div id="evFields" class="field">
+            <div id="evFields" class="field hidden">
               <label for="plug">Laadstekker</label>
               <div class="input"><select id="plug"><option selected>CCS</option><option>Type 2</option><option>CHAdeMO</option><option>Weet ik niet</option></select></div>
             </div>
@@ -126,17 +126,17 @@
 
         <article class="card card-pad left-fold" data-left-fold>
           <div class="card-title left-fold-head">
-            <div><h2>Voorkeuren</h2><p id="prefSummary" class="fold-summary">Familiekamers · huisdieren · parkeren · laadpunt</p></div>
+            <div><h2>Voorkeuren</h2><p id="prefSummary" class="fold-summary">geen voorkeuren gekozen</p></div>
             <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
           </div>
           <div class="left-fold-body">
             <div class="pref-grid">
-              <button class="pref active" type="button">Familiekamers</button>
-              <button class="pref active" type="button">Huisdieren</button>
-              <button class="pref active" type="button">Kindvriendelijk</button>
-              <button class="pref active" type="button">Parkeren</button>
-              <button class="pref active" type="button">Laadpunt</button>
-              <button class="pref active" type="button">Ontbijt</button>
+              <button class="pref" type="button">Familiekamers</button>
+              <button class="pref" type="button">Huisdieren</button>
+              <button class="pref" type="button">Kindvriendelijk</button>
+              <button class="pref" type="button">Parkeren</button>
+              <button class="pref" type="button">Laadpunt</button>
+              <button class="pref" type="button">Ontbijt</button>
             </div>
           </div>
         </article>
@@ -154,8 +154,8 @@
         </div>
         <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
         <div class="map-summary">
-          <h3 id="mapRouteTitle">Plan je route</h3>
-          <div class="summary-row"><span>Vul je route in</span><span>Roadora berekent afstand en tijd</span><span id="chargeDetail">650 km rijbereik</span></div>
+          <h3 id="mapRouteTitle">Nog geen route gepland</h3>
+          <div class="summary-row"><span>— km</span><span>—</span><span id="chargeDetail">Vul je route in</span></div>
           <div id="profileTags" class="tag-row"></div>
         </div>
       </div>
@@ -173,17 +173,17 @@
           <article class="card card-pad">
             <div class="card-title"><h2>Jouw roadtrip</h2><button id="saveRoute" class="btn" type="button">Bewaar</button></div>
             <p id="summaryRoute" class="muted">Nog geen route gepland</p>
-            <div class="stats"><div class="stat"><span>Afstand</span><strong>—</strong></div><div class="stat"><span>Rijtijd</span><strong>—</strong></div><div class="stat"><span>Routebasis</span><strong>Nog geen route</strong></div></div>
+            <div class="stats"><div class="stat"><span>Afstand</span><strong>— km</strong></div><div class="stat"><span>Rijtijd</span><strong>—</strong></div><div class="stat"><span>Routebasis</span><strong>Nog geen route</strong></div></div>
             <div class="route-dots"><span class="dot start">✓</span><span class="dash"></span><span class="dot one">1</span><span class="dash"></span><span class="dot two">2</span><span class="dash"></span><span class="dot three">3</span><span class="dash"></span><span class="dot four">4</span><span class="dash"></span><span class="dot end">B</span></div>
           </article>
           <article class="card card-pad">
-            <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">8 dagen</span></div>
+            <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">1 dag</span></div>
             <div id="dayTabs" class="day-tabs"></div>
-            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Nog geen dagroute berekend</p>
+            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · nog niet gepland</p>
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
-            <p class="muted plan-note">Roadora gebruikt je echte route, vertrektijd, rijbereik en gewenste aankomst om logische stopmomenten te berekenen. Alles blijft aanpasbaar.</p>
+            <p class="muted plan-note">Roadora gebruikt je route, vertrektijd, rijbereik en gewenste aankomst om logische stopmomenten te berekenen. Alles blijft aanpasbaar.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
@@ -223,10 +223,10 @@
       <div id="roadtripTab" class="tab-panel">
         <div class="panel-stack">
           <article class="card card-pad trip-overview-card">
-            <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDaysPill" class="pill">8 dagen</span></div>
+            <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDaysPill" class="pill">1 dag</span></div>
             <div class="trip-summary-box">
               <strong id="tripOverviewTitle">Nog geen route gepland</strong>
-              <span id="tripOverviewMeta">8 dagen · 1.495 km · 15 u 45 m heenreis</span>
+              <span id="tripOverviewMeta">Vul je route in om een roadtrip te maken</span>
               <div id="tripOverviewTags" class="tag-row"></div>
             </div>
           </article>
@@ -276,7 +276,7 @@
         <div class="modal-facts">
           <div><span>Omrijden</span><strong id="stopModalDetour">+8 min</strong></div>
           <div><span>Past rond</span><strong id="stopModalWindow">16:30 - 18:00</strong></div>
-          <div><span>Profiel</span><strong id="stopModalProfile">gezin · hond</strong></div>
+          <div><span>Profiel</span><strong id="stopModalProfile">Nog geen profielvoorkeuren</strong></div>
         </div>
         <div class="modal-actions">
           <button id="modalAddStop" class="btn primary" type="button">Toevoegen aan dagroute</button>
