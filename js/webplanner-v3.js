@@ -1153,13 +1153,13 @@ function clockParts(value){
 function buildRoundClock(selectedHour){
   const face=$('#roundClock');
   if(!face) return;
-  const radius=98;
-  const center=123;
+  const radius=68;
+  const center=87;
   let html='<div id="clockHand" class="clock-hand"></div><div class="clock-center"></div>';
   for(let hour=0; hour<24; hour++){
     const label=String(hour).padStart(2,'0');
     const angle=((hour % 12) / 12) * Math.PI * 2 - Math.PI/2;
-    const ring = hour < 12 ? radius : 67;
+    const ring = hour < 12 ? radius : 45;
     const x=center + Math.cos(angle)*ring;
     const y=center + Math.sin(angle)*ring;
     html += `<button class="clock-hour${hour===selectedHour?' active':''}" type="button" data-clock-hour="${hour}" style="left:${x}px;top:${y}px">${label}</button>`;
@@ -1178,6 +1178,17 @@ function openClockPicker(){
   if(!modal) return;
   readForm();
   let {hour,minute}=clockParts(state.depart || $('#departTime')?.value || '09:00');
+  const anchor=$('#openDepartClock');
+  const panel=modal.querySelector('.clock-panel');
+  if(anchor && panel){
+    const r=anchor.getBoundingClientRect();
+    const panelW=252;
+    const gap=8;
+    let left=Math.min(window.innerWidth-panelW-10, Math.max(10, r.right-panelW));
+    let top=Math.min(window.innerHeight-330, Math.max(10, r.bottom+gap));
+    panel.style.left=`${left}px`;
+    panel.style.top=`${top}px`;
+  }
   const sync=()=>{
     const val=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
     const display=$('#clockDisplay');
