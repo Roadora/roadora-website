@@ -3,17 +3,17 @@
 // Safe for Vercel: API key stays in Environment Variables.
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V51__',
+  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V54__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 24,
-  maxResultsPerPoint: 10,
-  maxTotalResults: 120,
-  defaultRadiusMeters: 25000,
+  maxPoints: 1,
+  maxResultsPerPoint: 20,
+  maxTotalResults: 20,
+  defaultRadiusMeters: 12000,
   minRadiusMeters: 5000,
-  maxRadiusMeters: 30000,
-  concurrency: 3,
-  routeEngine: 'route-core-lock-v1',
+  maxRadiusMeters: 15000,
+  concurrency: 1,
+  routeEngine: 'cost-safe-time-window-v1',
   placeMode: 'hotels'
 };
 
@@ -54,9 +54,22 @@ function normalizePoint(point, index = 0) {
   };
 }
 
-function cacheKey(points, radiusMeters, mode) {
+function cacheKey(points, radiusMeters, mode, hotelQuery = '') {
   const compact = points.map(p => `${roundCoord(p.lat)},${roundCoord(p.lng)}`).join('|');
-  return `${CONFIG.placeMode}:${mode || 'default'}:${radiusMeters}:${compact}`;
+  const q = sanitizeHotelHint(hotelQuery || 'hotel lodging').replace(/\s+/g,'-');
+  return `${CONFIG.placeMode}:${mode || 'default'}:${radiusMeters}:${q}:${compact}`;
+}
+function sanitizeHotelHint(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+}
+function buildHotelQuery(hint) {
+  const clean = sanitizeHotelHint(hint);
+  return clean ? `${clean} hotel lodging` : 'hotel lodging';
 }
 
 function inferHotelAmenities(place) {
@@ -67,7 +80,7 @@ function inferHotelAmenities(place) {
     ...(Array.isArray(place?.types) ? place.types : [])
   ].filter(Boolean).join(' ').toLowerCase();
 
-  const amenities = new Set(['Wifi', 'Parkeren']);
+  const amenities = new Set();
   if (text.includes('breakfast') || text.includes('ontbijt')) amenities.add('Ontbijt');
   if (text.includes('family') || text.includes('familie') || text.includes('children') || text.includes('kids')) amenities.add('Familie');
   if (text.includes('pet') || text.includes('dog') || text.includes('huisdier') || text.includes('hond')) amenities.add('Hond');
@@ -115,7 +128,7 @@ function normalizePlace(hit) {
   };
 }
 
-async function searchHotelsNearPoint({ apiKey, point, radiusMeters }) {
+async function searchHotelsNearPoint({ apiKey, point, radiusMeters, hotelQuery }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
 
@@ -135,17 +148,12 @@ async function searchHotelsNearPoint({ apiKey, point, radiusMeters }) {
           'places.rating',
           'places.userRatingCount',
           'places.priceLevel',
-          'places.regularOpeningHours.openNow',
           'places.googleMapsUri',
-          'places.websiteUri',
-          'places.nationalPhoneNumber',
-          'places.photos.name',
-          'places.types',
-          'places.editorialSummary'
+          'places.types'
         ].join(',')
       },
       body: JSON.stringify({
-        textQuery: 'hotel OR motel OR lodging',
+        textQuery: hotelQuery,
         maxResultCount: CONFIG.maxResultsPerPoint,
         languageCode: 'nl',
         locationBias: {
@@ -270,19 +278,20 @@ export default async function handler(req, res) {
     ? body.points.map(normalizePoint).filter(Boolean).slice(0, CONFIG.maxPoints)
     : [];
   const radiusMeters = Math.max(CONFIG.minRadiusMeters, Math.min(CONFIG.maxRadiusMeters, Number(body.radiusMeters) || CONFIG.defaultRadiusMeters));
+  const hotelQuery = buildHotelQuery(body.hotelHint);
 
   if (!points.length) {
     return send(res, 200, { ok: true, status: 'no_route_points', source: 'google', routeEngine: CONFIG.routeEngine, places: [] });
   }
 
-  const key = cacheKey(points, radiusMeters, mode);
+  const key = cacheKey(points, radiusMeters, mode, hotelQuery);
   const cached = memoryCache.get(key);
   if (cached && Date.now() - cached.savedAt < CONFIG.cacheTtlMs) {
     return send(res, 200, { ...cached.payload, cached: true });
   }
 
   try {
-    const settled = await runLimited(points, CONFIG.concurrency, point => searchHotelsNearPoint({ apiKey, point, radiusMeters }));
+    const settled = await runLimited(points, CONFIG.concurrency, point => searchHotelsNearPoint({ apiKey, point, radiusMeters, hotelQuery }));
     const rawHits = settled.flatMap(result => result.status === 'fulfilled' ? result.value : []);
     const errors = settled.filter(result => result.status === 'rejected').map(result => String(result.reason?.message || result.reason)).slice(0, 4);
     const places = dedupeAndSpread(rawHits, maxTotalResults);
@@ -295,6 +304,8 @@ export default async function handler(req, res) {
       routeEngine: CONFIG.routeEngine,
       searchedPoints: points.length,
       radiusMeters,
+      query: hotelQuery,
+      costSafe: true,
       count: places.length,
       places,
       errors

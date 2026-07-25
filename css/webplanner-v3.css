@@ -1737,3 +1737,5 @@ button{cursor:pointer}
 .suggestion-paused{background:#fff8ee;border-color:#d8c7aa;color:#8b660f;}
 #recommendPanel{display:none!important;}
 .mode-switch.hidden,#mapToggleStops.hidden,.legend.hidden{display:none!important;}
+
+.soft-required{font-weight:700;color:#6f7d7d;font-size:.72rem;margin-left:4px}

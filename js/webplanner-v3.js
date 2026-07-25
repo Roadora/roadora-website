@@ -291,6 +291,17 @@ function arrivalSlotCenterHour(value=state.arrival){
   if(!m) return null;
   return (Number(m[1])+Number(m[2]))/2;
 }
+function hasValidDepartTime(){ return /^\d{1,2}:\d{2}$/.test(String(state.depart||'')); }
+function activePreferenceTexts(){ return $$('.pref.active').map(b=>b.textContent.trim().toLowerCase()); }
+function hotelSearchHint(){
+  const prefs=activePreferenceTexts();
+  const parts=[];
+  if(state.pet && state.pet!=='none') parts.push('pet friendly');
+  if(state.children>0 || prefs.some(p=>p.includes('familie') || p.includes('kind'))) parts.push('family');
+  if(prefs.some(p=>p.includes('parkeren'))) parts.push('parking');
+  if(prefs.some(p=>p.includes('ontbijt'))) parts.push('breakfast');
+  return parts.slice(0,3).join(' ');
+}
 function progressForHotelArrivalSlot(){
   const center=arrivalSlotCenterHour();
   if(!Number.isFinite(center)) return null;
@@ -301,8 +312,8 @@ function progressForHotelArrivalSlot(){
     if(elapsedHours<0) elapsedHours+=24;
     return Math.max(0.06, Math.min(0.96, (elapsedHours*60)/Math.max(1,Number(state.routeDurationMin))));
   }
-  // Zonder vertrektijd gebruiken we het tijdvak als simpel dagdeel. Zo hoeft de gebruiker geen kilometers te begrijpen.
-  return Math.max(0.06, Math.min(0.96, (center-10)/12));
+  // Zonder vertrektijd kan Roadora niet betrouwbaar bepalen waar je rond het tijdvak op de route bent.
+  return null;
 }
 function routePointAtProgress(progress,index=0){
   const coords=Array.isArray(routeCoords)?routeCoords:[];
@@ -315,7 +326,7 @@ function routePointAtProgress(progress,index=0){
 function hotelArrivalSearchPoints(){
   const p=progressForHotelArrivalSlot();
   if(!Number.isFinite(p)) return [];
-  return [p-0.035,p,p+0.035].map((x,i)=>routePointAtProgress(x,i)).filter(Boolean);
+  return [p].map((x,i)=>routePointAtProgress(x,i)).filter(Boolean);
 }
 function isEnergyCategory(cat){ return cat==='tanken' || cat==='laden'; }
 function rangeZone(){
@@ -408,8 +419,15 @@ function normalizeLivePlace(place,cat){
 async function loadLivePlacesFor(cat){
   const endpoint = cat==='hotels' ? '/api/google-hotels' : cat==='tanken' ? '/api/google-fuel' : cat==='laden' ? '/api/google-charging' : null;
   if(!endpoint) return false;
+  if(cat==='hotels' && !hasValidDepartTime()){
+    stops.hotels=[];
+    clearPlaceMarkers();
+    setPlaceStatus('hotels','empty','Vul eerst je vertrektijd in. Dan kunnen we bepalen waar je rond je aankomsttijdvak op de route bent.');
+    return false;
+  }
   if(cat==='hotels' && !arrivalSlotLabel()){
     stops.hotels=[];
+    clearPlaceMarkers();
     setPlaceStatus('hotels','empty','Kies eerst een aankomsttijdvak. Dan zoeken we hotels rond het juiste deel van je route.');
     return false;
   }
@@ -421,7 +439,7 @@ async function loadLivePlacesFor(cat){
     return false;
   }
   try{
-    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?18000:7000,mode:cat==='hotels'?'arrival_window_hotels':'route_quick',maxResults:cat==='hotels'?20:40})});
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?12000:7000,mode:cat==='hotels'?'arrival_window_hotels_cost_safe':'route_quick',maxResults:cat==='hotels'?20:40,hotelHint:cat==='hotels'?hotelSearchHint():''})});
     const data=await res.json().catch(()=>({places:[]}));
     if(!res.ok || data.ok===false) throw new Error(data.message||data.status||'live places fout');
     const list=(Array.isArray(data.places)?data.places:[]).map(p=>normalizeLivePlace(p,cat));
@@ -776,7 +794,7 @@ function renderStops(){
   const rawSelected = (stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
   const selected = (state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) ? recommendedEnergyStops(rawSelected) : rawSelected;
   const recommended = state.suggestions
-    ? (isEnergyCategory(state.category) ? recommendedEnergyStops(rawSelected).slice(0,10) : rawSelected.slice(0, state.category==='hotels'?8:6))
+    ? (isEnergyCategory(state.category) ? recommendedEnergyStops(rawSelected).slice(0,10) : rawSelected.slice(0, state.category==='hotels'?20:6))
     : [];
   const recTitle = state.suggestions ? categoryTitle(state.category,'recommended') : 'Zelf zoeken actief';
   const allTitle = categoryTitle(state.category,'all');
@@ -823,7 +841,7 @@ function openStopDetail(cat,index){
   $('#stopModalPhoto').className = modalPhotoUrl ? 'stop-modal-photo has-live-photo' : 'stop-modal-photo no-live-photo';
   if(modalPhotoUrl) $('#stopModalPhoto').style.backgroundImage = `url('${modalPhotoUrl}')`;
   else $('#stopModalPhoto').style.backgroundImage = '';
-  const tags = [categorySingular(cat), state.children>0?'kindvriendelijk':null, state.pet==='dog'?'hond mee':null, state.range>0?`${state.range} km rijbereik`:null, meta.provider || null].filter(Boolean);
+  const tags = [categorySingular(cat), state.children>0?'gezin als voorkeur':null, state.pet==='dog'?'hond als voorkeur':null, state.range>0?`${state.range} km rijbereik`:null, meta.provider || null].filter(Boolean);
   $('#stopModalTags').innerHTML = tags.map(t=>`<span>${escapeHtml(t)}</span>`).join('');
   const modal=$('#stopDetailModal'); modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
 }
@@ -861,8 +879,12 @@ function bind(){
       state.category=next;
       if(hasRoute()){
         if(next==='hotels'){
-          if(!arrivalSlotLabel()){
-            stops.hotels=[];
+          if(!hasValidDepartTime()){
+            stops.hotels=[]; clearPlaceMarkers();
+            setPlaceStatus('hotels','empty','Vul eerst je vertrektijd in. Dan kunnen we bepalen waar je rond je aankomsttijdvak op de route bent.');
+            toast('Vul eerst je vertrektijd in');
+          } else if(!arrivalSlotLabel()){
+            stops.hotels=[]; clearPlaceMarkers();
             setPlaceStatus('hotels','empty','Kies eerst een aankomsttijdvak. Dan zoeken we hotels rond het juiste deel van je route.');
             toast('Kies eerst een aankomsttijdvak voor hotels');
           } else if(!['live','loading'].includes(state.placeStatus.hotels)){
@@ -910,7 +932,7 @@ function bind(){
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
   $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
   ['origin','destination','date','departTime','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
-  $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken.'); renderAll(); });
+  $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); });
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});
@@ -924,7 +946,7 @@ function bind(){
   });
   $('#modalAddStop')?.addEventListener('click',()=>{if(state.activeStop){addStopToActiveDay(state.activeStop.cat,state.activeStop.index); closeStopDetail();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
-  $('#chooseHotelZone')?.addEventListener('click',()=>{ state.category='hotels'; state.view='all'; state.suggestions=false; if(hasRoute()){ if(!arrivalSlotLabel()){ stops.hotels=[]; setPlaceStatus('hotels','empty','Kies eerst een aankomsttijdvak. Dan zoeken we hotels rond het juiste deel van je route.'); toast('Kies eerst een aankomsttijdvak voor hotels'); } else if(!['live','loading'].includes(state.placeStatus.hotels)){ resetLiveCategory('hotels','loading'); loadLivePlacesFor('hotels'); } } renderStops(); });
+  $('#chooseHotelZone')?.addEventListener('click',()=>{ state.category='hotels'; state.view='all'; state.suggestions=false; if(hasRoute()){ if(!hasValidDepartTime()){ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','empty','Vul eerst je vertrektijd in. Dan kunnen we bepalen waar je rond je aankomsttijdvak op de route bent.'); toast('Vul eerst je vertrektijd in'); } else if(!arrivalSlotLabel()){ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','empty','Kies eerst een aankomsttijdvak. Dan zoeken we hotels rond het juiste deel van je route.'); toast('Kies eerst een aankomsttijdvak voor hotels'); } else if(!['live','loading'].includes(state.placeStatus.hotels)){ resetLiveCategory('hotels','loading'); loadLivePlacesFor('hotels'); } } renderStops(); });
   $('#recalculatePlan')?.addEventListener('click',async()=>{await loadRealRoute(); renderAll(); toast('Route opnieuw berekend');});
   $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
