@@ -27,7 +27,7 @@ const stops = {
   uitjes:[],
   wc:[]
 };
-const AUTOSAVE_KEY = 'roadoraPlannerDraftV57';
+const AUTOSAVE_KEY = 'roadoraPlannerDraftV58';
 let autosaveTimer = null;
 let restoringDraft = false;
 function cloneJsonSafe(value){
@@ -77,7 +77,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v5.7', savedAt:Date.now(),
+    version:'v5.8', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -445,6 +445,35 @@ function formatMinutesAsClock(totalMinutes){
   const h=Math.floor(minutes/60);
   const m=minutes%60;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function minutesFromClock(value){
+  const m=String(value||'').match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  const h=Number(m[1]), min=Number(m[2]);
+  if(!Number.isFinite(h)||!Number.isFinite(min)||h<0||h>23||min<0||min>59) return null;
+  return h*60+min;
+}
+function addMinutesToClock(value, extraMinutes){
+  const base=minutesFromClock(value);
+  if(base===null || !Number.isFinite(Number(extraMinutes))) return '—';
+  return formatMinutesAsClock(base + Number(extraMinutes));
+}
+function syncFollowingDayArrival(day){
+  const d=Number(day)||state.activeDay;
+  if(d<=1) return;
+  const prev=selectedHotelForDay(d-1);
+  const plan=timelines[d];
+  if(!prev || !plan || plan.length<2) return;
+  const startTime = safeTimeValue(plan[0]?.[0]) || state.depart || '';
+  const arrival = addMinutesToClock(startTime, prev.info?.remainingMin);
+  if(arrival && arrival !== '—'){
+    plan[plan.length-1][0] = arrival;
+    plan[plan.length-1][2] = shortRouteDetailForDay(d);
+  }
+}
+function syncAllFollowingDayArrivals(){
+  for(let d=2; d<=Number(state.days||1); d++) syncFollowingDayArrival(d);
 }
 function hotelTripMeta(meta={}){
   const lines=[];
@@ -829,6 +858,7 @@ function deleteTripDay(day){
   toast('Dag verwijderd');
 }
 function renderTripOverview(){
+  syncAllFollowingDayArrivals();
   const list=$('#overviewDayList');
   if(list){
     list.innerHTML='';
@@ -864,6 +894,7 @@ function dayPlan(){
       ['—',`Aankomst ${end}`,shortRouteDetailForDay(state.activeDay),'Bestemming']
     ];
   }
+  syncFollowingDayArrival(state.activeDay);
   return timelines[state.activeDay];
 }
 function inferType(title=''){
@@ -1067,10 +1098,13 @@ function addStopToActiveDay(cat,index){
     if(state.activeDay < state.days){
       const next=state.activeDay+1;
       const dest=(state.destination||'').split(',')[0].trim() || 'bestemming';
+      const nextStartTime = state.depart || '—';
+      const nextArrivalTime = addMinutesToClock(nextStartTime, info.remainingMin);
       timelines[next]=[
-        ['—', `Vertrek ${title}`, 'Start vanaf gekozen overnachting', 'Vertrek'],
-        ['—', `Aankomst ${dest}`, shortRouteDetailForDay(next), 'Bestemming']
+        [nextStartTime, `Vertrek ${title}`, 'Start vanaf gekozen overnachting', 'Vertrek'],
+        [nextArrivalTime, `Aankomst ${dest}`, shortRouteDetailForDay(next), 'Bestemming']
       ];
+      syncFollowingDayArrival(next);
     }
     editingPlanRows.clear();
     activateTab('planningTab');
@@ -1148,7 +1182,7 @@ function bind(){
   document.addEventListener('input',e=>{
     const row=e.target.closest('[data-plan-index]'); if(!row) return;
     const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(!plan[i]) return;
-    if(e.target.classList.contains('plan-time-input')) plan[i][0]=e.target.value;
+    if(e.target.classList.contains('plan-time-input')){ plan[i][0]=e.target.value; if(i===0) syncFollowingDayArrival(state.activeDay); }
     if(e.target.classList.contains('plan-title-input')) plan[i][1]=e.target.value;
     if(e.target.classList.contains('plan-detail-input')) plan[i][2]=e.target.value;
     scheduleAutosave();
@@ -1165,6 +1199,8 @@ function bind(){
   ['origin','destination','date','departTime','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
   $('#departTime')?.addEventListener('blur',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
   $('#departTime')?.addEventListener('change',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
+  $('#departTime')?.addEventListener('click',()=>openClockPicker());
+  $('#openDepartClock')?.addEventListener('click',()=>openClockPicker());
   $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); });
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};

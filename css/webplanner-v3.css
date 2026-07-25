@@ -1764,3 +1764,81 @@ button{cursor:pointer}
 .left-panel .two .input{min-width:0}
 .left-panel .two .input input,.left-panel .two .input select{font-size:13px}
 @media(max-width:760px){.field-label-row{align-items:flex-start}.soft-required{font-size:9px;padding:2px 6px}.time-input-wrap:after{font-size:13px}}
+
+/* v5.8: form-audit polish + Androidachtige ronde vertrektijdklok */
+.left-panel .two{
+  gap:10px;
+  align-items:start;
+}
+.left-panel .two .field{
+  gap:6px;
+  margin-bottom:12px;
+}
+.field-label-row{
+  align-items:flex-start;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+  gap:4px 6px;
+  min-height:22px;
+}
+.field-label-row label{
+  display:block;
+  line-height:1.15;
+}
+.hotel-arrival-field .field-label-row label{
+  max-width:120px;
+}
+.soft-required{
+  margin-left:0;
+  transform:translateY(-1px);
+  font-size:9px;
+  line-height:1;
+  padding:4px 7px;
+}
+.left-panel .input{
+  border-radius:12px;
+  height:41px;
+}
+.time-input-wrap{
+  padding-right:8px;
+}
+.time-input-wrap:after{content:none!important}
+.time-input-wrap input[readonly]{cursor:pointer}
+.clock-open-btn{
+  width:30px;
+  height:30px;
+  border:0;
+  border-radius:999px;
+  background:#f6efe4;
+  color:#0c5d60;
+  display:grid;
+  place-items:center;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.clock-open-btn:hover{background:#e9fbfb}
+.clock-modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:18px}
+.clock-modal.open{display:flex}
+.clock-backdrop{position:absolute;inset:0;background:rgba(30,22,12,.28);backdrop-filter:blur(2px)}
+.clock-panel{position:relative;width:min(360px,calc(100vw - 28px));border:1px solid var(--line);border-radius:24px;background:#fffdf9;box-shadow:0 30px 90px rgba(29,20,8,.24);padding:16px}
+.clock-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.clock-head strong{display:block;font-size:16px;color:#111}
+.clock-head span{display:block;margin-top:3px;color:var(--muted);font-size:12px}
+.clock-close{width:34px;height:34px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#5b5145;font-size:20px;line-height:1;cursor:pointer}
+.clock-display{height:46px;border-radius:15px;background:#f3eadb;color:#0b5a5d;display:grid;place-items:center;font-size:28px;font-weight:850;font-variant-numeric:tabular-nums;margin-bottom:13px;letter-spacing:.02em}
+.round-clock{position:relative;width:240px;height:240px;margin:0 auto;border-radius:999px;background:linear-gradient(180deg,#f8f1e7,#fffdf9);border:1px solid var(--line);box-shadow:inset 0 0 0 10px rgba(255,255,255,.55)}
+.clock-hour{position:absolute;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:999px;border:0;background:#fff;color:#4c4236;font-weight:850;box-shadow:0 4px 12px rgba(42,31,12,.10);cursor:pointer}
+.clock-hour.active{background:#0d6b6e;color:#fff}
+.clock-center{position:absolute;left:50%;top:50%;width:10px;height:10px;border-radius:999px;background:#0d6b6e;transform:translate(-50%,-50%);z-index:2}
+.clock-hand{position:absolute;left:50%;top:50%;width:3px;height:76px;background:#0d6b6e;transform-origin:50% 100%;border-radius:999px;z-index:1;transition:transform .12s ease}
+.minute-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 0}
+.minute-chip{height:36px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#4d4337;font-weight:850;cursor:pointer}
+.minute-chip.active{background:#e9fbfb;border-color:#8acfd0;color:#075b5e}
+.clock-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+@media(max-width:760px){
+  .clock-panel{border-radius:22px;padding:14px}
+  .round-clock{width:220px;height:220px}
+  .clock-hour{width:36px;height:36px}
+}
