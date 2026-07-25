@@ -60,8 +60,15 @@
           </div>
           <div class="two">
             <div class="field">
-              <label for="hotelArrival">Overnachting</label>
-              <div class="input"><select id="hotelArrival"><option value="" selected>Geen overnachting gepland</option><option value="manual">Zelf later hotel kiezen</option></select></div>
+              <label for="hotelArrival">Aankomsttijdvak hotel</label>
+              <div class="input"><select id="hotelArrival">
+                <option value="" selected>Geen tijdvak gekozen</option>
+                <option value="12-14">12:00 - 14:00</option>
+                <option value="14-16">14:00 - 16:00</option>
+                <option value="16-18">16:00 - 18:00</option>
+                <option value="18-20">18:00 - 20:00</option>
+                <option value="20-22">20:00 - 22:00</option>
+              </select></div>
             </div>
             <div class="field">
               <label for="tripDays">Aantal dagen</label>
@@ -199,7 +206,7 @@
           <div class="card-title stops-head">
             <div>
               <h2>Stops en hotels</h2>
-              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Na het laden van de route staat alles standaard uit.</p>
+              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Na het laden van de route staat alles standaard uit. Hotels zoeken kan pas na keuze van een aankomsttijdvak.</p>
             </div>
             <span class="pill suggestion-paused">Suggesties on hold</span>
           </div>
