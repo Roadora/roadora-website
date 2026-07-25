@@ -1739,3 +1739,6 @@ button{cursor:pointer}
 .mode-switch.hidden,#mapToggleStops.hidden,.legend.hidden{display:none!important;}
 
 .soft-required{font-weight:700;color:#6f7d7d;font-size:.72rem;margin-left:4px}
+
+.stop-trip-line{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+.stop-trip-line span{display:inline-flex;align-items:center;border:1px solid rgba(15,118,110,.24);background:rgba(15,118,110,.08);color:#075b57;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:800}

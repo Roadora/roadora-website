@@ -3,17 +3,17 @@
 // Safe for Vercel: API key stays in Environment Variables.
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V54__',
+  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V55__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 1,
+  maxPoints: 3,
   maxResultsPerPoint: 20,
-  maxTotalResults: 20,
-  defaultRadiusMeters: 12000,
+  maxTotalResults: 30,
+  defaultRadiusMeters: 22000,
   minRadiusMeters: 5000,
-  maxRadiusMeters: 15000,
-  concurrency: 1,
-  routeEngine: 'cost-safe-time-window-v1',
+  maxRadiusMeters: 25000,
+  concurrency: 2,
+  routeEngine: 'cost-safe-time-window-v2-3points',
   placeMode: 'hotels'
 };
 

@@ -31,7 +31,7 @@ const categorySpecs = {
   hotels: {
     singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je stopmoment',
     recommended:'Hotels rond je gekozen aankomsttijdvak', all:'Hotels rond je gekozen aankomsttijdvak',
-    sort:'Maximaal 20 hotels rond je gekozen aankomsttijdvak. Gebruik Meer laden later voor extra resultaten.',
+    sort:'Maximaal 30 hotels rond je gekozen aankomsttijdvak. Resultaten tonen afstand vanaf vertrek en verwachte aankomst.',
     match:['Overnachten rond', 'Weinig omrijden', 'Past bij route'],
     why:['Ligt logisch langs je route', 'Je kiest zelf of je hier wilt overnachten', 'Zo min mogelijk omrijden']
   },
@@ -324,9 +324,42 @@ function routePointAtProgress(progress,index=0){
   return c ? {lat:c[0],lng:c[1],index,progress:p,distanceFromStartMeters:Math.round((state.routeDistanceKm||0)*1000*p)} : null;
 }
 function hotelArrivalSearchPoints(){
-  const p=progressForHotelArrivalSlot();
-  if(!Number.isFinite(p)) return [];
-  return [p].map((x,i)=>routePointAtProgress(x,i)).filter(Boolean);
+  const depart=String(state.depart||'').match(/^(\d{1,2}):(\d{2})$/);
+  const slot=String(state.arrival||'').match(/^(\d{1,2})-(\d{1,2})$/);
+  const duration=Number(state.routeDurationMin)||0;
+  if(!depart || !slot || duration<=0) return [];
+  const departHour=Number(depart[1])+(Number(depart[2])/60);
+  const startHour=Number(slot[1]);
+  const endHour=Number(slot[2]);
+  const hours=[startHour,(startHour+endHour)/2,endHour];
+  const progresses=hours.map(hour=>{
+    let elapsed=hour-departHour;
+    if(elapsed<0) elapsed+=24;
+    return Math.max(0.06, Math.min(0.96, (elapsed*60)/Math.max(1,duration)));
+  });
+  return [...new Set(progresses.map(p=>Math.round(p*1000)/1000))]
+    .map((x,i)=>routePointAtProgress(x,i))
+    .filter(Boolean);
+}
+function formatMinutesAsClock(totalMinutes){
+  const minutes=((Math.round(Number(totalMinutes)||0)%1440)+1440)%1440;
+  const h=Math.floor(minutes/60);
+  const m=minutes%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function hotelTripMeta(meta={}){
+  const lines=[];
+  const meters=Number(meta.distanceFromStartMeters);
+  const km=Number.isFinite(meters) ? Math.round(meters/1000) : (Number.isFinite(Number(meta.distanceFromStartKm)) ? Math.round(Number(meta.distanceFromStartKm)) : null);
+  if(Number.isFinite(km)) lines.push(`${km} km vanaf vertrek`);
+  const progress=Number.isFinite(Number(meta.routeProgress)) ? Number(meta.routeProgress) : (Number(state.routeDistanceKm)>0 && Number.isFinite(km) ? km/Number(state.routeDistanceKm) : null);
+  const depart=String(state.depart||'').match(/^(\d{1,2}):(\d{2})$/);
+  if(depart && Number.isFinite(progress) && Number(state.routeDurationMin)>0){
+    const departMinutes=Number(depart[1])*60+Number(depart[2]);
+    const arrival=departMinutes + (Number(state.routeDurationMin)*progress);
+    lines.push(`aankomst ± ${formatMinutesAsClock(arrival)}`);
+  }
+  return lines;
 }
 function isEnergyCategory(cat){ return cat==='tanken' || cat==='laden'; }
 function rangeZone(){
@@ -408,6 +441,7 @@ function normalizeLivePlace(place,cat){
   if(Array.isArray(place?.amenities)&&place.amenities.length) bits.push(place.amenities.slice(0,3).join(' · '));
   const distanceKm = Number.isFinite(Number(place?.distanceFromStartMeters)) ? Math.round(Number(place.distanceFromStartMeters)/1000) : null;
   if(isEnergyCategory(cat) && Number.isFinite(distanceKm)) bits.push(`± ${distanceKm} km vanaf vertrek`);
+  if(cat==='hotels') hotelTripMeta(place).forEach(x=>bits.push(x));
   bits.push(place?.detourLabel || (cat==='hotels'?'+10 min omrijden':'+3 min omrijden'));
   const derivedPhotoUrl = place?.photoUrl || (place?.photoName ? `/api/google-photo?name=${encodeURIComponent(place.photoName)}&w=420` : null);
   const derivedPhotoUrls = Array.isArray(place?.photoUrls) && place.photoUrls.length
@@ -439,7 +473,7 @@ async function loadLivePlacesFor(cat){
     return false;
   }
   try{
-    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?12000:7000,mode:cat==='hotels'?'arrival_window_hotels_cost_safe':'route_quick',maxResults:cat==='hotels'?20:40,hotelHint:cat==='hotels'?hotelSearchHint():''})});
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?22000:7000,mode:cat==='hotels'?'arrival_window_hotels_cost_safe':'route_quick',maxResults:cat==='hotels'?30:40,hotelHint:cat==='hotels'?hotelSearchHint():''})});
     const data=await res.json().catch(()=>({places:[]}));
     if(!res.ok || data.ok===false) throw new Error(data.message||data.status||'live places fout');
     const list=(Array.isArray(data.places)?data.places:[]).map(p=>normalizeLivePlace(p,cat));
@@ -741,6 +775,7 @@ function stopCardHtml(item, index, cat, compact=false, originalIndex=index){
   const showPhoto = isPhotoStop(cat) && Boolean(meta.photoUrl);
   const primaryAction = categorySpec(cat).action;
   const labels = stopMatchLabels(cat, rawDesc, meta).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
+  const tripMeta = cat==='hotels' ? hotelTripMeta(meta).map(x=>`<span>${escapeHtml(x)}</span>`).join('') : '';
   const why = stopWhyList(cat).slice(0, compact ? 2 : 3).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   const photoStyle = meta.photoUrl ? ` style="background-image:url('${escapeHtml(meta.photoUrl)}')"` : '';
   const livePill = meta.live ? '<span class="live-place-pill">live</span>' : '';
@@ -750,6 +785,7 @@ function stopCardHtml(item, index, cat, compact=false, originalIndex=index){
       <strong>${name}${livePill}</strong>
       <p>${desc}</p>
       <div class="stop-match-line">${labels}</div>
+      ${tripMeta ? `<div class="stop-trip-line">${tripMeta}</div>` : ''}
       <div class="stop-why-line">${why}</div>
       <div class="stop-result-actions-inline">
         <button class="text-action" data-view-stop="${originalIndex}" data-stop-cat="${cat}" type="button">${primaryAction}</button>
