@@ -28,6 +28,50 @@ const stops = {
   wc:[]
 };
 const AUTOSAVE_KEY = 'roadoraPlannerDraftV58';
+const LOCATION_HISTORY_KEY = 'roadoraLocationHistoryV1';
+const LOCATION_HISTORY_LIMIT = 8;
+function cleanLocationValue(value){ return String(value||'').replace(/\s+/g,' ').trim(); }
+function readLocationHistory(){
+  try{
+    const raw=localStorage.getItem(LOCATION_HISTORY_KEY);
+    const data=raw?JSON.parse(raw):{};
+    return {
+      origin:Array.isArray(data.origin)?data.origin.filter(Boolean):[],
+      destination:Array.isArray(data.destination)?data.destination.filter(Boolean):[]
+    };
+  }catch(_){ return {origin:[], destination:[]}; }
+}
+function saveLocationHistory(data){
+  try{ localStorage.setItem(LOCATION_HISTORY_KEY, JSON.stringify(data)); }catch(_){}
+}
+function rememberLocation(field, value){
+  const val=cleanLocationValue(value);
+  if(!val || val.length < 2 || !['origin','destination'].includes(field)) return;
+  const data=readLocationHistory();
+  const current=data[field] || [];
+  data[field]=[val, ...current.filter(x=>String(x).toLowerCase()!==val.toLowerCase())].slice(0, LOCATION_HISTORY_LIMIT);
+  saveLocationHistory(data);
+}
+function rememberCurrentLocations(){
+  rememberLocation('origin', $('#origin')?.value || state.origin);
+  rememberLocation('destination', $('#destination')?.value || state.destination);
+}
+function locationHistoryLabel(field){ return field==='origin' ? 'Eerder gezocht vertrekpunt' : 'Eerder gezocht bestemming'; }
+function closeLocationHistory(){ $$('.location-history-popover').forEach(p=>p.remove()); }
+function showLocationHistory(input){
+  if(!input || !['origin','destination'].includes(input.id)) return;
+  closeLocationHistory();
+  const items=(readLocationHistory()[input.id] || []).filter(Boolean);
+  if(!items.length) return;
+  const wrap=input.closest('.input') || input.parentElement;
+  if(!wrap) return;
+  wrap.classList.add('has-location-history');
+  const panel=document.createElement('div');
+  panel.className='location-history-popover';
+  panel.setAttribute('role','listbox');
+  panel.innerHTML=`<div class="location-history-title">${locationHistoryLabel(input.id)}</div>` + items.map(item=>`<button type="button" class="location-history-item" data-location-value="${String(item).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">${String(item).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</button>`).join('');
+  wrap.appendChild(panel);
+}
 let autosaveTimer = null;
 let restoringDraft = false;
 function cloneJsonSafe(value){
@@ -104,7 +148,7 @@ function serializeDraft(){
 }
 function saveDraftNow(){
   if(restoringDraft) return;
-  try{localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(serializeDraft()));}catch(err){console.warn('Roadora autosave fout:',err);}
+  try{rememberCurrentLocations(); localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(serializeDraft()));}catch(err){console.warn('Roadora autosave fout:',err);}
 }
 function scheduleAutosave(){
   if(restoringDraft) return;
@@ -135,7 +179,7 @@ function restoreDraft(){
   }
 }
 function clearDraft(){
-  try{localStorage.removeItem(AUTOSAVE_KEY);}catch(_){}
+  try{localStorage.removeItem(AUTOSAVE_KEY); localStorage.removeItem(LOCATION_HISTORY_KEY);}catch(_){}
 }
 function resetPlanner(){
   clearDraft();
@@ -707,6 +751,7 @@ async function loadRealRoute(){
   ['restaurants','uitjes','wc'].forEach(cat=>setPlaceStatus(cat,'empty','Deze categorie staat standaard uit en wordt later live gekoppeld. Kies voorlopig hotels, laden of tanken voor live kaartresultaten.'));
   try{
     toast('Plaatsen zoeken…');
+    rememberCurrentLocations();
     const [startGeo,endGeo]=await Promise.all([geocodePlace(state.origin), geocodePlace(state.destination)]);
     toast('Route laden via Google…');
     const params=new URLSearchParams({start:startGeo.coord.join(','),end:endGeo.coord.join(','),profile:'driving-car'});
@@ -1297,6 +1342,31 @@ function bind(){
     if(!el) return;
     ['input','change','blur'].forEach(ev=>el.addEventListener(ev,()=>{ readForm(); renderAll(); saveDraftNow(); }));
   });
+  ['origin','destination'].forEach(id=>{
+    const input=$('#'+id);
+    if(!input) return;
+    input.addEventListener('focus',()=>showLocationHistory(input));
+    input.addEventListener('click',()=>showLocationHistory(input));
+    input.addEventListener('input',()=>{ readForm(); scheduleAutosave(); });
+    input.addEventListener('blur',()=>{ rememberLocation(id, input.value); saveDraftNow(); setTimeout(closeLocationHistory,160); });
+  });
+  document.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.location-history-popover') && !e.target.closest('#origin') && !e.target.closest('#destination')) closeLocationHistory();
+  });
+  document.addEventListener('click',e=>{
+    const item=e.target.closest('.location-history-item');
+    if(!item) return;
+    const pop=item.closest('.location-history-popover');
+    const input=pop?.parentElement?.querySelector('input');
+    if(!input) return;
+    input.value=item.dataset.locationValue || item.textContent.trim();
+    readForm();
+    rememberLocation(input.id, input.value);
+    closeLocationHistory();
+    renderAll();
+    saveDraftNow();
+  });
+
   const timeBox=$('#openDepartClock');
   if(timeBox){
     ['click','touchend'].forEach(ev=>timeBox.addEventListener(ev,(e)=>{ e.preventDefault(); openClockPicker(); }));

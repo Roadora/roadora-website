@@ -2052,3 +2052,18 @@ button{cursor:pointer}
 .hotel-arrival-field .input{padding-left:10px!important;padding-right:8px!important}
 .left-panel .two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:start!important}
 .left-panel .field{min-width:0!important}
+
+/* v6.2 locatiegeschiedenis vertrek/bestemming */
+.input.has-location-history{position:relative;overflow:visible!important;z-index:30}
+.location-history-popover{
+  position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:9999;
+  background:#fffdf9;border:1px solid #dfcfb8;border-radius:16px;
+  box-shadow:0 16px 44px rgba(37,27,11,.16);padding:7px;box-sizing:border-box;
+}
+.location-history-title{font-size:11px;font-weight:850;color:#8a6412;padding:5px 8px 6px}
+.location-history-item{
+  width:100%;border:0;background:transparent;text-align:left;border-radius:11px;
+  padding:10px 10px;font-size:14px;font-weight:650;color:#2b2117;cursor:pointer;
+}
+.location-history-item:hover,.location-history-item:focus{background:#f4ead7;outline:none}
+.location-history-item::before{content:'↺';display:inline-block;margin-right:8px;color:#0d6b6e;font-weight:900}
