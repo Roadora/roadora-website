@@ -497,7 +497,10 @@ async function loadRealRoute(){
     const data=await res.json().catch(()=>({}));
     if(!res.ok || !data?.features?.[0]?.geometry?.coordinates){
       console.warn('Roadora route API detail:', data);
-      const msg = data?.detail?.message || data?.error || data?.status || `Route ${res.status}`;
+      try{ console.warn('Roadora route API detail JSON:', JSON.stringify(data, null, 2)); }catch(_){}
+      window.__ROADORA_LAST_ROUTE_ERROR__ = data;
+      const firstAttempt = data?.debug?.attempts?.[0];
+      const msg = firstAttempt?.body?.error?.message || firstAttempt?.body?.message || firstAttempt?.message || data?.error || data?.status || `Route ${res.status}`;
       throw new Error(String(msg));
     }
     const feature=data.features[0];
@@ -526,7 +529,7 @@ async function loadRealRoute(){
     setPlaceStatus('laden','error','Route of geocoding niet geladen; live laadpunten zijn daarom niet opgehaald.');
     updateTexts();
     renderStops();
-    toast('Route niet geladen: controleer API-instellingen');
+    toast('Route niet geladen: open console voor Roadora route API detail JSON');
     return false;
   }
 }
