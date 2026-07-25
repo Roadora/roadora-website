@@ -20,82 +20,13 @@ const recs = [
   ['Camper/parkeren','Ruime plekken · makkelijk keren · geschikt voor langere voertuigen']
 ];
 const stops = {
-  hotels:[
-    ['Hotel Alpenblick','Beste match · parkeren · +8 min omrijden'],
-    ['Gasthof Route Süd','Goed alternatief · parkeren · +5 min omrijden'],
-    ['City Hotel Ulm','Past deels · snel bereikbaar · +3 min omrijden'],
-    ['Hotel Am Park','Rustige locatie · ontbijt · +11 min omrijden'],
-    ['Familiehotel Tirol','Ruime kamers · laadpunt dichtbij · +14 min omrijden'],
-    ['Routehotel Donau','Parkeren · ontbijt mogelijk · +6 min omrijden'],
-    ['Hotel Waldruhe','Rustige ligging · goed bereikbaar · +12 min omrijden'],
-    ['Aparthotel Zuid-Duitsland','Ruime kamer · keukenhoek · rustig gelegen'],
-    ['Hotel bij afrit A8','Snel bereikbaar · ontbijt · +4 min omrijden'],
-    ['Pension Alpenroute','Eenvoudig · ontbijt mogelijk · +9 min omrijden'],
-    ['Hotel met laadpunt','Laadpunt dichtbij · parkeren · +10 min omrijden'],
-    ['Familie Gasthof','Restaurant aanwezig · +7 min omrijden']
-  ],
-  restaurants:[
-    ['Raststätte Frankenhöhe','Lunch langs route · WC · parkeren'],
-    ['Trattoria Al Lago','Italiaans · geschikt voor gezin · terras'],
-    ['Bistro Route Süd','Korte omweg · terras · parkeren'],
-    ['Gasthof Waldblick','Rustige lunchplek · +7 min omrijden'],
-    ['Familierestaurant A8','Kinderstoelen · snelle bediening · +5 min'],
-    ['Autohof Restaurant','Ruim parkeren · WC · tanken mogelijk'],
-    ['Lunch bij stadspark','Korte wandeling erbij · kindvriendelijk'],
-    ['Pizzeria langs route','Snel eten · geschikt voor kinderen'],
-    ['Café bij laadplein','Koffie · broodjes · laadpunt naast de deur'],
-    ['Restaurant Overnachten rond','Handig rond aankomst · parkeren bij deur']
-  ],
-  laden:[
-    ['IONITY Ulm-West','Snelladen · lunch dichtbij · binnen rijbereik'],
-    ['Fastned Augsburg','Snelladen · WC · koffie'],
-    ['EnBW Park','Laadplein · meerdere punten · weinig omrijden'],
-    ['Hotelcharger Alpenblick','Laadpunt bij hotel · handig bij overnachting'],
-    ['Aral Pulse Autohof','Snelladen · tanken · restaurant'],
-    ['Tesla Supercharger route','Snel laden · eten dichtbij'],
-    ['ChargePoint centrum','Laadpunt + korte wandeling'],
-    ['Laadplein rond overnachting','Goed moment vóór inchecken'],
-    ['Shell Recharge A8','Laadstop combineren met WC en koffie'],
-    ['Snellader bij outlet','Laden + korte pauze of uitje']
-  ],
-  tanken:[
-    ['Shell Route Süd','Langs route · weinig omrijden'],
-    ['Aral Autohof','Ruim parkeren · WC'],
-    ['TotalEnergies A8','Goede tankstop voor je overnachting'],
-    ['OMV Tirol','Voor aankomst bij je overnachting'],
-    ['Esso Raststätte','Tanken · koffie · snel verder'],
-    ['BP Autohof Zuid','Ruime pomp · restaurant naast station'],
-    ['Avia Routepunt','Goed alternatief · +4 min omrijden'],
-    ['Tankstation bij overnachting','Handig voor vertrek volgende dag'],
-    ['Shell grensroute','Goed moment vóór grensovergang'],
-    ['Total Truckstop','Ruim parkeren · camper/bus geschikt']
-  ],
-  uitjes:[
-    ['Korte wandeling Donau','Rustige stop · korte wandeling'],
-    ['Speeltuin stadspark','Korte pauze · 15 min'],
-    ['Uitzichtpunt Alpenroute','Korte foto-stop · weinig omrijden'],
-    ['Zwembad bij overnachting','Voor avond na aankomst'],
-    ['Historisch centrum Ulm','Korte wandeling · eten dichtbij'],
-    ['Natuurpad langs route','Even bewegen · korte stop'],
-    ['Outlet stop','Korte tussenstop · parkeren makkelijk'],
-    ['Meer bij overnachting','Rustig aankomen · wandelen'],
-    ['Kindermuseum omgeving','Voor langere pauze of vrije dag'],
-    ['Panorama parkeerplaats','Foto-stop · 20 minuten']
-  ],
-  wc:[
-    ['Raststätte Keulen Süd','WC · koffie · weinig omrijden'],
-    ['Autohof Ulm','WC · parkeren · eten'],
-    ['Pauzeplek A8','Snel en praktisch'],
-    ['Servicepunt rond overnachting','Vlak voor aankomst'],
-    ['Tankstation met WC','Direct langs route · korte stop'],
-    ['Familie pauzeplek','WC · speeltuin · picknicktafel'],
-    ['Laadplein met sanitair','WC tijdens laden'],
-    ['Restaurantstop met WC','Lunch combineren met pauze'],
-    ['Parkeerplaats met voorzieningen','Snel uitstappen · korte pauze'],
-    ['Autohof grensroute','WC · tanken · koffie']
-  ]
-};
-const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
+  hotels:[],
+  restaurants:[],
+  laden:[],
+  tanken:[],
+  uitjes:[],
+  wc:[]
+};const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const categorySpecs = {
   hotels: {
     singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je stopmoment',
@@ -175,7 +106,7 @@ function displayedPlacesForMap(){
   if(!state.category) return [];
   const list = currentDisplayedStopsForMap();
   if(!Array.isArray(list) || !list.length) return [];
-  const max = state.suggestions && state.view === 'recommended' ? (isEnergyCategory(state.category) ? 10 : (state.category === 'hotels' ? 3 : 4)) : 40;
+  const max = state.suggestions && state.view === 'recommended' ? (isEnergyCategory(state.category) ? 10 : 8) : 120;
   return list.slice(0,max)
     .map((item,index)=>({item,index:item?.[2]?.__stopIndex ?? index,meta:item?.[2] || {}}))
     .filter(x=>Number.isFinite(Number(x.meta.lat)) && Number.isFinite(Number(x.meta.lng)));
@@ -419,7 +350,7 @@ function currentDisplayedStopsForMap(){
   if(!state.category) return [];
   const list=(stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
   if(state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) return recommendedEnergyStops(list);
-  if(state.suggestions && state.view==='recommended') return list.slice(0,state.category==='hotels'?3:4);
+  if(state.suggestions && state.view==='recommended') return list.slice(0,state.category==='hotels'?8:6);
   return list;
 }
 
@@ -461,11 +392,11 @@ async function loadLivePlacesFor(cat){
   const endpoint = cat==='hotels' ? '/api/google-hotels' : cat==='tanken' ? '/api/google-fuel' : cat==='laden' ? '/api/google-charging' : null;
   if(!endpoint) return false;
   const points = cat==='hotels'
-    ? routeSamplePoints(8,{includeEnds:false}).filter(p=>p.progress>.35 && p.progress<.92)
+    ? routeSamplePoints(24,{includeEnds:false}).filter(p=>p.progress>.05 && p.progress<.98)
     : (isEnergyCategory(cat) ? energySearchPoints() : routeSamplePoints(10,{includeEnds:false}));
   if(!points.length) return false;
   try{
-    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?16000:7000,mode:cat==='hotels'?'route_planning':'route_quick'})});
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points,radiusMeters:cat==='hotels'?25000:7000,mode:cat==='hotels'?'route_all_hotels':'route_quick',maxResults:cat==='hotels'?120:40})});
     const data=await res.json().catch(()=>({places:[]}));
     if(!res.ok || data.ok===false) throw new Error(data.message||data.status||'live places fout');
     const list=(Array.isArray(data.places)?data.places:[]).map(p=>normalizeLivePlace(p,cat));
@@ -805,7 +736,7 @@ function renderStops(){
   if(!state.category){
     $('#recommendTitle').textContent = 'Geen categorie geselecteerd';
     $('#allStopsTitle').textContent = 'Zet een stopcategorie aan';
-    const empty = `<div class="empty-stops"><strong>Stops staan uit.</strong><span>Kies handmatig een categorie hierboven. Pas dan haalt Roadora live locaties op en verschijnen pins op de kaart.</span></div>`;
+    const empty = `<div class="empty-stops"><strong>Stops staan uit.</strong><span>Kies handmatig Hotels, Laden of Tanken. Pas dan haalt Roadora live locaties op en verschijnen pins op de kaart.</span></div>`;
     $('#recommendations').innerHTML = empty;
     $('#allStops').innerHTML = empty;
     $('#recommendPanel').classList.add('hidden');
@@ -816,7 +747,7 @@ function renderStops(){
   const rawSelected = (stops[state.category]||[]).map((item,i)=>{ if(item?.[2]) item[2].__stopIndex=i; return item; });
   const selected = (state.suggestions && state.view==='recommended' && isEnergyCategory(state.category)) ? recommendedEnergyStops(rawSelected) : rawSelected;
   const recommended = state.suggestions
-    ? (isEnergyCategory(state.category) ? recommendedEnergyStops(rawSelected).slice(0,10) : rawSelected.slice(0, state.category==='hotels'?3:4))
+    ? (isEnergyCategory(state.category) ? recommendedEnergyStops(rawSelected).slice(0,10) : rawSelected.slice(0, state.category==='hotels'?8:6))
     : [];
   const recTitle = state.suggestions ? categoryTitle(state.category,'recommended') : 'Zelf zoeken actief';
   const allTitle = categoryTitle(state.category,'all');
@@ -825,7 +756,7 @@ function renderStops(){
   const recommendSub = $('#recommendPanel .tiny-muted') || $('#recommendPanel .stops-subhead .mini-link');
   const allSub = $('#allStopsPanel .tiny-muted');
   if(allSub) allSub.textContent = categorySpec(state.category).sort;
-  $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Zelf zoeken actief';
+  $('#suggestionToggle').textContent = state.suggestions ? 'Roadora suggesties aan' : 'Roadora suggesties uit';
   $('#suggestionToggle').setAttribute('aria-pressed', String(state.suggestions));
   $('#suggestionToggle').classList.toggle('off', !state.suggestions);
   const status = state.placeStatus[state.category] || (selected.length ? 'demo' : 'empty');

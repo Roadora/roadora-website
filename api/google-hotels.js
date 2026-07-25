@@ -3,16 +3,16 @@
 // Safe for Vercel: API key stays in Environment Variables.
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V41__',
+  cacheName: '__ROADORA_GOOGLE_HOTELS_CACHE_V51__',
   cacheTtlMs: 15 * 60 * 1000,
-  requestTimeoutMs: 9000,
-  maxPoints: 20,
-  maxResultsPerPoint: 5,
-  maxTotalResults: 38,
-  defaultRadiusMeters: 16000,
+  requestTimeoutMs: 8000,
+  maxPoints: 24,
+  maxResultsPerPoint: 10,
+  maxTotalResults: 120,
+  defaultRadiusMeters: 25000,
   minRadiusMeters: 5000,
-  maxRadiusMeters: 25000,
-  concurrency: 4,
+  maxRadiusMeters: 30000,
+  concurrency: 3,
   routeEngine: 'route-core-lock-v1',
   placeMode: 'hotels'
 };
@@ -263,6 +263,8 @@ export default async function handler(req, res) {
   }
 
   const body = req.body || {};
+  const requestedMax = Number(body.maxResults);
+  const maxTotalResults = Number.isFinite(requestedMax) ? Math.max(1, Math.min(CONFIG.maxTotalResults, Math.round(requestedMax))) : CONFIG.maxTotalResults;
   const mode = String(body.mode || 'route_planning');
   const points = Array.isArray(body.points)
     ? body.points.map(normalizePoint).filter(Boolean).slice(0, CONFIG.maxPoints)
@@ -283,7 +285,7 @@ export default async function handler(req, res) {
     const settled = await runLimited(points, CONFIG.concurrency, point => searchHotelsNearPoint({ apiKey, point, radiusMeters }));
     const rawHits = settled.flatMap(result => result.status === 'fulfilled' ? result.value : []);
     const errors = settled.filter(result => result.status === 'rejected').map(result => String(result.reason?.message || result.reason)).slice(0, 4);
-    const places = dedupeAndSpread(rawHits, CONFIG.maxTotalResults);
+    const places = dedupeAndSpread(rawHits, maxTotalResults);
 
     const payload = {
       ok: true,
