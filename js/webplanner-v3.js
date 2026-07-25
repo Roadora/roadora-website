@@ -26,7 +26,105 @@ const stops = {
   tanken:[],
   uitjes:[],
   wc:[]
-};const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
+};
+const AUTOSAVE_KEY = 'roadoraPlannerDraftV57';
+let autosaveTimer = null;
+let restoringDraft = false;
+function cloneJsonSafe(value){
+  try{return JSON.parse(JSON.stringify(value));}catch(_){return value;}
+}
+function normalizeTimeValue(value){
+  const raw=String(value||'').trim();
+  if(!raw || raw==='--:--') return '';
+  const compact=raw.replace(/[^0-9]/g,'');
+  let hh='', mm='';
+  if(/^\d{1,2}:\d{1,2}$/.test(raw)){
+    const parts=raw.split(':'); hh=parts[0]; mm=parts[1];
+  } else if(compact.length===3){
+    hh=compact.slice(0,1); mm=compact.slice(1);
+  } else if(compact.length>=4){
+    hh=compact.slice(0,2); mm=compact.slice(2,4);
+  } else if(compact.length<=2){
+    hh=compact; mm='00';
+  }
+  const h=Number(hh), m=Number(mm);
+  if(!Number.isFinite(h)||!Number.isFinite(m)||h<0||h>23||m<0||m>59) return '';
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function activePrefLabels(){return $$('.pref.active').map(b=>b.textContent.trim());}
+function applySavedChoices(saved={}){
+  if(saved.pet){ $$('.choice[data-pet]').forEach(b=>b.classList.toggle('active', b.dataset.pet===saved.pet)); }
+  if(saved.vehicle){ $$('.choice[data-vehicle]').forEach(b=>b.classList.toggle('active', b.dataset.vehicle===saved.vehicle)); }
+  else { $$('.choice[data-vehicle]').forEach(b=>b.classList.remove('active')); }
+  const prefs=Array.isArray(saved.prefs)?saved.prefs:[];
+  $$('.pref').forEach(b=>b.classList.toggle('active', prefs.includes(b.textContent.trim())));
+}
+function setFormFromState(){
+  const set=(id,val)=>{const el=$('#'+id); if(el) el.value = val ?? '';};
+  set('origin', state.origin || '');
+  set('destination', state.destination || '');
+  set('date', state.date || todayISO());
+  set('departTime', state.depart || '');
+  set('hotelArrival', state.arrival || '');
+  set('tripDays', state.days || 1);
+  set('vehicleRangeKm', state.range || '');
+  set('plug', state.plug || 'CCS');
+  set('maxDetour', state.maxDetour || 20);
+  const adults=$('[name="adults"]'); if(adults) adults.value=state.adults || 2;
+  const children=$('[name="children"]'); if(children) children.value=state.children || 0;
+  applySavedChoices({pet:state.pet, vehicle:state.vehicle, prefs:state.prefs||[]});
+}
+function serializeDraft(){
+  readForm();
+  return {
+    version:'v5.7', savedAt:Date.now(),
+    state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
+    routeCoords:cloneJsonSafe(routeCoords),
+    timelines:cloneJsonSafe(timelines),
+    stops:cloneJsonSafe(stops),
+    activeTab:$('.tab.active')?.dataset?.tab || 'planning'
+  };
+}
+function saveDraftNow(){
+  if(restoringDraft) return;
+  try{localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(serializeDraft()));}catch(err){console.warn('Roadora autosave fout:',err);}
+}
+function scheduleAutosave(){
+  if(restoringDraft) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer=setTimeout(saveDraftNow,180);
+}
+function restoreDraft(){
+  const raw=localStorage.getItem(AUTOSAVE_KEY);
+  if(!raw) return false;
+  try{
+    const draft=JSON.parse(raw);
+    if(!draft || !draft.state) return false;
+    restoringDraft=true;
+    Object.assign(state, draft.state);
+    state.date=state.date || todayISO();
+    state.depart=normalizeTimeValue(state.depart);
+    state.days=Math.max(1,Math.min(21,Number(state.days)||1));
+    if(Array.isArray(draft.routeCoords)) routeCoords=draft.routeCoords.filter(c=>Array.isArray(c)&&c.length>=2&&Number.isFinite(Number(c[0]))&&Number.isFinite(Number(c[1]))).map(c=>[Number(c[0]),Number(c[1])]);
+    if(draft.timelines && typeof draft.timelines==='object'){ Object.keys(timelines).forEach(k=>delete timelines[k]); Object.assign(timelines,draft.timelines); }
+    if(draft.stops && typeof draft.stops==='object'){ Object.keys(stops).forEach(k=>{stops[k]=Array.isArray(draft.stops[k])?draft.stops[k]:[];}); }
+    setFormFromState();
+    restoringDraft=false;
+    return true;
+  }catch(err){
+    restoringDraft=false;
+    console.warn('Roadora herstel fout:',err);
+    return false;
+  }
+}
+function clearDraft(){
+  try{localStorage.removeItem(AUTOSAVE_KEY);}catch(_){}
+}
+function resetPlanner(){
+  clearDraft();
+  location.reload();
+}
+const cats = [['hotels','Hotels'],['restaurants','Restaurants'],['laden','Laden'],['tanken','Tanken'],['uitjes','Uitjes'],['wc','WC']];
 const categorySpecs = {
   hotels: {
     singular:'hotel', action:'Bekijk hotel', type:'overnachten rond je stopmoment',
@@ -590,6 +688,8 @@ async function loadRealRoute(){
     toast(state.routeSource==='google' ? 'Google route geladen' : 'Route geladen via fallback');
     clearPlaceMarkers();
     renderStops();
+    updateMapRoute();
+    saveDraftNow();
     return true;
   }catch(err){
     console.warn('Roadora route error:',err);
@@ -613,7 +713,7 @@ window.RoadoraPlanner.setGoogleRoute = function(routeData){
       if(summary.distance) state.routeDistanceKm=Math.round(Number(summary.distance)/1000);
       if(summary.duration) state.routeDurationMin=Math.round(Number(summary.duration)/60);
       state.routeSource='external-route';
-      applyRouteZones(); renderAll(); updateMapRoute();
+      applyRouteZones(); renderAll(); updateMapRoute(); saveDraftNow();
     }
   }catch(err){console.warn('setGoogleRoute fout:',err);}
 };
@@ -627,7 +727,7 @@ function readForm(){
   state.origin=($('#origin')?.value||'').trim();
   state.destination=($('#destination')?.value||'').trim();
   state.date=$('#date')?.value || todayISO();
-  state.depart=$('#departTime')?.value || '';
+  state.depart=normalizeTimeValue($('#departTime')?.value || '');
   state.arrival=$('#hotelArrival')?.value || '';
   state.days=Math.max(1,Math.min(21,Number($('#tripDays')?.value)||1));
   state.range=Number($('#vehicleRangeKm')?.value)||0;
@@ -975,6 +1075,7 @@ function addStopToActiveDay(cat,index){
     editingPlanRows.clear();
     activateTab('planningTab');
     renderAll();
+    saveDraftNow();
     toast(`${title} ingesteld als eindpunt van Dag ${state.activeDay}`);
     return;
   }
@@ -991,7 +1092,7 @@ function renderTrips(){
   const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]');
   $('#savedTrips').innerHTML = trips.length ? trips.map(t=>`<div class="trip-card"><strong>${t.name}</strong><span>${t.days} dagen · ${t.route} · ${t.created}</span></div>`).join('') : '<p class="muted">Nog geen opgeslagen roadtrips. Bewaar je planning om hem later via je account naar de app te sturen.</p>';
 }
-function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80);}
+function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80); scheduleAutosave();}
 function bind(){
   $$('.tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
   document.addEventListener('click',e=>{
@@ -1050,16 +1151,20 @@ function bind(){
     if(e.target.classList.contains('plan-time-input')) plan[i][0]=e.target.value;
     if(e.target.classList.contains('plan-title-input')) plan[i][1]=e.target.value;
     if(e.target.classList.contains('plan-detail-input')) plan[i][2]=e.target.value;
+    scheduleAutosave();
   });
   document.addEventListener('change',e=>{
     const row=e.target.closest('[data-plan-index]'); if(!row || !e.target.classList.contains('plan-type')) return;
     const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(plan[i]) plan[i][3]=e.target.value;
+    scheduleAutosave();
   });
   $$('[data-vehicle]').forEach(b=>b.onclick=()=>{$$('[data-vehicle]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.vehicle=b.dataset.vehicle; renderAll();});
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
   $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
   ['origin','destination','date','departTime','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
+  $('#departTime')?.addEventListener('blur',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
+  $('#departTime')?.addEventListener('change',e=>{const val=normalizeTimeValue(e.target.value); e.target.value=val; state.depart=val; renderAll();});
   $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); });
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
@@ -1079,8 +1184,8 @@ function bind(){
   $('#addTripDay')?.addEventListener('click',()=>{state.days=Math.min(21,state.days+1); const input=$('#tripDays'); if(input) input.value=state.days; state.activeDay=state.days; editingPlanRows.clear(); renderAll(); toast('Dag toegevoegd');});
   $('#mapFit').onclick=fitMap; $('#mapZoomIn').onclick=()=>map?.zoomIn(); $('#mapZoomOut').onclick=()=>map?.zoomOut();
   $('#mapToggleStops').onclick=()=>toast('Stopmoment-suggesties staan tijdelijk on hold');
-  function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); toast('Roadtrip opgeslagen');}
-  $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=()=>location.reload();
+  function save(){readForm(); const trips=JSON.parse(localStorage.getItem('roadoraTripsV3')||'[]'); trips.unshift({name:`Roadtrip ${state.destination.split(',')[0]}`,route:`${state.origin.split(',')[0]} → ${state.destination.split(',')[0]}`,days:state.days,created:new Date().toLocaleDateString('nl-NL')}); localStorage.setItem('roadoraTripsV3',JSON.stringify(trips.slice(0,4))); renderTrips(); saveDraftNow(); toast('Roadtrip opgeslagen');}
+  $('#saveRoute').onclick=save; $('#saveRouteSide').onclick=save; $('#exportApp').onclick=()=>toast('Account/app-export wordt later gekoppeld'); $('#resetDemo').onclick=resetPlanner;
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
 }
-document.addEventListener('DOMContentLoaded',()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); bind();applyRouteZones();renderAll();setTimeout(initMap,250); });
+document.addEventListener('DOMContentLoaded',()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); restoreDraft(); bind();applyRouteZones();renderAll();setTimeout(()=>{initMap(); if(hasRoute()){setTimeout(()=>{updateMapRoute(); fitMap();},250);}},250); });
