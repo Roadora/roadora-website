@@ -6,7 +6,7 @@ function effectiveRangeKm(){ if(Number(state.range)>0) return Number(state.range
 const state = {
   origin:'', destination:'', date:todayISO(), depart:'', arrival:'', days:1,
   adults:2, children:0, pet:'none', vehicle:'', range:0, plug:'CCS', maxDetour:20, activeDay:1, view:'all', category:'', suggestions:false, activeStop:null,
-  routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}
+  routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}, dayHotels:{}
 };
 const editingPlanRows = new Set();
 let routeCoords = [];
@@ -249,6 +249,7 @@ function applyRouteZones(){
   // Bewust geen automatische pauze-, lunch-, laad-, tank- of hotelmomenten.
   state.routeZones=[];
   markerData=[];
+  state.dayHotels={};
   const originName=(state.origin||'vertrekpunt').split(',')[0];
   const destName=(state.destination||'bestemming').split(',')[0];
   timelines[1]=[
@@ -360,6 +361,57 @@ function hotelTripMeta(meta={}){
     lines.push(`aankomst ± ${formatMinutesAsClock(arrival)}`);
   }
   return lines;
+}
+
+function hotelTripInfo(meta={}){
+  const meters=Number(meta.distanceFromStartMeters);
+  const km=Number.isFinite(meters) ? Math.round(meters/1000) : (Number.isFinite(Number(meta.distanceFromStartKm)) ? Math.round(Number(meta.distanceFromStartKm)) : null);
+  const progress=Number.isFinite(Number(meta.routeProgress)) ? Number(meta.routeProgress) : (Number(state.routeDistanceKm)>0 && Number.isFinite(km) ? km/Number(state.routeDistanceKm) : null);
+  const depart=String(state.depart||'').match(/^(\d{1,2}):(\d{2})$/);
+  let arrivalTime='—';
+  if(depart && Number.isFinite(progress) && Number(state.routeDurationMin)>0){
+    const departMinutes=Number(depart[1])*60+Number(depart[2]);
+    arrivalTime=formatMinutesAsClock(departMinutes + (Number(state.routeDurationMin)*progress));
+  }
+  const remainingKm = Number.isFinite(km) && Number(state.routeDistanceKm)>0 ? Math.max(0, Math.round(Number(state.routeDistanceKm)-km)) : null;
+  const remainingMin = Number.isFinite(progress) && Number(state.routeDurationMin)>0 ? Math.max(0, Math.round(Number(state.routeDurationMin)*(1-progress))) : null;
+  return {km,progress,arrivalTime,remainingKm,remainingMin};
+}
+function selectedHotelForDay(day=state.activeDay){
+  return state.dayHotels && state.dayHotels[day] ? state.dayHotels[day] : null;
+}
+function dayStartName(day){
+  const origin=(state.origin||'').split(',')[0].trim() || 'vertrekpunt';
+  if(day<=1) return origin;
+  const previousHotel=selectedHotelForDay(day-1);
+  if(previousHotel?.name) return previousHotel.name;
+  return `dag ${day}`;
+}
+function dayEndName(day){
+  const dest=(state.destination||'').split(',')[0].trim() || 'bestemming';
+  const hotel=selectedHotelForDay(day);
+  if(hotel?.name) return hotel.name;
+  if(day===state.days) return dest;
+  return 'eindpunt later kiezen';
+}
+function shortRouteDetailForDay(day){
+  const hotel=selectedHotelForDay(day);
+  if(hotel){
+    const bits=[];
+    if(Number.isFinite(hotel.info?.km)) bits.push(`${hotel.info.km} km vanaf vertrek`);
+    if(hotel.info?.arrivalTime && hotel.info.arrivalTime!=='—') bits.push(`aankomst ± ${hotel.info.arrivalTime}`);
+    const detour=hotel.meta?.detourLabel || '± 10 min van route';
+    bits.push(detour);
+    return bits.join(' · ');
+  }
+  if(day>1 && selectedHotelForDay(day-1)){
+    const prev=selectedHotelForDay(day-1);
+    const bits=[];
+    if(Number.isFinite(prev.info?.remainingKm)) bits.push(`${prev.info.remainingKm} km resterend`);
+    if(Number.isFinite(prev.info?.remainingMin)) bits.push(durationLabel(prev.info.remainingMin));
+    return bits.join(' · ') || 'vanaf gekozen overnachting';
+  }
+  return `${Math.round(state.routeDistanceKm||0)} km · ${durationLabel(state.routeDurationMin||0)}`;
 }
 function isEnergyCategory(cat){ return cat==='tanken' || cat==='laden'; }
 function rangeZone(){
@@ -566,6 +618,11 @@ window.RoadoraPlanner.setGoogleRoute = function(routeData){
   }catch(err){console.warn('setGoogleRoute fout:',err);}
 };
 function toast(msg){ const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function activateTab(tabId){
+  $$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===tabId));
+  $$('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===tabId));
+  if(map) setTimeout(()=>map.invalidateSize(),150);
+}
 function readForm(){
   state.origin=($('#origin')?.value||'').trim();
   state.destination=($('#destination')?.value||'').trim();
@@ -627,7 +684,7 @@ function updateTexts(){
   setText('#dayCountPill',`${state.days} ${state.days===1?'dag':'dagen'}`);
   setText('#overviewDayPill',`Dag ${state.activeDay}`);
   setText('#overviewDaysPill',`${state.days} ${state.days===1?'dag':'dagen'}`);
-  setText('#activeDaySummary', hasRoute() ? `Dag ${state.activeDay} · ${dayRouteLabel(state.activeDay, simpleOrigin, simpleDest)}` : 'Dag 1 · nog niet gepland');
+  setText('#activeDaySummary', hasRoute() ? `Dag ${state.activeDay} · ${dayRouteLabel(state.activeDay)}` : 'Dag 1 · nog niet gepland');
   setText('#tripOverviewMeta', hasRoute() ? `${state.days} ${state.days===1?'dag':'dagen'} · ${Number(state.routeDistanceKm).toLocaleString('nl-NL')} km · ${durationLabel(state.routeDurationMin)} heenreis` : 'Vul je route in om een roadtrip te maken');
   const tags = [];
   if(state.children>0) tags.push(`${state.children} kinderen`);
@@ -642,12 +699,11 @@ function renderDays(){
   const tabs=$('#dayTabs'); tabs.innerHTML='';
   for(let i=1;i<=state.days;i++){const b=document.createElement('button'); b.className='day-tab'+(i===state.activeDay?' active':''); b.textContent=`Dag ${i}`; b.onclick=()=>{state.activeDay=i; editingPlanRows.clear(); renderAll();}; tabs.appendChild(b);}
 }
-function dayRouteLabel(day, origin=state.origin.split(',')[0], dest=state.destination.split(',')[0]){
-  if(day===1) return origin && dest ? `${origin} → ${dest}` : (origin ? `${origin} → bestemming` : 'nog niet gepland');
-  if(day===2) return dest ? `dag 2 → ${dest}` : 'dag 2';
-  if(day===state.days && state.days>3) return (dest && origin) ? `${dest} → ${origin}` : 'terugreis';
-  if(day===state.days-1 && state.days>4) return dest ? `${dest} → tussenstop` : 'tussenstop';
-  return dest ? `${dest} omgeving` : 'dagroute';
+function dayRouteLabel(day){
+  const start=dayStartName(day);
+  const end=dayEndName(day);
+  if(!hasRoute() && day===1) return 'nog niet gepland';
+  return start && end ? `${start} → ${end}` : 'dagroute';
 }
 function dayStatus(day){
   if(timelines[day]) return day===1?'gepland':'voorgesteld';
@@ -675,13 +731,12 @@ function deleteTripDay(day){
 function renderTripOverview(){
   const list=$('#overviewDayList');
   if(list){
-    const origin=state.origin.split(',')[0], dest=state.destination.split(',')[0];
     list.innerHTML='';
     for(let i=1;i<=state.days;i++){
       const b=document.createElement('button');
       b.type='button';
       b.className='overview-day-row'+(i===state.activeDay?' active':'');
-      b.innerHTML=`<span class="overview-day-num">Dag ${i}</span><span class="overview-day-main"><strong>${dayRouteLabel(i,origin,dest)}</strong><em>${i===state.activeDay?'actieve dag':dayStatus(i)}</em></span><button class="overview-day-delete" type="button" data-delete-day="${i}" title="Dag verwijderen">Verwijder</button>`;
+      b.innerHTML=`<span class="overview-day-num">Dag ${i}</span><span class="overview-day-main"><strong>${dayRouteLabel(i)}</strong><em>${i===state.activeDay?'actieve dag':dayStatus(i)}</em></span><button class="overview-day-delete" type="button" data-delete-day="${i}" title="Dag verwijderen">Verwijder</button>`;
       b.onclick=(e)=>{if(e.target.closest('[data-delete-day]')) return; state.activeDay=i; editingPlanRows.clear(); renderAll();};
       list.appendChild(b);
     }
@@ -689,14 +744,26 @@ function renderTripOverview(){
   const detail=$('#activeDayDetail');
   if(detail){
     const plan=dayPlan();
-    const hotel=plan.find(r=>inferType(r[1])==='Overnachten rond'||String(r[3]||'').includes('Hotel')) || plan[plan.length-1];
+    const hotel=selectedHotelForDay(state.activeDay);
+    const endpointTitle = hotel ? `Hotel / eindpunt` : (state.activeDay===state.days ? 'Bestemming / eindpunt' : 'Eindpunt');
+    const endpointText = hotel
+      ? `${hotel.name} · ${shortRouteDetailForDay(state.activeDay)}`
+      : shortRouteDetailForDay(state.activeDay);
     detail.innerHTML = `<div class="active-day-head"><strong>${dayRouteLabel(state.activeDay)}</strong><span>${dayStatus(state.activeDay)} · ${plan.length} momenten</span></div>` +
-      `<div class="active-day-mini-list">${plan.map(r=>`<div><span>${r[0]}</span><strong>${r[1]}</strong></div>`).join('')}</div>` +
-      `<div class="active-day-note"><strong>Hotel / eindpunt</strong><span>${hotel ? (typeof hotel[2]==='function'?hotel[2]():hotel[2]) : state.arrival}</span></div>`;
+      `<div class="active-day-mini-list">${plan.map(r=>`<div><span>${safeReadTime(r[0])}</span><strong>${escapeHtml(r[1])}</strong></div>`).join('')}</div>` +
+      `<div class="active-day-note"><strong>${endpointTitle}</strong><span>${escapeHtml(endpointText)}</span></div>`;
   }
 }
 function dayPlan(){
-  if(!timelines[state.activeDay]) timelines[state.activeDay] = [[state.depart,'Vrije dag','Zelf stops, uitjes of restaurants toevoegen'],['13:00','Optionele stop','Alles tonen op kaart blijft mogelijk'],['—','Vrije planning','Overzicht bewaren in Mijn roadtrips']];
+  if(!timelines[state.activeDay]){
+    const start=dayStartName(state.activeDay);
+    const end=dayEndName(state.activeDay);
+    const startTime = state.activeDay===1 ? (state.depart || '—') : '—';
+    timelines[state.activeDay] = [
+      [startTime,`Vertrek ${start}`,'Start van deze reisdag','Vertrek'],
+      ['—',`Aankomst ${end}`,shortRouteDetailForDay(state.activeDay),'Bestemming']
+    ];
+  }
   return timelines[state.activeDay];
 }
 function inferType(title=''){
@@ -884,14 +951,39 @@ function openStopDetail(cat,index){
 function closeStopDetail(){const modal=$('#stopDetailModal'); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden','true');}
 function addStopToActiveDay(cat,index){
   const item=(stops[cat]||[])[index]; if(!item) return;
-  const title=item[0]; const desc=typeof item[1]==='function'?item[1]():item[1];
-  const time = {hotels:'zelf kiezen',restaurants:'13:00',laden:'15:15',tanken:'15:15',uitjes:'14:30',wc:'11:00'}[cat]||'12:00';
-  const type = {hotels:'Overnachten rond',restaurants:'Lunch',laden:'Laden/tanken',tanken:'Laden/tanken',uitjes:'Uitje',wc:'Pauze'}[cat]||'Stop';
+  const title=item[0];
+  const desc=typeof item[1]==='function'?item[1]():item[1];
+  const meta=item[2]||{};
   const plan=dayPlan();
+  if(cat==='hotels'){
+    const info=hotelTripInfo(meta);
+    const arrivalTime = info.arrivalTime && info.arrivalTime!=='—' ? info.arrivalTime : '—';
+    state.dayHotels[state.activeDay]={name:title,desc,meta,info};
+    const start=dayStartName(state.activeDay);
+    timelines[state.activeDay]=[
+      [state.activeDay===1 ? (state.depart || '—') : (plan[0]?.[0] || '—'), `Vertrek ${start}`, 'Start van deze reisdag', 'Vertrek'],
+      [arrivalTime, `Aankomst ${title}`, shortRouteDetailForDay(state.activeDay), 'Hotel']
+    ];
+    if(state.activeDay < state.days){
+      const next=state.activeDay+1;
+      const dest=(state.destination||'').split(',')[0].trim() || 'bestemming';
+      timelines[next]=[
+        ['—', `Vertrek ${title}`, 'Start vanaf gekozen overnachting', 'Vertrek'],
+        ['—', `Aankomst ${dest}`, shortRouteDetailForDay(next), 'Bestemming']
+      ];
+    }
+    editingPlanRows.clear();
+    activateTab('planningTab');
+    renderAll();
+    toast(`${title} ingesteld als eindpunt van Dag ${state.activeDay}`);
+    return;
+  }
+  const time = {restaurants:'13:00',laden:'15:15',tanken:'15:15',uitjes:'14:30',wc:'11:00'}[cat]||'12:00';
+  const type = {restaurants:'Lunch',laden:'Laden/tanken',tanken:'Laden/tanken',uitjes:'Uitje',wc:'Pauze'}[cat]||'Stop';
   const insertAt=Math.max(1,plan.length-1);
   plan.splice(insertAt,0,[time,title,desc,type]);
   editingPlanRows.clear();
-  state.activeTab='planning';
+  activateTab('planningTab');
   renderTimeline(); renderTripOverview();
   toast(`${title} toegevoegd aan Dag ${state.activeDay}`);
 }
@@ -901,7 +993,7 @@ function renderTrips(){
 }
 function renderAll(){updateTexts();renderDays();renderTimeline();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80);}
 function bind(){
-  $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); $$('.tab-panel').forEach(x=>x.classList.remove('active')); b.classList.add('active'); $('#'+b.dataset.tab).classList.add('active'); if(map) setTimeout(()=>map.invalidateSize(),150);});
+  $$('.tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
   document.addEventListener('click',e=>{
     const viewStop=e.target.closest('[data-view-stop]');
     if(viewStop){openStopDetail(viewStop.dataset.stopCat, Number(viewStop.dataset.viewStop)); return;}
