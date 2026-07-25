@@ -1,7 +1,7 @@
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 function todayISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
-function hasRoute(){ return ['ors','external-route'].includes(state.routeSource) && Array.isArray(routeCoords) && routeCoords.length > 1; }
+function hasRoute(){ return ['google','ors','external-route'].includes(state.routeSource) && Array.isArray(routeCoords) && routeCoords.length > 1; }
 function effectiveRangeKm(){ if(Number(state.range)>0) return Number(state.range); if(state.vehicle==='electric') return 325; if(state.vehicle==='camper') return 500; if(state.vehicle==='bus') return 600; if(state.vehicle==='car') return 650; return 650; }
 const state = {
   origin:'', destination:'', date:todayISO(), depart:'', arrival:'16:30 - 18:00', days:1,
@@ -491,7 +491,7 @@ async function loadRealRoute(){
   try{
     toast('Plaatsen zoeken…');
     const [startGeo,endGeo]=await Promise.all([geocodePlace(state.origin), geocodePlace(state.destination)]);
-    toast('Echte route laden…');
+    toast('Route laden via Google…');
     const params=new URLSearchParams({start:startGeo.coord.join(','),end:endGeo.coord.join(','),profile:'driving-car'});
     const res=await fetch('/api/route?'+params.toString(),{headers:{Accept:'application/json'}});
     const data=await res.json().catch(()=>({}));
@@ -508,13 +508,13 @@ async function loadRealRoute(){
     const summary=feature.properties?.summary||{};
     state.routeDistanceKm=Math.max(1,Math.round(Number(summary.distance||0)/1000));
     state.routeDurationMin=Math.max(1,Math.round(Number(summary.duration||0)/60));
-    state.routeSource='ors';
+    state.routeSource=(data?.roadora?.source==='google')?'google':((data?.roadora?.source==='ors')?'ors':'external-route');
     state.originResolved=startGeo.formattedAddress||state.origin;
     state.destinationResolved=endGeo.formattedAddress||state.destination;
     applyRouteZones();
     updateTexts();
     renderTimeline();
-    toast('Echte route geladen');
+    toast(state.routeSource==='google' ? 'Google route geladen' : 'Route geladen via fallback');
     const liveLoads=[loadLivePlacesFor('hotels')];
     if(state.vehicle==='electric') liveLoads.push(loadLivePlacesFor('laden'));
     else if(state.vehicle) liveLoads.push(loadLivePlacesFor('tanken'));
@@ -569,7 +569,9 @@ function routeTitleLabel(){
   return 'Nog geen route gepland';
 }
 function routeSourceLabel(){
-  if(state.routeSource==='ors' || state.routeSource==='external-route') return 'Echte route';
+  if(state.routeSource==='google') return 'Google route';
+  if(state.routeSource==='ors') return 'ORS fallback';
+  if(state.routeSource==='external-route') return 'Echte route';
   if(state.routeSource==='route_error') return 'Routefout';
   return 'Nog geen route';
 }
@@ -692,6 +694,9 @@ function planTypeSelect(type){
   const opts=['Vertrek','Pauze','Lunch','Laden/tanken','Overnachten rond','Restaurant','Hotel','Uitje','WC','Zelf ingevuld'];
   return `<select class="plan-type" aria-label="Type stop">${opts.map(o=>`<option ${o===type?'selected':''}>${o}</option>`).join('')}</select>`;
 }
+function isValidTimeValue(value){ return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')); }
+function safeTimeValue(value){ return isValidTimeValue(value) ? String(value) : ''; }
+function safeReadTime(value){ return value && value !== '—' ? value : 'tijd later'; }
 function renderTimeline(){
   const list = dayPlan();
   $('#timeline').innerHTML = list.map((r,i)=>{
@@ -700,12 +705,12 @@ function renderTimeline(){
     const editing = editingPlanRows.has(i);
     return `<div class="plan-row ${i===list.length-1?'active':''} ${editing?'editing':''}" data-plan-index="${i}">
       <div class="plan-read">
-        <div class="plan-read-time">${r[0]}</div>
+        <div class="plan-read-time">${safeReadTime(r[0])}</div>
         <div class="plan-read-main"><strong>${r[1]}</strong><span>${detail}</span><em>${type}</em></div>
         <button class="plan-edit" type="button">Bewerken</button>
       </div>
       <div class="plan-edit-panel">
-        <div class="plan-timebox"><input class="plan-time-input" type="time" value="${r[0]}" aria-label="Tijd"></div>
+        <div class="plan-timebox"><input class="plan-time-input" type="time" value="${safeTimeValue(r[0])}" aria-label="Tijd"></div>
         <div class="plan-fields">
           <div class="plan-topline">${planTypeSelect(type)}<button class="plan-remove" type="button" title="Verwijderen">Verwijder</button></div>
           <input class="plan-title-input" value="${r[1]}" aria-label="Titel van stop">
