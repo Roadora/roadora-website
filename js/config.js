@@ -21,7 +21,7 @@ export const CONFIG = {
     maxDetour: 20,
     tripDays: 1,
     activeDay: 1,
-    stopViewMode: 'recommended',
+    stopViewMode: 'all',
     activeStopCategory: 'hotels',
     preferences: []
   }

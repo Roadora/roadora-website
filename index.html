@@ -150,9 +150,9 @@
           <button id="mapFit" type="button" title="Route centreren">⌖</button>
           <button id="mapZoomIn" type="button" title="Inzoomen">+</button>
           <button id="mapZoomOut" type="button" title="Uitzoomen">−</button>
-          <button id="mapToggleStops" type="button" title="Stops tonen of verbergen">▧</button>
+          <button id="mapToggleStops" class="hidden" type="button" title="Stopmomenten staan tijdelijk uit" aria-hidden="true">▧</button>
         </div>
-        <div class="legend"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
+        <div class="legend hidden" aria-hidden="true"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
         <div class="map-summary">
           <h3 id="mapRouteTitle">Nog geen route gepland</h3>
           <div class="summary-row"><span>— km</span><span>—</span><span id="chargeDetail">Vul je route in</span></div>
@@ -182,8 +182,8 @@
             <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · nog niet gepland</p>
           </article>
           <article class="card card-pad">
-            <div class="card-title"><h2>Roadora voorstel</h2><span class="pill">alles aanpasbaar</span></div>
-            <p class="muted plan-note">Roadora gebruikt je route en eventuele keuzes om logische stopmomenten te berekenen. Hotels staan standaard uit en kies je zelf.</p>
+            <div class="card-title"><h2>Routeplanning</h2><span class="pill">handmatig uitbreiden</span></div>
+            <p class="muted plan-note">Eerst maken we alleen je route. Stops, hotels en suggesties staan tijdelijk uit; je zet later zelf categorieën aan.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
@@ -201,18 +201,15 @@
               <h2>Stops en hotels</h2>
               <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Na het laden van de route staat alles standaard uit.</p>
             </div>
-            <button id="suggestionToggle" class="suggestion-toggle off" type="button" aria-pressed="false">Roadora suggesties uit</button>
+            <span class="pill suggestion-paused">Suggesties on hold</span>
           </div>
-          <div class="mode-switch">
-            <button class="mode-btn" data-view="recommended" type="button">Slim aanbevolen</button>
-            <button class="mode-btn active" data-view="all" type="button">Alles tonen</button>
-          </div>
+          <div class="mode-switch hidden" aria-hidden="true"></div>
           <div id="categoryTabs" class="category-grid stops-cats"></div>
-          <div id="recommendPanel" class="stops-results-panel">
+          <div id="recommendPanel" class="stops-results-panel hidden" aria-hidden="true">
             <div class="card-title stops-subhead"><h3 id="recommendTitle">Stops die je zelf aanzet</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
             <div id="recommendations" class="stop-list rich-stop-list"></div>
           </div>
-          <div id="allStopsPanel" class="hidden stops-results-panel">
+          <div id="allStopsPanel" class="stops-results-panel">
             <div class="card-title stops-subhead"><h3 id="allStopsTitle">Nog geen categorie gekozen</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
             <div id="allStops" class="stop-list rich-stop-list"></div>
           </div>

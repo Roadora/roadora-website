@@ -1732,3 +1732,8 @@ button{cursor:pointer}
 .place-marker::after{
   font-size:11px;
 }
+
+/* v5.2 Routeflow zonder Roadora-suggesties */
+.suggestion-paused{background:#fff8ee;border-color:#d8c7aa;color:#8b660f;}
+#recommendPanel{display:none!important;}
+.mode-switch.hidden,#mapToggleStops.hidden,.legend.hidden{display:none!important;}
