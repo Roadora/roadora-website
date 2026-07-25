@@ -495,7 +495,11 @@ async function loadRealRoute(){
     const params=new URLSearchParams({start:startGeo.coord.join(','),end:endGeo.coord.join(','),profile:'driving-car'});
     const res=await fetch('/api/route?'+params.toString(),{headers:{Accept:'application/json'}});
     const data=await res.json().catch(()=>({}));
-    if(!res.ok || !data?.features?.[0]?.geometry?.coordinates) throw new Error(data.error||`Route ${res.status}`);
+    if(!res.ok || !data?.features?.[0]?.geometry?.coordinates){
+      console.warn('Roadora route API detail:', data);
+      const msg = data?.detail?.message || data?.error || data?.status || `Route ${res.status}`;
+      throw new Error(String(msg));
+    }
     const feature=data.features[0];
     if(!setRouteCoordsFromLngLat(feature.geometry.coordinates)) throw new Error('Route heeft geen bruikbare polyline');
     const summary=feature.properties?.summary||{};
