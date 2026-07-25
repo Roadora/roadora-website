@@ -53,12 +53,10 @@ function normalizeTimeValue(value){
 }
 
 function updateDepartTimeDisplay(){
-  const hidden=$('#departTime');
-  const display=$('#departTimeDisplay');
-  if(!display) return;
-  const val=normalizeTimeValue(hidden?.value || state.depart || '');
-  display.textContent = val || 'Tijd kiezen';
-  display.classList.toggle('is-placeholder', !val);
+  const input=$('#departTime');
+  if(!input) return;
+  const val=normalizeTimeValue(input.value || state.depart || '');
+  input.value = val;
 }
 function setDepartTime(value){
   const val=normalizeTimeValue(value);
@@ -67,6 +65,7 @@ function setDepartTime(value){
   state.depart=val;
   updateDepartTimeDisplay();
   renderAll();
+  saveDraftNow();
 }
 function activePrefLabels(){return $$('.pref.active').map(b=>b.textContent.trim());}
 function applySavedChoices(saved={}){
@@ -1177,6 +1176,7 @@ function updateClockHand(hour){
 function openClockPicker(){
   const modal=$('#departClockModal');
   if(!modal) return;
+  readForm();
   let {hour,minute}=clockParts(state.depart || $('#departTime')?.value || '09:00');
   const sync=()=>{
     const val=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
@@ -1213,6 +1213,8 @@ function openClockPicker(){
 function bind(){
   $$('.tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
   document.addEventListener('click',e=>{
+    const clockTarget=e.target.closest('#openDepartClock, .clock-icon-btn');
+    if(clockTarget){ e.preventDefault(); openClockPicker(); return; }
     const viewStop=e.target.closest('[data-view-stop]');
     if(viewStop){openStopDetail(viewStop.dataset.stopCat, Number(viewStop.dataset.viewStop)); return;}
     const addStop=e.target.closest('[data-add-stop]');
@@ -1279,10 +1281,19 @@ function bind(){
   $$('[data-pet]').forEach(b=>b.onclick=()=>{$$('[data-pet]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.pet=b.dataset.pet; renderAll();});
   $$('.pref').forEach(b=>b.onclick=()=>{b.classList.toggle('active'); renderAll();});
   $$('.left-edit-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('[data-left-fold]'); const open=!card.classList.contains('open'); card.classList.toggle('open',open); btn.textContent=open?'Sluiten':'Bewerken'; btn.setAttribute('aria-expanded', String(open));});
-  ['origin','destination','date','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>$('#'+id)?.addEventListener('input',renderAll));
-  $('#openDepartClock')?.addEventListener('click',()=>openClockPicker());
+  ['origin','destination','date','tripDays','vehicleRangeKm','plug','maxDetour'].forEach(id=>{
+    const el=$('#'+id);
+    if(!el) return;
+    ['input','change','blur'].forEach(ev=>el.addEventListener(ev,()=>{ readForm(); renderAll(); saveDraftNow(); }));
+  });
+  const timeBox=$('#openDepartClock');
+  if(timeBox){
+    ['click','touchend'].forEach(ev=>timeBox.addEventListener(ev,(e)=>{ e.preventDefault(); openClockPicker(); }));
+    timeBox.addEventListener('keydown',e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openClockPicker(); } });
+  }
   updateDepartTimeDisplay();
-  $('#hotelArrival')?.addEventListener('input',()=>{ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); });
+  $('#hotelArrival')?.addEventListener('input',()=>{ readForm(); stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','idle','Klik op Hotels om rond dit aankomsttijdvak te zoeken. Vertrektijd is hiervoor nodig.'); renderAll(); saveDraftNow(); });
+  $('#hotelArrival')?.addEventListener('change',()=>{ readForm(); saveDraftNow(); });
   $$('input[name="adults"],input[name="children"]').forEach(i=>i.addEventListener('input',renderAll));
   $('#planRoute').onclick=async()=>{await loadRealRoute(); renderAll(); fitMap();};
   $('#addPlanStop')?.addEventListener('click',()=>{const insertAt=Math.max(1,dayPlan().length-1); dayPlan().splice(insertAt,0,['12:00','Nieuwe stop','Zelf invullen of kies later uit Stops','Zelf ingevuld']); editingPlanRows.clear(); editingPlanRows.add(insertAt); renderTimeline(); toast('Stop toegevoegd');});

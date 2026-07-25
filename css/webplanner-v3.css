@@ -1947,3 +1947,61 @@ button{cursor:pointer}
   .clock-hour{width:36px;height:36px;font-size:12px}
   .clock-hand{height:72px}
 }
+
+
+/* v6.0: echte klikbare tijdklok + strakke hotel-tijdvak velden */
+.clock-field-btn{
+  position:relative;
+  border:1px solid var(--line-2, #d9c8ad)!important;
+  background:#fff!important;
+  padding:0 8px 0 12px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  cursor:pointer!important;
+}
+.roadora-time-input{
+  width:100%;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  height:100%!important;
+  font:inherit;
+  font-size:13px;
+  font-weight:650;
+  color:#2b2117;
+  cursor:pointer;
+  pointer-events:none;
+}
+.roadora-time-input::placeholder{color:#8b7b67;font-weight:550}
+.clock-icon-btn{
+  width:30px;
+  height:30px;
+  border:0;
+  border-radius:999px;
+  background:#f4ecdf;
+  color:#0d6b6e;
+  display:grid;
+  place-items:center;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.clock-icon-btn:hover{background:#e9fbfb}
+.hotel-arrival-field select{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  padding-right:26px!important;
+}
+.left-panel .two .field{min-width:0}
+.left-panel .two .field label{line-height:1.05}
+@media(max-width:760px){
+  .hotel-arrival-field select{font-size:11.5px;padding-left:10px!important}
+  .roadora-time-input{font-size:12px}
+}

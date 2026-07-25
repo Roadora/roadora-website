@@ -55,11 +55,10 @@
             </div>
             <div class="field compact-field">
               <label for="departTime">Vertrektijd</label>
-              <button id="openDepartClock" class="input time-input-wrap clock-field-btn" type="button" aria-label="Vertrektijd kiezen">
-                <span id="departTimeDisplay" class="time-display-text">09:00</span>
-                <input id="departTime" class="clean-time-input" type="hidden" autocomplete="off">
-                <span class="clock-icon" aria-hidden="true">◷</span>
-              </button>
+              <div id="openDepartClock" class="input time-input-wrap clock-field-btn" role="button" tabindex="0" aria-label="Vertrektijd kiezen">
+                <input id="departTime" class="roadora-time-input" type="text" inputmode="none" readonly placeholder="Kies tijd" autocomplete="off">
+                <button class="clock-icon-btn" type="button" aria-label="Open tijdklok">◷</button>
+              </div>
             </div>
           </div>
           <div class="two">
