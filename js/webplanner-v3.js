@@ -7,13 +7,15 @@ function createDefaultState(){
   return {
     tripId:'', tripName:'', origin:'', destination:'', date:todayISO(), depart:'', arrival:'', days:1,
     adults:2, children:0, pet:'none', vehicle:'', range:0, plug:'CCS', maxDetour:20, activeDay:1, view:'all', category:'', suggestions:false, activeStop:null,
-    routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}, dayHotels:{}, routePreference:'fastest', routeVariantId:'', routeVariantSummaries:[], foodType:'restaurant'
+    routeSource:'empty', routeDistanceKm:0, routeDurationMin:0, routeZones:[], placeStatus:{}, dayHotels:{}, routePreference:'fastest', routeVariantId:'', routeVariantSummaries:[], routeMismatchCount:0, foodType:'restaurant'
   };
 }
 const state = createDefaultState();
 const editingPlanRows = new Set();
 let routeCoords = [];
 let routeVariants = [];
+let routeGeometryCache = null;
+let replacingPlanStop = null;
 let markerData = [];
 const recs = [
   ['Hotels rond je overnachting','Overnachten rond je stopmoment · parkeren · weinig omrijden'],
@@ -148,7 +150,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v6.5.0', savedAt:Date.now(),
+    version:'v6.5.1', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -183,6 +185,7 @@ function applyDraftSnapshot(draft){
   routeCoords=Array.isArray(draft.routeCoords)
     ? draft.routeCoords.filter(c=>Array.isArray(c)&&c.length>=2&&Number.isFinite(Number(c[0]))&&Number.isFinite(Number(c[1]))).map(c=>[Number(c[0]),Number(c[1])])
     : [];
+  routeGeometryCache=null;
   routeVariants=[];
   Object.keys(timelines).forEach(k=>delete timelines[k]);
   if(draft.timelines && typeof draft.timelines==='object') Object.assign(timelines,cloneJsonSafe(draft.timelines));
@@ -331,8 +334,8 @@ function plannedStopTypeLabel(kind,row){
   if(kind==='end') return 'Eindbestemming';
   return String(row?.[3] || 'Stop');
 }
-function plannedMarkerHtml(kind,label){
-  return `<div class="planned-stop-pin planned-stop-pin-${kind}"><span>${escapeHtml(label)}</span></div>`;
+function plannedMarkerHtml(kind,label,mismatch=false){
+  return `<div class="planned-stop-pin planned-stop-pin-${kind}${mismatch?' planned-stop-pin-mismatch':''}"><span>${escapeHtml(label)}</span></div>`;
 }
 function renderPlannedStopMarkers(){
   if(!map || !window.L) return;
@@ -356,7 +359,7 @@ function renderPlannedStopMarkers(){
       alt:title,
       icon:L.divIcon({
         className:'roadora-planned-marker-icon',
-        html:plannedMarkerHtml(kind,label),
+        html:plannedMarkerHtml(kind,label,Boolean(row?.[4]?.routeMismatch)),
         iconSize:[34,40],
         iconAnchor:[17,38],
         popupAnchor:[0,-34]
@@ -489,15 +492,39 @@ function destinationCoords(value){
   const hit=known.find(([rx])=>rx.test(text));
   return hit ? hit[1] : null;
 }
-function sampleRouteAtProgress(progress){
+function routeGeometryMetrics(){
+  if(routeGeometryCache?.coords===routeCoords && Array.isArray(routeGeometryCache?.cumulative)) return routeGeometryCache;
+  const cumulative=[0];
+  let totalKm=0;
+  for(let i=1;i<routeCoords.length;i++){
+    const a=routeCoords[i-1],b=routeCoords[i];
+    totalKm+=haversineKm(Number(a?.[0]),Number(a?.[1]),Number(b?.[0]),Number(b?.[1]));
+    cumulative.push(totalKm);
+  }
+  routeGeometryCache={coords:routeCoords,cumulative,totalKm};
+  return routeGeometryCache;
+}
+function routeCoordinateAtProgress(progress){
   if(!Array.isArray(routeCoords)||!routeCoords.length) return null;
+  if(routeCoords.length===1) return routeCoords[0];
   const p=Math.max(0,Math.min(1,Number(progress)||0));
-  const idx=Math.round(p*(routeCoords.length-1));
-  return routeCoords[idx] || routeCoords[0];
+  const metrics=routeGeometryMetrics();
+  const target=metrics.totalKm*p;
+  let i=1;
+  while(i<metrics.cumulative.length && metrics.cumulative[i]<target) i++;
+  if(i>=routeCoords.length) return routeCoords[routeCoords.length-1];
+  const before=metrics.cumulative[i-1],after=metrics.cumulative[i];
+  const t=after>before?(target-before)/(after-before):0;
+  const a=routeCoords[i-1],b=routeCoords[i];
+  return [Number(a[0])+(Number(b[0])-Number(a[0]))*t,Number(a[1])+(Number(b[1])-Number(a[1]))*t];
+}
+function sampleRouteAtProgress(progress){
+  return routeCoordinateAtProgress(progress);
 }
 function setRouteCoordsFromLngLat(coords){
   if(!Array.isArray(coords)||coords.length<2) return false;
   routeCoords = coords.map(c=>[Number(c[1]),Number(c[0])]).filter(c=>Number.isFinite(c[0])&&Number.isFinite(c[1]));
+  routeGeometryCache=null;
   return routeCoords.length>1;
 }
 
@@ -548,7 +575,22 @@ function routeMetricText(variant,fastest){
   if(deltaMin) extras.push(`${deltaMin>0?'+':'-'}${durationLabel(Math.abs(deltaMin))}`);
   return `${km.toLocaleString('nl-NL')} km · ${durationLabel(mins)}${extras.length?' · '+extras.join(' · '):''}`;
 }
+function currentRouteMismatchCount(){
+  const seen=new Set();
+  let count=0;
+  const inspect=meta=>{
+    if(!meta?.routeMismatch) return;
+    const lat=Number(meta.lat),lng=Number(meta.lng);
+    const key=meta.id||meta.placeId||(Number.isFinite(lat)&&Number.isFinite(lng)?`${lat.toFixed(5)},${lng.toFixed(5)}`:`manual-${count}`);
+    if(seen.has(key)) return;
+    seen.add(key); count++;
+  };
+  Object.values(timelines).forEach(plan=>Array.isArray(plan)&&plan.forEach(row=>inspect(row?.[4])));
+  Object.values(state.dayHotels||{}).forEach(hotel=>inspect(hotel?.meta));
+  return count;
+}
 function renderRouteChoices(){
+  state.routeMismatchCount=currentRouteMismatchCount();
   const summaries=currentRouteSummaries();
   const fastest=summaries.find(v=>v.id==='fastest');
   const loaded=summaries.length>0;
@@ -568,10 +610,12 @@ function renderRouteChoices(){
   });
   const note=$('#routePreferenceNote');
   if(note){
-    note.classList.toggle('warning',state.routePreference==='tollfree');
+    note.classList.toggle('warning',state.routePreference==='tollfree' || Number(state.routeMismatchCount)>0);
     if(hasRoute()){
       const base=`Actief: ${routePreferenceLabel()} · ${routeProviderLabel()}. Stops worden langs deze route gezocht.`;
-      note.textContent=state.routePreference==='tollfree' ? `${base} Tol vermijden blijft een routevoorkeur.` : base;
+      const mismatch=Number(state.routeMismatchCount)||0;
+      const check=mismatch?` ${mismatch} ${mismatch===1?'gekozen stop ligt':'gekozen stops liggen'} niet gunstig langs deze route; gebruik Vervang.`:'';
+      note.textContent=(state.routePreference==='tollfree' ? `${base} Tol vermijden blijft een routevoorkeur.` : base)+check;
     } else {
       note.textContent=`Gekozen: ${routePreferenceLabel()}. Roadora zoekt beschikbare routes zodra je op Maak dagroute klikt.`;
     }
@@ -644,10 +688,14 @@ function applyRouteVariant(variant,{preservePlan=false,confirmImpact=false,silen
   state.routeVariantSummaries=currentRouteSummaries().length?currentRouteSummaries():[routeVariantSummary(normalized)];
   resetLiveResultsForRoute();
   applyRouteZones({resetPlan:!preservePlan});
-  if(preservePlan) reprojectSavedPlanToCurrentRoute();
+  const routeAdjustment=preservePlan?reprojectSavedPlanToCurrentRoute():{adjusted:0,mismatch:0};
+  if(!preservePlan) state.routeMismatchCount=0;
   updateTexts(); renderTimeline(); renderStops(); renderTripOverview(); renderRouteChoices(); updateMapRoute();
   saveDraftNow();
-  if(!silent) toast(`${normalized.label} geselecteerd`);
+  if(!silent){
+    const extra=routeAdjustment.mismatch?` · ${routeAdjustment.mismatch} ${routeAdjustment.mismatch===1?'stop controleren':'stops controleren'}`:(routeAdjustment.adjusted?` · ${routeAdjustment.adjusted} ${routeAdjustment.adjusted===1?'stop aangepast':'stops aangepast'}`:'');
+    toast(`${normalized.label} geselecteerd${extra}`);
+  }
   return true;
 }
 async function selectRoutePreference(id){
@@ -755,13 +803,11 @@ function activeDayRouteSamplePoints(maxPoints=10){
   }).filter(Boolean);
 }
 function routePointAtDistanceKm(distanceKm,index=0){
-  const coords=Array.isArray(routeCoords)?routeCoords:[];
   const total=Math.max(1,Number(state.routeDistanceKm)||1);
-  if(coords.length<2) return null;
+  if(!Array.isArray(routeCoords)||routeCoords.length<2) return null;
   const km=Math.max(0,Math.min(total,Number(distanceKm)||0));
   const progress=km/total;
-  const idx=Math.max(0,Math.min(coords.length-1,Math.round(progress*(coords.length-1))));
-  const c=coords[idx];
+  const c=routeCoordinateAtProgress(progress);
   return c ? {lat:c[0],lng:c[1],index,progress,distanceFromStartMeters:Math.round(km*1000)} : null;
 }
 function arrivalSlotLabel(value=state.arrival){
@@ -806,11 +852,9 @@ function progressForHotelArrivalSlot(){
   return null;
 }
 function routePointAtProgress(progress,index=0){
-  const coords=Array.isArray(routeCoords)?routeCoords:[];
-  if(coords.length<2) return null;
+  if(!Array.isArray(routeCoords)||routeCoords.length<2) return null;
   const p=Math.max(0,Math.min(1,Number(progress)||0));
-  const idx=Math.max(0,Math.min(coords.length-1,Math.round(p*(coords.length-1))));
-  const c=coords[idx];
+  const c=routeCoordinateAtProgress(p);
   return c ? {lat:c[0],lng:c[1],index,progress:p,distanceFromStartMeters:Math.round((state.routeDistanceKm||0)*1000*p)} : null;
 }
 function hotelArrivalSearchPoints(){
@@ -878,32 +922,32 @@ function plannedDelayBeforeProgress(progress,day=state.activeDay){
   },0);
 }
 
-function hotelTripMeta(meta={}){
+function hotelTripMeta(meta={},day=state.activeDay){
   const lines=[];
   const meters=Number(meta.distanceFromStartMeters);
   const km=Number.isFinite(meters) ? Math.round(meters/1000) : (Number.isFinite(Number(meta.distanceFromStartKm)) ? Math.round(Number(meta.distanceFromStartKm)) : null);
   if(Number.isFinite(km)) lines.push(`${km} km vanaf vertrek`);
   const progress=Number.isFinite(Number(meta.routeProgress)) ? Number(meta.routeProgress) : (Number(state.routeDistanceKm)>0 && Number.isFinite(km) ? km/Number(state.routeDistanceKm) : null);
-  const depart=String(activeDayStartClock()||'').match(/^(\d{1,2}):(\d{2})$/);
+  const depart=String(activeDayStartClock(day)||'').match(/^(\d{1,2}):(\d{2})$/);
   if(depart && Number.isFinite(progress) && Number(state.routeDurationMin)>0){
     const departMinutes=Number(depart[1])*60+Number(depart[2]);
-    const driveProgress=Math.max(0,progress-dayStartProgress(state.activeDay));
-    const arrival=departMinutes + (Number(state.routeDurationMin)*driveProgress) + plannedDelayBeforeProgress(progress,state.activeDay);
+    const driveProgress=Math.max(0,progress-dayStartProgress(day));
+    const arrival=departMinutes + (Number(state.routeDurationMin)*driveProgress) + plannedDelayBeforeProgress(progress,day);
     lines.push(`aankomst ± ${formatMinutesAsClock(arrival)}`);
   }
   return lines;
 }
 
-function hotelTripInfo(meta={}){
+function hotelTripInfo(meta={},day=state.activeDay){
   const meters=Number(meta.distanceFromStartMeters);
   const km=Number.isFinite(meters) ? Math.round(meters/1000) : (Number.isFinite(Number(meta.distanceFromStartKm)) ? Math.round(Number(meta.distanceFromStartKm)) : null);
   const progress=Number.isFinite(Number(meta.routeProgress)) ? Number(meta.routeProgress) : (Number(state.routeDistanceKm)>0 && Number.isFinite(km) ? km/Number(state.routeDistanceKm) : null);
-  const depart=String(activeDayStartClock()||'').match(/^(\d{1,2}):(\d{2})$/);
+  const depart=String(activeDayStartClock(day)||'').match(/^(\d{1,2}):(\d{2})$/);
   let arrivalTime='—';
   if(depart && Number.isFinite(progress) && Number(state.routeDurationMin)>0){
     const departMinutes=Number(depart[1])*60+Number(depart[2]);
-    const driveProgress=Math.max(0,progress-dayStartProgress(state.activeDay));
-    arrivalTime=formatMinutesAsClock(departMinutes + (Number(state.routeDurationMin)*driveProgress) + plannedDelayBeforeProgress(progress,state.activeDay));
+    const driveProgress=Math.max(0,progress-dayStartProgress(day));
+    arrivalTime=formatMinutesAsClock(departMinutes + (Number(state.routeDurationMin)*driveProgress) + plannedDelayBeforeProgress(progress,day));
   }
   const remainingKm = Number.isFinite(km) && Number(state.routeDistanceKm)>0 ? Math.max(0, Math.round(Number(state.routeDistanceKm)-km)) : null;
   const remainingMin = Number.isFinite(progress) && Number(state.routeDurationMin)>0 ? Math.max(0, Math.round(Number(state.routeDurationMin)*(1-progress))) : null;
@@ -914,20 +958,31 @@ function clampRouteProgress(value){
   const n=Number(value);
   return Number.isFinite(n) ? Math.max(0,Math.min(1,n)) : null;
 }
-function nearestRouteProgress(lat,lng){
+function nearestRouteProjection(lat,lng){
   if(!Array.isArray(routeCoords) || routeCoords.length<2 || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null;
-  const targetLat=Number(lat), targetLng=Number(lng);
-  const lngScale=Math.max(0.2,Math.cos(targetLat*Math.PI/180));
-  let bestIndex=0, bestScore=Infinity;
-  routeCoords.forEach((coord,index)=>{
-    const cLat=Number(coord?.[0]), cLng=Number(coord?.[1]);
-    if(!Number.isFinite(cLat)||!Number.isFinite(cLng)) return;
-    const dLat=cLat-targetLat;
-    const dLng=(cLng-targetLng)*lngScale;
-    const score=(dLat*dLat)+(dLng*dLng);
-    if(score<bestScore){bestScore=score; bestIndex=index;}
-  });
-  return bestIndex/Math.max(1,routeCoords.length-1);
+  const targetLat=Number(lat),targetLng=Number(lng);
+  const metrics=routeGeometryMetrics();
+  let best=null;
+  for(let i=1;i<routeCoords.length;i++){
+    const a=routeCoords[i-1],b=routeCoords[i];
+    const refLat=(targetLat+Number(a[0])+Number(b[0]))/3;
+    const scale=Math.max(0.2,Math.cos(refLat*Math.PI/180));
+    const ax=Number(a[1])*scale,ay=Number(a[0]);
+    const bx=Number(b[1])*scale,by=Number(b[0]);
+    const px=targetLng*scale,py=targetLat;
+    const dx=bx-ax,dy=by-ay;
+    const denom=(dx*dx)+(dy*dy);
+    const t=denom>0?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/denom)):0;
+    const projectedLat=Number(a[0])+(Number(b[0])-Number(a[0]))*t;
+    const projectedLng=Number(a[1])+(Number(b[1])-Number(a[1]))*t;
+    const gapKm=haversineKm(targetLat,targetLng,projectedLat,projectedLng);
+    const alongKm=metrics.cumulative[i-1]+((metrics.cumulative[i]-metrics.cumulative[i-1])*t);
+    if(!best || gapKm<best.gapKm) best={progress:metrics.totalKm>0?alongKm/metrics.totalKm:0,alongKm,gapKm,lat:projectedLat,lng:projectedLng};
+  }
+  return best;
+}
+function nearestRouteProgress(lat,lng){
+  return nearestRouteProjection(lat,lng)?.progress ?? null;
 }
 function routeProgressForMeta(meta={}){
   const direct=clampRouteProgress(meta.routeProgress);
@@ -962,6 +1017,50 @@ function dayStartProgress(day){
 }
 function dayEndProgress(day){
   return clampRouteProgress(selectedHotelForDay(Number(day))?.info?.progress) ?? 1;
+}
+function routeFitThresholdKm(category=''){
+  return ({restaurants:4,wc:4,tanken:7,laden:7,hotels:15,camperplaces:15,uitjes:8}[String(category)]||8);
+}
+function updateMetaForCurrentRoute(meta={}){
+  const projection=nearestRouteProjection(meta.lat,meta.lng);
+  if(!projection) return null;
+  const category=String(meta.category||'');
+  const threshold=routeFitThresholdKm(category);
+  const gapKm=Math.max(0,projection.gapKm);
+  meta.routeProgress=clampRouteProgress(projection.progress);
+  meta.distanceFromStartMeters=Math.round(meta.routeProgress*Number(state.routeDistanceKm||0)*1000);
+  meta.routeGapKm=Math.round(gapKm*10)/10;
+  meta.routeMismatch=gapKm>threshold;
+  meta.routeVariantId=state.routeVariantId||state.routePreference||'';
+  const detourMinutes=Math.max(2,Math.min(60,Math.round(2+gapKm*2.2)));
+  meta.detourMinutes=detourMinutes;
+  meta.detourLabel=meta.routeMismatch
+    ? `± ${meta.routeGapKm.toLocaleString('nl-NL')} km van nieuwe route`
+    : `± ${detourMinutes} min van route`;
+  return projection;
+}
+function plannedStopDetail(row,day){
+  const meta=row?.[4]||{};
+  const category=String(meta.category||'');
+  if(!meta.live && !['restaurants','wc','tanken','laden'].includes(category)) return row?.[2]||'';
+  const bits=[];
+  if(Number.isFinite(Number(meta.rating))) bits.push(`${Number(meta.rating).toFixed(1).replace('.0','')} ★`);
+  if(category==='restaurants') bits.push(meta.foodLabel||foodTypeLabel(meta.foodType));
+  else if(category==='wc') bits.push(meta.wcLabel||(Array.isArray(meta.amenities)?meta.amenities[0]:null)||'WC/pauze');
+  else if(Array.isArray(meta.amenities)&&meta.amenities.length) bits.push(meta.amenities.slice(0,2).join(' · '));
+  const meters=Number(meta.distanceFromStartMeters);
+  if(Number.isFinite(meters)) bits.push(`${Math.round(meters/1000)} km vanaf vertrek`);
+  if(safeTimeValue(row?.[0])) bits.push(`aankomst ± ${row[0]}`);
+  if(meta.status) bits.push(meta.status);
+  if(meta.routeMismatch) bits.push(`controleer of vervang deze stop`);
+  if(meta.detourLabel) bits.push(meta.detourLabel);
+  return bits.filter(Boolean).join(' · ');
+}
+function refreshPlannedRowDetails(day){
+  const plan=timelines[Number(day)]||[];
+  plan.slice(1,-1).forEach(row=>{
+    if(row?.[4]&&typeof row[4]==='object') row[2]=plannedStopDetail(row,day);
+  });
 }
 function refreshDayTimelineTimes(day=state.activeDay,{sortStops=true}={}){
   const d=Number(day)||1;
@@ -1017,6 +1116,7 @@ function refreshDayTimelineTimes(day=state.activeDay,{sortStops=true}={}){
     const segmentKm=Math.max(0,Math.round(Number(state.routeDistanceKm||0)*Math.max(0,endProgress-startProgress)));
     last[2]=`${segmentKm} km · ${durationLabel(Math.round(finalDrive+accumulatedDelay))}`;
   }
+  refreshPlannedRowDetails(d);
 }
 function refreshAllTimelineTimes(){
   for(let d=1;d<=Number(state.days||1);d++) refreshDayTimelineTimes(d);
@@ -1224,29 +1324,39 @@ async function loadLivePlacesFor(cat){
   return false;
 }
 function reprojectSavedPlanToCurrentRoute(){
-  Object.values(timelines).forEach(plan=>{
+  let adjusted=0;
+  const adjustedKeys=new Set();
+  const inspectCount=meta=>{
+    const lat=Number(meta?.lat),lng=Number(meta?.lng);
+    const key=meta?.id||meta?.placeId||(Number.isFinite(lat)&&Number.isFinite(lng)?`${lat.toFixed(5)},${lng.toFixed(5)}`:`unknown-${adjustedKeys.size}`);
+    if(adjustedKeys.has(key)) return;
+    adjustedKeys.add(key); adjusted++;
+  };
+  Object.entries(timelines).forEach(([dayKey,plan])=>{
     if(!Array.isArray(plan)) return;
     plan.forEach(row=>{
       const meta=row?.[4];
-      if(!meta || typeof meta!=='object') return;
-      const progress=nearestRouteProgress(meta.lat,meta.lng);
-      if(progress!==null){
-        meta.routeProgress=progress;
-        meta.distanceFromStartMeters=Math.round(progress*Number(state.routeDistanceKm||0)*1000);
-      }
+      if(!meta || typeof meta!=='object' || !Number.isFinite(Number(meta.lat)) || !Number.isFinite(Number(meta.lng))) return;
+      const projection=updateMetaForCurrentRoute(meta);
+      if(projection) inspectCount(meta);
     });
+    refreshDayTimelineTimes(Number(dayKey));
   });
-  Object.values(state.dayHotels||{}).forEach(hotel=>{
+  Object.entries(state.dayHotels||{}).forEach(([dayKey,hotel])=>{
     const meta=hotel?.meta;
     if(!meta || typeof meta!=='object') return;
-    const progress=nearestRouteProgress(meta.lat,meta.lng);
-    if(progress!==null){
-      meta.routeProgress=progress;
-      meta.distanceFromStartMeters=Math.round(progress*Number(state.routeDistanceKm||0)*1000);
-      hotel.info=hotelTripInfo(meta);
+    const projection=updateMetaForCurrentRoute(meta);
+    if(projection){
+      inspectCount(meta);
+      hotel.info=hotelTripInfo(meta,Number(dayKey));
+      const plan=timelines[Number(dayKey)];
+      const last=Array.isArray(plan)&&plan.length?plan[plan.length-1]:null;
+      if(last?.[4]&&typeof last[4]==='object') Object.assign(last[4],meta);
     }
   });
+  state.routeMismatchCount=currentRouteMismatchCount();
   refreshAllTimelineTimes();
+  return {adjusted,mismatch:state.routeMismatchCount};
 }
 async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
   readForm();
@@ -1312,7 +1422,7 @@ async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
     return true;
   }catch(err){
     console.warn('Roadora route error:',err);
-    routeCoords=routeBackup.routeCoords; routeVariants=routeBackup.routeVariants;
+    routeCoords=routeBackup.routeCoords; routeGeometryCache=null; routeVariants=routeBackup.routeVariants;
     markerData=routeBackup.markerData;
     state.routeSource=routeBackup.routeSource; state.routeDistanceKm=routeBackup.routeDistanceKm; state.routeDurationMin=routeBackup.routeDurationMin;
     state.routePreference=routeBackup.routePreference; state.routeVariantId=routeBackup.routeVariantId; state.routeVariantSummaries=routeBackup.routeVariantSummaries||[];
@@ -1424,6 +1534,7 @@ function updateTexts(){
   if($('#tripOverviewTags')) $('#tripOverviewTags').innerHTML = tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
 }
 function activateTripDay(day){
+  replacingPlanStop=null;
   state.activeDay=Math.max(1,Math.min(state.days,Number(day)||1));
   state.category='';
   state.suggestions=false;
@@ -1578,6 +1689,24 @@ function removePlanRow(index){
   toast('Stop verwijderd');
   return true;
 }
+function canReplacePlannedStop(row){
+  const category=String(row?.[4]?.category||'');
+  return ['hotels','camperplaces','restaurants','laden','tanken','wc'].includes(category);
+}
+function startReplacePlannedStop(index){
+  const plan=dayPlan();
+  const row=plan[Number(index)];
+  const category=String(row?.[4]?.category||'');
+  if(!row || !canReplacePlannedStop(row)){toast('Deze handmatige stop kan niet automatisch worden vervangen'); return;}
+  replacingPlanStop={day:state.activeDay,index:Number(index),category};
+  state.category=category; state.view='all'; state.suggestions=false;
+  if(category==='restaurants') state.foodType=row?.[4]?.foodType||state.foodType||'restaurant';
+  activateTab('stopsTab');
+  resetLiveCategory(category,'loading');
+  renderAll();
+  loadLivePlacesFor(category);
+  toast(`Kies een vervangende ${categorySingular(category)} langs de nieuwe route`);
+}
 function renderTimeline(){
   const list = dayPlan();
   $('#timeline').innerHTML = list.map((r,i)=>{
@@ -1585,12 +1714,14 @@ function renderTimeline(){
     const type = r[3] || inferType(r[1]);
     const editing = editingPlanRows.has(i);
     const hasMapPoint=Boolean(plannedRowCoordinate(r,i,list));
-    return `<div class="plan-row ${i===list.length-1?'active':''} ${editing?'editing':''}" data-plan-index="${i}">
+    const mismatch=Boolean(r?.[4]?.routeMismatch);
+    return `<div class="plan-row ${i===list.length-1?'active':''} ${editing?'editing':''} ${mismatch?'route-mismatch':''}" data-plan-index="${i}">
       <div class="plan-read">
         <div class="plan-read-time">${safeReadTime(r[0])}</div>
         <div class="plan-read-main"><strong>${r[1]}</strong><span>${detail}</span><em>${type}</em></div>
         <div class="plan-read-actions">
           ${hasMapPoint?`<button class="plan-map" type="button" data-show-plan-on-map="${i}" aria-label="Toon ${escapeHtml(r[1])} op de kaart">Kaart</button>`:''}
+          ${mismatch&&canReplacePlannedStop(r)?`<button class="plan-replace" type="button" data-replace-plan-stop="${i}">Vervang</button>`:''}
           <button class="plan-edit" type="button">Bewerken</button>
         </div>
       </div>
@@ -1773,6 +1904,7 @@ function addStopToActiveDay(cat,index){
     const overnightType=cat==='camperplaces'?'Camperplek':'Hotel';
     const navMeta={...meta,lat:Number(meta.lat),lng:Number(meta.lng),placeId:meta.id||'',name:title,category:cat,autoTime:true,stopDurationMin:0};
     state.dayHotels[state.activeDay]={name:title,desc,meta:{...meta,category:cat},info,category:cat};
+    replacingPlanStop=null;
     const start=dayStartName(state.activeDay);
     const middle=plan.length>2 ? plan.slice(1,-1) : [];
     timelines[state.activeDay]=[
@@ -1828,12 +1960,19 @@ function addStopToActiveDay(cat,index){
     stopDurationMin:defaultStopDurationMinutes(cat),
     autoTime:true
   };
-  plan.splice(insertAt,0,['—',title,desc,type,navMeta]);
+  const replacement=replacingPlanStop && Number(replacingPlanStop.day)===Number(state.activeDay) && replacingPlanStop.category===cat
+    ? Number(replacingPlanStop.index) : null;
+  if(Number.isInteger(replacement) && replacement>0 && replacement<plan.length-1){
+    plan[replacement]=['—',title,desc,type,navMeta];
+    replacingPlanStop=null;
+  } else {
+    plan.splice(insertAt,0,['—',title,desc,type,navMeta]);
+  }
   refreshDayTimelineTimes(state.activeDay);
   editingPlanRows.clear();
   activateTab('planningTab');
   renderTimeline(); renderTripOverview(); scheduleAutosave();
-  toast(`${title} toegevoegd aan Dag ${state.activeDay}`);
+  toast(Number.isInteger(replacement)?`${title} ingesteld als vervangende stop`:`${title} toegevoegd aan Dag ${state.activeDay}`);
 }
 function tripDb(){return window.RoadoraTripDB || null;}
 function createTripId(){return globalThis.crypto?.randomUUID ? crypto.randomUUID() : `trip-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
@@ -1908,10 +2047,11 @@ async function saveCurrentTripToLibrary({silent=false,name=''}={}){
   }
 }
 function resetWorkingPlannerState(){
+  replacingPlanStop=null;
   restoringDraft=true;
   Object.keys(state).forEach(k=>delete state[k]);
   Object.assign(state,createDefaultState());
-  routeCoords=[]; routeVariants=[]; markerData=[];
+  routeCoords=[]; routeGeometryCache=null; routeVariants=[]; markerData=[];
   Object.keys(stops).forEach(k=>stops[k]=[]);
   Object.keys(timelines).forEach(k=>delete timelines[k]);
   timelines[1]=[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']];
@@ -2221,6 +2361,8 @@ function bind(){
     const openDay=e.target.closest('[data-open-day]'); if(openDay){activateTripDay(Number(openDay.dataset.openDay)||1); return;}
     const showPlanOnMap=e.target.closest('[data-show-plan-on-map]');
     if(showPlanOnMap){e.preventDefault(); e.stopPropagation(); focusPlannedStop(Number(showPlanOnMap.dataset.showPlanOnMap)); return;}
+    const replacePlanStop=e.target.closest('[data-replace-plan-stop]');
+    if(replacePlanStop){e.preventDefault(); e.stopPropagation(); startReplacePlannedStop(Number(replacePlanStop.dataset.replacePlanStop)); return;}
     const edit=e.target.closest('.plan-edit');
     if(edit){const row=edit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.has(i)?editingPlanRows.delete(i):editingPlanRows.add(i); renderTimeline(); return;}
     const saveEdit=e.target.closest('.plan-save');
