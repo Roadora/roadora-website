@@ -146,7 +146,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v6.3.3', savedAt:Date.now(),
+    version:'v6.3.4', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -1632,11 +1632,35 @@ function dayNavigationPoints(day=state.activeDay){
   const plan=timelines[day] || (day===state.activeDay ? dayPlan() : []);
   return plan.slice(1).map(navPointFromRow).filter(Boolean);
 }
-function buildGoogleMapsUrl(points){
+function dayNavigationOrigin(day=state.activeDay){
+  const d=Number(day)||1;
+  if(d<=1) return null;
+  const previousHotel=selectedHotelForDay(d-1);
+  if(previousHotel){
+    const meta=previousHotel.meta||{};
+    const lat=Number(meta.lat), lng=Number(meta.lng);
+    const title=String(previousHotel.name||'').trim();
+    const value=Number.isFinite(lat)&&Number.isFinite(lng) ? `${lat},${lng}` : title;
+    if(value){
+      return {
+        value,
+        placeId:String(meta.placeId||meta.id||''),
+        title
+      };
+    }
+  }
+  const plan=timelines[d] || [];
+  return navPointFromRow(plan[0]);
+}
+function buildGoogleMapsUrl(points,origin=null){
   if(!points.length) return '';
   const destination=points[points.length-1];
   const waypoints=points.slice(0,-1);
   const params=new URLSearchParams({api:'1',destination:destination.value,travelmode:'driving',dir_action:'navigate'});
+  if(origin?.value){
+    params.set('origin',origin.value);
+    if(origin.placeId) params.set('origin_place_id',origin.placeId);
+  }
   if(destination.placeId) params.set('destination_place_id',destination.placeId);
   if(waypoints.length){
     params.set('waypoints',waypoints.map(p=>p.value).join('|'));
@@ -1648,11 +1672,13 @@ function startFullDayRoute(){
   const points=dayNavigationPoints();
   if(!points.length){toast('Voeg eerst een bestemming of stop toe'); return;}
   if(points.length>4){toast('Meer dan 4 bestemmingen: gebruik Navigeer naar volgende stop'); return;}
-  window.open(buildGoogleMapsUrl(points),'_blank','noopener');
+  const origin=dayNavigationOrigin(state.activeDay);
+  window.open(buildGoogleMapsUrl(points,origin),'_blank','noopener');
 }
 function navigateToNextStop(){
   const point=dayNavigationPoints()[0];
   if(!point){toast('Geen volgende stop gevonden'); return;}
+  // Bewust zonder origin: deze knop navigeert altijd vanaf de actuele locatie.
   window.open(buildGoogleMapsUrl([point]),'_blank','noopener');
 }
 function formatTripUpdated(value){
