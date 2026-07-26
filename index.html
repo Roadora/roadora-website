@@ -9,10 +9,10 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/webplanner-v3.css?v=6.4.0">
+  <link rel="stylesheet" href="css/webplanner-v3.css?v=6.5.0">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script defer src="js/trip-db.js?v=6.4.0"></script>
-  <script defer src="js/webplanner-v3.js?v=6.4.0"></script>
+  <script defer src="js/trip-db.js?v=6.5.0"></script>
+  <script defer src="js/webplanner-v3.js?v=6.5.0"></script>
 </head>
 <body>
   <header class="app-header">
@@ -226,12 +226,13 @@
           <div class="card-title stops-head">
             <div>
               <h2>Stops en overnachten</h2>
-              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Alles staat standaard uit. Hotels en Camperplekken zoeken pas na keuze van een aankomsttijdvak; Camperplekken verschijnen alleen bij Busje en Camper.</p>
+              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Alles staat standaard uit. Hotels en Camperplekken zoeken pas na keuze van een aankomsttijdvak; Camperplekken verschijnen alleen bij Busje en Camper. Eten en WC zoeken live langs de actieve reisdag.</p>
             </div>
             <span class="pill suggestion-paused">Suggesties on hold</span>
           </div>
           <div class="mode-switch hidden" aria-hidden="true"></div>
           <div id="categoryTabs" class="category-grid stops-cats"></div>
+          <div id="foodFilters" class="food-filter-bar hidden" aria-hidden="true"></div>
           <div id="recommendPanel" class="stops-results-panel hidden" aria-hidden="true">
             <div class="card-title stops-subhead"><h3 id="recommendTitle">Stops die je zelf aanzet</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
             <div id="recommendations" class="stop-list rich-stop-list"></div>

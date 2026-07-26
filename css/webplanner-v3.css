@@ -1455,7 +1455,7 @@ button{cursor:pointer}
   font-size:10px;
 }
 .place-marker-hotels::after{content:'H';}
-.place-marker-restaurants::after{content:'R';}
+.place-marker-restaurants::after{content:'E';}
 .place-marker-laden::after{content:'L';}
 .place-marker-tanken::after{content:'T';}
 .place-marker-uitjes::after{content:'U';}
@@ -2163,3 +2163,13 @@ button{cursor:pointer}
 .route-preference-note{margin:7px 2px 0}
 .route-preference-note.warning{color:#8a5b0b}
 @media(max-width:720px){.route-preference-grid{grid-template-columns:1fr}.route-preference{min-height:0;padding:10px 12px}.route-preference strong,.route-preference span{display:inline}.route-preference strong{margin-right:7px}.route-preference span:before{content:'· ';}}
+
+
+/* Roadora v6.5.0 — live Eten/WC filters */
+.food-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 4px;padding:10px 12px;border:1px solid var(--line,#dfe6e3);border-radius:14px;background:#f8fbfa}
+.food-filter-bar.hidden{display:none}
+.food-filter-bar>span{font-size:.82rem;font-weight:800;color:#51605c;margin-right:2px}
+.food-filter{appearance:none;border:1px solid #cfdad6;background:#fff;color:#34413e;border-radius:999px;padding:8px 12px;font:inherit;font-size:.82rem;font-weight:750;cursor:pointer}
+.food-filter:hover{border-color:#779a91}
+.food-filter.active{background:#0d6b6e;border-color:#0d6b6e;color:#fff}
+@media(max-width:680px){.food-filter-bar{gap:6px;padding:9px}.food-filter{padding:7px 10px;font-size:.78rem}}
