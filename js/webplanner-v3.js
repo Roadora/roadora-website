@@ -145,7 +145,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v6.3.1', savedAt:Date.now(),
+    version:'v6.3.2', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -261,7 +261,7 @@ const FEATURE_ROADORA_SUGGESTIONS = false; // tijdelijk on hold: eerst routeflow
 const timelines = {
   1:[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']]
 };
-let map, routeLine, markers=[], placeMarkers=[];
+let map, routeLine, markers=[], placeMarkers=[], plannedStopMarkers=[];
 let routeZoneMarkersVisible = false;
 function setRouteZoneMarkersVisible(visible){
   routeZoneMarkersVisible = Boolean(visible);
@@ -284,6 +284,92 @@ function clearPlaceMarkers(){
   if(!Array.isArray(placeMarkers)) placeMarkers=[];
   placeMarkers.forEach(m=>{ if(map && map.hasLayer(m)) map.removeLayer(m); });
   placeMarkers=[];
+}
+function clearPlannedStopMarkers(){
+  if(!Array.isArray(plannedStopMarkers)) plannedStopMarkers=[];
+  plannedStopMarkers.forEach(m=>{ if(map && map.hasLayer(m)) map.removeLayer(m); });
+  plannedStopMarkers=[];
+}
+function plannedRowCoordinate(row,index,plan){
+  const meta=row?.[4] || {};
+  const lat=Number(meta.lat), lng=Number(meta.lng);
+  if(Number.isFinite(lat) && Number.isFinite(lng)) return [lat,lng];
+  if(Array.isArray(routeCoords) && routeCoords.length){
+    if(index===0) return routeCoords[0];
+    if(index===plan.length-1) return routeCoords[routeCoords.length-1];
+  }
+  return null;
+}
+function plannedStopKind(row,index,plan){
+  const meta=row?.[4] || {};
+  const type=String(row?.[3] || '').toLowerCase();
+  const category=String(meta.category || '').toLowerCase();
+  if(index===0) return 'start';
+  if(category==='camperplaces' || type.includes('camper')) return 'camper';
+  if(category==='hotels' || type.includes('hotel') || type.includes('overnacht')) return 'hotel';
+  if(index===plan.length-1) return 'end';
+  return 'stop';
+}
+function plannedStopLabel(kind,index){
+  if(kind==='start') return 'S';
+  if(kind==='hotel') return 'H';
+  if(kind==='camper') return 'C';
+  if(kind==='end') return 'E';
+  return String(Math.max(1,index));
+}
+function plannedStopTypeLabel(kind,row){
+  if(kind==='start') return 'Vertrekpunt';
+  if(kind==='hotel') return 'Hotel';
+  if(kind==='camper') return 'Camperplek';
+  if(kind==='end') return 'Eindbestemming';
+  return String(row?.[3] || 'Stop');
+}
+function plannedMarkerHtml(kind,label){
+  return `<div class="planned-stop-pin planned-stop-pin-${kind}"><span>${escapeHtml(label)}</span></div>`;
+}
+function renderPlannedStopMarkers(){
+  if(!map || !window.L) return;
+  clearPlannedStopMarkers();
+  const plan=timelines[state.activeDay] || [];
+  if(!Array.isArray(plan) || !plan.length) return;
+  plannedStopMarkers=plan.map((row,index)=>{
+    const coords=plannedRowCoordinate(row,index,plan);
+    if(!coords) return null;
+    const kind=plannedStopKind(row,index,plan);
+    const label=plannedStopLabel(kind,index);
+    const title=String(row?.[1] || plannedStopTypeLabel(kind,row));
+    const typeLabel=plannedStopTypeLabel(kind,row);
+    const marker=L.marker(coords,{
+      interactive:true,
+      keyboard:true,
+      bubblingMouseEvents:false,
+      riseOnHover:true,
+      zIndexOffset:900 + index,
+      title,
+      alt:title,
+      icon:L.divIcon({
+        className:'roadora-planned-marker-icon',
+        html:plannedMarkerHtml(kind,label),
+        iconSize:[34,40],
+        iconAnchor:[17,38],
+        popupAnchor:[0,-34]
+      })
+    });
+    marker.__planIndex=index;
+    marker.bindTooltip(`${title} · Dag ${state.activeDay}`,{direction:'top',offset:[0,-28]});
+    marker.bindPopup(`<div class="planned-stop-popup"><strong>${escapeHtml(title)}</strong><span>Dag ${state.activeDay} · ${escapeHtml(typeLabel)}</span></div>`,{offset:[0,-28]});
+    return marker;
+  }).filter(Boolean);
+  plannedStopMarkers.forEach(marker=>marker.addTo(map));
+}
+function focusPlannedStop(index){
+  if(!map){toast('De kaart is nog niet geladen'); return;}
+  const marker=plannedStopMarkers.find(m=>Number(m.__planIndex)===Number(index));
+  if(!marker){toast('Voor deze handmatige stop is nog geen exacte locatie bekend'); return;}
+  const target=marker.getLatLng();
+  const zoom=Math.max(Number(map.getZoom())||5,12);
+  map.flyTo(target,zoom,{duration:.45});
+  setTimeout(()=>marker.openPopup(),220);
 }
 function placeMarkerHtml(cat,index){
   const letter = {hotels:'H',camperplaces:'C',restaurants:'R',laden:'L',tanken:'T',uitjes:'U',wc:'W'}[cat] || 'P';
@@ -365,6 +451,7 @@ function initMap(){
   routeLine = L.polyline(routeCoords || [],{color:'#0b6f71',weight:5,opacity:.88,lineCap:'round'}).addTo(map);
   renderRouteZoneMarkers(false);
   renderPlaceMarkers();
+  renderPlannedStopMarkers();
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
 }
 function fitMap(){ if(map && routeLine && routeCoords.length>1) map.fitBounds(routeLine.getBounds(),{padding:[45,45]}); else if(map) map.setView([48.4,8.8],5); }
@@ -417,9 +504,12 @@ function renderRouteZoneMarkers(forceVisible=false){
 }
 function updateMapRoute(){
   if(!map || !routeLine) return;
-  if(!Array.isArray(routeCoords) || routeCoords.length<2){ routeLine.setLatLngs([]); markerData=[]; renderRouteZoneMarkers(false); fitMap(); return; }
+  if(!Array.isArray(routeCoords) || routeCoords.length<2){
+    routeLine.setLatLngs([]); markerData=[]; renderRouteZoneMarkers(false); renderPlannedStopMarkers(); fitMap(); return;
+  }
   routeLine.setLatLngs(routeCoords);
   renderRouteZoneMarkers(false);
+  renderPlannedStopMarkers();
   fitMap();
 }
 function applyRouteZones({resetPlan=true}={}){
@@ -1051,11 +1141,15 @@ function renderTimeline(){
     const detail = typeof r[2]==='function'?r[2]():r[2];
     const type = r[3] || inferType(r[1]);
     const editing = editingPlanRows.has(i);
+    const hasMapPoint=Boolean(plannedRowCoordinate(r,i,list));
     return `<div class="plan-row ${i===list.length-1?'active':''} ${editing?'editing':''}" data-plan-index="${i}">
       <div class="plan-read">
         <div class="plan-read-time">${safeReadTime(r[0])}</div>
         <div class="plan-read-main"><strong>${r[1]}</strong><span>${detail}</span><em>${type}</em></div>
-        <button class="plan-edit" type="button">Bewerken</button>
+        <div class="plan-read-actions">
+          ${hasMapPoint?`<button class="plan-map" type="button" data-show-plan-on-map="${i}" aria-label="Toon ${escapeHtml(r[1])} op de kaart">Kaart</button>`:''}
+          <button class="plan-edit" type="button">Bewerken</button>
+        </div>
       </div>
       <div class="plan-edit-panel">
         <div class="plan-timebox"><input class="plan-time-input" type="time" value="${safeTimeValue(r[0])}" aria-label="Tijd"></div>
@@ -1068,6 +1162,7 @@ function renderTimeline(){
       </div>
     </div>`;
   }).join('');
+  renderPlannedStopMarkers();
 }
 
 function escapeHtml(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -1336,6 +1431,7 @@ function resetWorkingPlannerState(){
   editingPlanRows.clear();
   setFormFromState();
   clearPlaceMarkers();
+  clearPlannedStopMarkers();
   if(routeLine) routeLine.setLatLngs([]);
   markers.forEach(m=>{if(map?.hasLayer(m)) map.removeLayer(m);}); markers=[];
   restoringDraft=false;
@@ -1589,6 +1685,8 @@ function bind(){
       return;
     }
     const delDay=e.target.closest('[data-delete-day]'); if(delDay){e.preventDefault(); e.stopPropagation(); deleteTripDay(Number(delDay.dataset.deleteDay)); return;}
+    const showPlanOnMap=e.target.closest('[data-show-plan-on-map]');
+    if(showPlanOnMap){e.preventDefault(); e.stopPropagation(); focusPlannedStop(Number(showPlanOnMap.dataset.showPlanOnMap)); return;}
     const edit=e.target.closest('.plan-edit');
     if(edit){const row=edit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.has(i)?editingPlanRows.delete(i):editingPlanRows.add(i); renderTimeline(); return;}
     const saveEdit=e.target.closest('.plan-save');
