@@ -25,7 +25,8 @@
     try{return JSON.parse(localStorage.getItem(FALLBACK_KEY)||'[]');}catch(_){return [];}
   }
   function fallbackWrite(items){
-    try{localStorage.setItem(FALLBACK_KEY,JSON.stringify(items));}catch(_){}
+    try{localStorage.setItem(FALLBACK_KEY,JSON.stringify(items)); return true;}
+    catch(_){return false;}
   }
   async function withStore(mode,fn){
     const db=await openDb();
@@ -95,7 +96,7 @@
       const rows=fallbackRead();
       const index=rows.findIndex(x=>x.id===record.id);
       if(index>=0) rows[index]=record; else rows.unshift(record);
-      fallbackWrite(rows.slice(0,50));
+      if(!fallbackWrite(rows.slice(0,50))) throw new Error('Lokale fallback-opslag mislukt');
       return record;
     }
   }
@@ -111,7 +112,7 @@
       });
       db.close();
     }catch(_){
-      fallbackWrite(fallbackRead().filter(x=>x.id!==id));
+      if(!fallbackWrite(fallbackRead().filter(x=>x.id!==id))) throw new Error('Lokale fallback-opslag mislukt');
     }
   }
 
