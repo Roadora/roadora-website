@@ -150,7 +150,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v6.5.1', savedAt:Date.now(),
+    version:'v6.5.2', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -1052,8 +1052,12 @@ function plannedStopDetail(row,day){
   if(Number.isFinite(meters)) bits.push(`${Math.round(meters/1000)} km vanaf vertrek`);
   if(safeTimeValue(row?.[0])) bits.push(`aankomst ± ${row[0]}`);
   if(meta.status) bits.push(meta.status);
-  if(meta.routeMismatch) bits.push(`controleer of vervang deze stop`);
-  if(meta.detourLabel) bits.push(meta.detourLabel);
+  if(meta.routeMismatch){
+    const gapKm=Number(meta.routeGapKm);
+    bits.push(Number.isFinite(gapKm) ? `${gapKm.toLocaleString('nl-NL')} km buiten nieuwe route` : 'Niet gunstig langs nieuwe route');
+  } else if(meta.detourLabel){
+    bits.push(meta.detourLabel);
+  }
   return bits.filter(Boolean).join(' · ');
 }
 function refreshPlannedRowDetails(day){

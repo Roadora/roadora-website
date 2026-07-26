@@ -2184,3 +2184,34 @@ button{cursor:pointer}
 .planned-stop-pin-mismatch{background:#d36b18!important;box-shadow:0 0 0 4px rgba(211,107,24,.20),0 7px 18px rgba(25,18,8,.32)}
 .route-preference-note.warning{font-weight:700}
 @media(max-width:760px){.plan-replace{font-size:10.5px;padding-left:5px}.plan-replace::before{margin-right:2px}}
+
+
+/* Roadora v6.5.2 — compacte routewaarschuwing en acties */
+.plan-read{
+  grid-template-columns:54px minmax(0,1fr);
+  align-items:start;
+}
+.plan-read-main span{
+  word-break:normal;
+  overflow-wrap:break-word;
+  hyphens:auto;
+}
+.plan-read-actions{
+  grid-column:2;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+  gap:2px 8px;
+  margin-top:-2px;
+}
+.plan-map,.plan-edit,.plan-replace{
+  padding:3px 0;
+  white-space:nowrap;
+}
+.plan-row.route-mismatch .plan-read-main span{
+  line-height:1.4;
+}
+@media(max-width:760px){
+  .plan-read{grid-template-columns:48px minmax(0,1fr);gap:7px;padding:9px}
+  .plan-read-actions{grid-column:2;gap:2px 7px}
+  .plan-map,.plan-edit,.plan-replace{font-size:10.5px;padding:3px 0}
+}
