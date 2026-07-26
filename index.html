@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/webplanner-v3.css">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="js/trip-db.js"></script>
   <script defer src="js/webplanner-v3.js"></script>
 </head>
 <body>
@@ -63,7 +64,7 @@
           </div>
           <div class="two">
             <div class="field compact-field hotel-arrival-field">
-              <label for="hotelArrival">Aankomsttijdvak hotel</label>
+              <label for="hotelArrival">Aankomsttijdvak overnachting</label>
               <div class="input"><select id="hotelArrival">
                 <option value="" selected>Geen tijdvak</option>
                 <option value="12-14">12:00 - 14:00</option>
@@ -78,7 +79,7 @@
               <div class="input"><input id="tripDays" type="number" min="1" max="21" value="1"><strong>dag(en)</strong></div>
             </div>
           </div>
-          <p class="hint hotel-helper-note">Hotels zoeken kan pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je route.</p>
+          <p class="hint hotel-helper-note">Hotels en Camperplekken zoeken pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je route.</p>
           <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
         </article>
 
@@ -117,7 +118,7 @@
               <button class="choice" data-vehicle="car" type="button">Auto</button>
               <button class="choice" data-vehicle="electric" type="button">Elektrisch</button>
               <button class="choice" data-vehicle="camper" type="button">Camper</button>
-              <button class="choice" data-vehicle="bus" type="button">Bus</button>
+              <button class="choice" data-vehicle="bus" type="button">Busje</button>
             </div>
             <div class="field" style="margin-top:12px">
               <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden?</label>
@@ -209,8 +210,8 @@
         <article class="card card-pad stops-card">
           <div class="card-title stops-head">
             <div>
-              <h2>Stops en hotels</h2>
-              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Na het laden van de route staat alles standaard uit. Hotels zoeken kan pas na keuze van een aankomsttijdvak.</p>
+              <h2>Stops en overnachten</h2>
+              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Alles staat standaard uit. Hotels en Camperplekken zoeken pas na keuze van een aankomsttijdvak; Camperplekken verschijnen alleen bij Busje en Camper.</p>
             </div>
             <span class="pill suggestion-paused">Suggesties on hold</span>
           </div>
@@ -247,12 +248,21 @@
           <article class="card card-pad active-day-card">
             <div class="card-title"><h2>Actieve dag</h2><span id="overviewDayPill" class="pill">Dag 1</span></div>
             <div id="activeDayDetail" class="active-day-detail"></div>
+            <div class="day-navigation-actions">
+              <button id="startDayRoute" class="btn primary" type="button">Start dagroute in Maps</button>
+              <button id="navigateNextStop" class="btn" type="button">Navigeer naar volgende stop</button>
+            </div>
+            <p class="hint">De dagroute gebruikt je huidige locatie en maximaal drie tussenstops plus één eindbestemming. Bij meer stops gebruik je navigatie per etappe.</p>
           </article>
 
           <article class="card card-pad">
-            <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">account later</span></div>
+            <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">op dit apparaat</span></div>
+            <div class="trip-library-toolbar">
+              <button id="newRoadtrip" class="btn primary" type="button">+ Nieuwe roadtrip</button>
+              <span id="storageStatus" class="storage-status">Nog niet bewaard</span>
+            </div>
             <div id="savedTrips" class="trip-list"></div>
-            <button id="exportApp" class="btn full" type="button">Exporteer naar app</button>
+            <p class="hint storage-warning">Roadtrips worden lokaal in deze browser opgeslagen. Bij het wissen van browsergegevens kunnen ze verloren gaan.</p>
           </article>
         </div>
       </div>
