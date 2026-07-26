@@ -115,6 +115,7 @@ function setDepartTime(value){
   if(input) input.value=val;
   state.depart=val;
   updateDepartTimeDisplay();
+  refreshAllTimelineTimes();
   renderAll();
   saveDraftNow();
 }
@@ -145,7 +146,7 @@ function setFormFromState(){
 function serializeDraft(){
   readForm();
   return {
-    version:'v6.3.2', savedAt:Date.now(),
+    version:'v6.3.3', savedAt:Date.now(),
     state:{...cloneJsonSafe(state), prefs:activePrefLabels()},
     routeCoords:cloneJsonSafe(routeCoords),
     timelines:cloneJsonSafe(timelines),
@@ -185,6 +186,7 @@ function applyDraftSnapshot(draft){
   if(!Object.keys(timelines).length) timelines[1]=[['—','Route nog niet gepland','Vul vertrekpunt en bestemming in en klik op Maak dagroute','Vertrek']];
   Object.keys(stops).forEach(k=>{stops[k]=Array.isArray(draft.stops?.[k])?cloneJsonSafe(draft.stops[k]):[];});
   repairDayHotelsFromTimelines();
+  refreshAllTimelineTimes();
   setFormFromState();
   restoringDraft=false;
   return true;
@@ -690,6 +692,117 @@ function hotelTripInfo(meta={}){
   const remainingKm = Number.isFinite(km) && Number(state.routeDistanceKm)>0 ? Math.max(0, Math.round(Number(state.routeDistanceKm)-km)) : null;
   const remainingMin = Number.isFinite(progress) && Number(state.routeDurationMin)>0 ? Math.max(0, Math.round(Number(state.routeDurationMin)*(1-progress))) : null;
   return {km,progress,arrivalTime,remainingKm,remainingMin};
+}
+
+function clampRouteProgress(value){
+  const n=Number(value);
+  return Number.isFinite(n) ? Math.max(0,Math.min(1,n)) : null;
+}
+function nearestRouteProgress(lat,lng){
+  if(!Array.isArray(routeCoords) || routeCoords.length<2 || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null;
+  const targetLat=Number(lat), targetLng=Number(lng);
+  const lngScale=Math.max(0.2,Math.cos(targetLat*Math.PI/180));
+  let bestIndex=0, bestScore=Infinity;
+  routeCoords.forEach((coord,index)=>{
+    const cLat=Number(coord?.[0]), cLng=Number(coord?.[1]);
+    if(!Number.isFinite(cLat)||!Number.isFinite(cLng)) return;
+    const dLat=cLat-targetLat;
+    const dLng=(cLng-targetLng)*lngScale;
+    const score=(dLat*dLat)+(dLng*dLng);
+    if(score<bestScore){bestScore=score; bestIndex=index;}
+  });
+  return bestIndex/Math.max(1,routeCoords.length-1);
+}
+function routeProgressForMeta(meta={}){
+  const direct=clampRouteProgress(meta.routeProgress);
+  if(direct!==null) return direct;
+  const meters=Number(meta.distanceFromStartMeters);
+  if(Number.isFinite(meters) && Number(state.routeDistanceKm)>0) return clampRouteProgress(meters/(Number(state.routeDistanceKm)*1000));
+  const km=Number(meta.distanceFromStartKm);
+  if(Number.isFinite(km) && Number(state.routeDistanceKm)>0) return clampRouteProgress(km/Number(state.routeDistanceKm));
+  return nearestRouteProgress(meta.lat,meta.lng);
+}
+function detourMinutesFromMeta(meta={}){
+  const direct=Number(meta.detourMinutes);
+  if(Number.isFinite(direct) && direct>=0) return Math.round(direct);
+  const match=String(meta.detourLabel||'').match(/(\d+)\s*min/i);
+  return match ? Number(match[1]) : 0;
+}
+function defaultStopDurationMinutes(category=''){
+  return ({tanken:15,laden:30,restaurants:45,uitjes:60,wc:10}[String(category)]||15);
+}
+function stopDelayMinutes(row){
+  const meta=row?.[4]||{};
+  const category=String(meta.category||'');
+  if(isOvernightCategory(category)) return 0;
+  const duration=Number(meta.stopDurationMin);
+  const stay=Number.isFinite(duration) && duration>=0 ? duration : defaultStopDurationMinutes(category);
+  // De Google-resultaten tonen een benaderde afstand/tijd vanaf de route. We tellen die één keer mee.
+  return Math.max(0,Math.round(stay + detourMinutesFromMeta(meta)));
+}
+function dayStartProgress(day){
+  if(Number(day)<=1) return 0;
+  return clampRouteProgress(selectedHotelForDay(Number(day)-1)?.info?.progress) ?? 0;
+}
+function dayEndProgress(day){
+  return clampRouteProgress(selectedHotelForDay(Number(day))?.info?.progress) ?? 1;
+}
+function refreshDayTimelineTimes(day=state.activeDay,{sortStops=true}={}){
+  const d=Number(day)||1;
+  const plan=timelines[d];
+  if(!Array.isArray(plan)||plan.length<2||Number(state.routeDurationMin)<=0) return;
+  const startClock=safeTimeValue(plan[0]?.[0]) || (d===1?safeTimeValue(state.depart):'');
+  const startMinutes=minutesFromClock(startClock);
+  if(startMinutes===null) return;
+  const startProgress=dayStartProgress(d);
+  const endProgress=Math.max(startProgress,dayEndProgress(d));
+  const first=plan[0], last=plan[plan.length-1];
+  let middle=plan.slice(1,-1);
+  middle.forEach(row=>{
+    const meta=(row[4]&&typeof row[4]==='object')?row[4]:(row[4]={});
+    const progress=routeProgressForMeta(meta);
+    if(progress!==null){
+      meta.routeProgress=progress;
+      if(!Number.isFinite(Number(meta.distanceFromStartMeters)) && Number(state.routeDistanceKm)>0) meta.distanceFromStartMeters=Math.round(progress*Number(state.routeDistanceKm)*1000);
+    }
+  });
+  if(sortStops){
+    middle=middle.map((row,index)=>({row,index,progress:routeProgressForMeta(row?.[4]||{})}))
+      .sort((a,b)=>{
+        if(a.progress===null && b.progress===null) return a.index-b.index;
+        if(a.progress===null) return 1;
+        if(b.progress===null) return -1;
+        return a.progress-b.progress || a.index-b.index;
+      }).map(x=>x.row);
+    timelines[d]=[first,...middle,last];
+  }
+  let accumulatedDelay=0;
+  middle.forEach(row=>{
+    const meta=row?.[4]||{};
+    const progress=routeProgressForMeta(meta);
+    if(progress!==null && meta.autoTime!==false){
+      const bounded=Math.max(startProgress,Math.min(endProgress,progress));
+      const driveMinutes=Number(state.routeDurationMin)*Math.max(0,bounded-startProgress);
+      row[0]=formatMinutesAsClock(startMinutes+driveMinutes+accumulatedDelay);
+    }
+    accumulatedDelay+=stopDelayMinutes(row);
+  });
+  const selected=selectedHotelForDay(d);
+  const finalDrive=Number(state.routeDurationMin)*Math.max(0,endProgress-startProgress);
+  const finalArrival=formatMinutesAsClock(startMinutes+finalDrive+accumulatedDelay);
+  const finalMeta=(last[4]&&typeof last[4]==='object')?last[4]:(last[4]={});
+  if(finalMeta.autoTime!==false) last[0]=finalArrival;
+  if(selected){
+    selected.info=selected.info||{};
+    selected.info.arrivalTime=finalArrival;
+    selected.info.progress=endProgress;
+    last[2]=shortRouteDetailForDay(d);
+  } else if(d===Number(state.days||1)){
+    last[2]=`${Math.round(state.routeDistanceKm||0)} km · ${durationLabel(Math.round(finalDrive+accumulatedDelay))}`;
+  }
+}
+function refreshAllTimelineTimes(){
+  for(let d=1;d<=Number(state.days||1);d++) refreshDayTimelineTimes(d);
 }
 function repairDayHotelsFromTimelines(){
   if(!state.dayHotels || typeof state.dayHotels!=='object' || Array.isArray(state.dayHotels)) state.dayHotels={};
@@ -1316,7 +1429,7 @@ function addStopToActiveDay(cat,index){
     const info=hotelTripInfo(meta);
     const arrivalTime = info.arrivalTime && info.arrivalTime!=='—' ? info.arrivalTime : '—';
     const overnightType=cat==='camperplaces'?'Camperplek':'Hotel';
-    const navMeta={lat:Number(meta.lat),lng:Number(meta.lng),placeId:meta.id||'',name:title,category:cat};
+    const navMeta={...meta,lat:Number(meta.lat),lng:Number(meta.lng),placeId:meta.id||'',name:title,category:cat,autoTime:true,stopDurationMin:0};
     state.dayHotels[state.activeDay]={name:title,desc,meta:{...meta,category:cat},info,category:cat};
     const start=dayStartName(state.activeDay);
     const middle=plan.length>2 ? plan.slice(1,-1) : [];
@@ -1336,6 +1449,8 @@ function addStopToActiveDay(cat,index){
       ];
       syncFollowingDayArrival(next);
     }
+    refreshDayTimelineTimes(state.activeDay);
+    if(state.activeDay < state.days) refreshDayTimelineTimes(state.activeDay+1);
     editingPlanRows.clear();
     activateTab('planningTab');
     renderAll();
@@ -1343,10 +1458,19 @@ function addStopToActiveDay(cat,index){
     toast(`${title} ingesteld als eindpunt van Dag ${state.activeDay}`);
     return;
   }
-  const time = {restaurants:'13:00',laden:'15:15',tanken:'15:15',uitjes:'14:30',wc:'11:00'}[cat]||'12:00';
   const type = {restaurants:'Lunch',laden:'Laden/tanken',tanken:'Laden/tanken',uitjes:'Uitje',wc:'Pauze'}[cat]||'Stop';
   const insertAt=Math.max(1,plan.length-1);
-  plan.splice(insertAt,0,[time,title,desc,type,{lat:Number(meta.lat),lng:Number(meta.lng),placeId:meta.id||'',name:title,category:cat}]);
+  const routeProgress=routeProgressForMeta(meta);
+  const navMeta={
+    ...meta,
+    lat:Number(meta.lat),lng:Number(meta.lng),placeId:meta.id||'',name:title,category:cat,
+    routeProgress,
+    distanceFromStartMeters:Number.isFinite(Number(meta.distanceFromStartMeters))?Number(meta.distanceFromStartMeters):(routeProgress!==null?Math.round(routeProgress*Number(state.routeDistanceKm||0)*1000):null),
+    stopDurationMin:defaultStopDurationMinutes(cat),
+    autoTime:true
+  };
+  plan.splice(insertAt,0,['—',title,desc,type,navMeta]);
+  refreshDayTimelineTimes(state.activeDay);
   editingPlanRows.clear();
   activateTab('planningTab');
   renderTimeline(); renderTripOverview(); scheduleAutosave();
@@ -1692,12 +1816,21 @@ function bind(){
     const saveEdit=e.target.closest('.plan-save');
     if(saveEdit){const row=saveEdit.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); editingPlanRows.delete(i); renderTimeline(); toast('Planningregel opgeslagen'); return;}
     const remove=e.target.closest('.plan-remove');
-    if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); editingPlanRows.clear(); renderTimeline(); scheduleAutosave(); toast('Stop verwijderd');}
+    if(remove){const row=remove.closest('[data-plan-index]'); const i=Number(row.dataset.planIndex); dayPlan().splice(i,1); refreshDayTimelineTimes(state.activeDay); editingPlanRows.clear(); renderTimeline(); renderTripOverview(); scheduleAutosave(); toast('Stop verwijderd');}
   });
   document.addEventListener('input',e=>{
     const row=e.target.closest('[data-plan-index]'); if(!row) return;
     const i=Number(row.dataset.planIndex); const plan=dayPlan(); if(!plan[i]) return;
-    if(e.target.classList.contains('plan-time-input')){ plan[i][0]=e.target.value; if(i===0) syncFollowingDayArrival(state.activeDay); }
+    if(e.target.classList.contains('plan-time-input')){
+      plan[i][0]=e.target.value;
+      if(i===0){
+        refreshDayTimelineTimes(state.activeDay,{sortStops:false});
+        syncFollowingDayArrival(state.activeDay);
+      } else {
+        if(!plan[i][4] || typeof plan[i][4]!=='object') plan[i][4]={};
+        plan[i][4].autoTime=false;
+      }
+    }
     if(e.target.classList.contains('plan-title-input')){plan[i][1]=e.target.value; if(plan[i][4]) plan[i][4]=null;}
     if(e.target.classList.contains('plan-detail-input')){plan[i][2]=e.target.value; if(plan[i][4]) plan[i][4]=null;}
     scheduleAutosave();
