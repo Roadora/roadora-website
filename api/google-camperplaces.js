@@ -71,7 +71,7 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_CAMPERPLACES_CACHE_V63__',
+  cacheName: '__ROADORA_GOOGLE_CAMPERPLACES_CACHE_V655__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
   maxPoints: 3,
@@ -81,7 +81,7 @@ const CONFIG = {
   minRadiusMeters: 5000,
   maxRadiusMeters: 25000,
   concurrency: 2,
-  routeEngine: 'camperplaces-time-window-v1-3points',
+  routeEngine: 'camperplaces-time-window-v2-hard-geofence',
   placeMode: 'camperplaces'
 };
 
@@ -104,6 +104,18 @@ function roundCoord(value, digits = 3) {
   if (!Number.isFinite(n)) return null;
   const m = 10 ** digits;
   return Math.round(n * m) / m;
+}
+
+function haversineMeters(lat1, lng1, lat2, lng2) {
+  const values = [lat1, lng1, lat2, lng2].map(Number);
+  if (!values.every(Number.isFinite)) return Infinity;
+  const [aLat, aLng, bLat, bLng] = values;
+  const toRad = value => value * Math.PI / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(Math.max(0, 1 - s)));
 }
 
 function normalizePoint(point, index = 0) {
@@ -188,7 +200,10 @@ function normalizePlace(hit) {
     summary: place?.editorialSummary?.text || null,
     routeSampleIndex: Number.isFinite(hit?.sampleIndex) ? hit.sampleIndex : null,
     routeProgress: Number.isFinite(hit?.point?.progress) ? hit.point.progress : null,
-    distanceFromStartMeters: Number.isFinite(hit?.point?.distanceFromStartMeters) ? hit.point.distanceFromStartMeters : null
+    distanceFromStartMeters: Number.isFinite(hit?.point?.distanceFromStartMeters) ? hit.point.distanceFromStartMeters : null,
+    searchPointDistanceMeters: Number.isFinite(hit?.point?.lat) && Number.isFinite(hit?.point?.lng)
+      ? Math.round(haversineMeters(lat, lng, hit.point.lat, hit.point.lng))
+      : null
   };
 }
 
@@ -273,13 +288,16 @@ function scoreHotel(place) {
   return rating + reviews + openBonus;
 }
 
-function dedupeAndSpread(rawHits, maxTotal = CONFIG.maxTotalResults) {
+function dedupeAndSpread(rawHits, maxTotal = CONFIG.maxTotalResults, radiusMeters = CONFIG.defaultRadiusMeters) {
   const seen = new Set();
   const normalized = [];
 
   for (const hit of rawHits) {
     const place = normalizePlace(hit);
     if (!place) continue;
+    // Google Text Search locationBias is not a hard boundary. Enforce the requested
+    // arrival-area circle ourselves so distant matches never reach the planner.
+    if (!Number.isFinite(place.searchPointDistanceMeters) || place.searchPointDistanceMeters > radiusMeters) continue;
     const id = place.id || `${roundCoord(place.lat, 4)},${roundCoord(place.lng, 4)}`;
     if (seen.has(id)) continue;
     seen.add(id);
@@ -360,7 +378,7 @@ export default async function handler(req, res) {
     const settled = await runLimited(points, CONFIG.concurrency, point => searchHotelsNearPoint({ apiKey, point, radiusMeters, hotelQuery }));
     const rawHits = settled.flatMap(result => result.status === 'fulfilled' ? result.value : []);
     const errors = settled.filter(result => result.status === 'rejected').map(result => String(result.reason?.message || result.reason)).slice(0, 4);
-    const places = dedupeAndSpread(rawHits, maxTotalResults);
+    const places = dedupeAndSpread(rawHits, maxTotalResults, radiusMeters);
 
     const payload = {
       ok: true,
@@ -370,6 +388,7 @@ export default async function handler(req, res) {
       routeEngine: CONFIG.routeEngine,
       searchedPoints: points.length,
       radiusMeters,
+      hardGeofence: true,
       query: hotelQuery,
       costSafe: true,
       count: places.length,
