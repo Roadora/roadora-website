@@ -2147,3 +2147,19 @@ button{cursor:pointer}
   .plan-map,.plan-edit{font-size:10.5px;padding-left:5px}
   .plan-map::before{margin-right:2px}
 }
+
+/* Roadora v6.4 — routekeuze */
+.route-preference-block{margin:14px 0 12px}
+.route-preference-block>label{display:block;font-size:.83rem;font-weight:800;color:#183c3d;margin-bottom:8px}
+.route-preference-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.route-preference{appearance:none;border:1px solid #cddfdf;background:#f7fbfb;border-radius:12px;padding:10px 9px;text-align:left;min-height:70px;cursor:pointer;color:#183c3d;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease,transform .16s ease}
+.route-preference:hover{border-color:#7eb1b2;transform:translateY(-1px)}
+.route-preference strong{display:block;font-size:.85rem;line-height:1.2;margin-bottom:5px}
+.route-preference span{display:block;font-size:.7rem;line-height:1.25;color:#617979;font-weight:600}
+.route-preference.active{border-color:#0b6f71;background:#e9f6f5;box-shadow:0 0 0 2px rgba(11,111,113,.11)}
+.route-preference.active strong{color:#075b5d}
+.route-preference.unavailable{opacity:.52;cursor:not-allowed;transform:none}
+.route-preference.same-route span{color:#527071}
+.route-preference-note{margin:7px 2px 0}
+.route-preference-note.warning{color:#8a5b0b}
+@media(max-width:720px){.route-preference-grid{grid-template-columns:1fr}.route-preference{min-height:0;padding:10px 12px}.route-preference strong,.route-preference span{display:inline}.route-preference strong{margin-right:7px}.route-preference span:before{content:'· ';}}

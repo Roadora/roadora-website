@@ -9,10 +9,10 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/webplanner-v3.css?v=6.3.5">
+  <link rel="stylesheet" href="css/webplanner-v3.css?v=6.4.0">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script defer src="js/trip-db.js?v=6.3.5"></script>
-  <script defer src="js/webplanner-v3.js?v=6.3.5"></script>
+  <script defer src="js/trip-db.js?v=6.4.0"></script>
+  <script defer src="js/webplanner-v3.js?v=6.4.0"></script>
 </head>
 <body>
   <header class="app-header">
@@ -79,7 +79,22 @@
               <div class="input"><input id="tripDays" type="number" min="1" max="21" value="1"><strong>dag(en)</strong></div>
             </div>
           </div>
-          <p class="hint hotel-helper-note">Hotels en Camperplekken zoeken pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je route.</p>
+          <div class="route-preference-block" aria-labelledby="routePreferenceLabel">
+            <label id="routePreferenceLabel">Kies je route</label>
+            <div id="routePreferenceGrid" class="route-preference-grid">
+              <button class="route-preference active" data-route-preference="fastest" type="button">
+                <strong>Snelste</strong><span data-route-metric="fastest">Meestal de kortste reistijd</span>
+              </button>
+              <button class="route-preference" data-route-preference="tollfree" type="button">
+                <strong>Tol vermijden</strong><span data-route-metric="tollfree">Probeert tolwegen te vermijden</span>
+              </button>
+              <button class="route-preference" data-route-preference="alternative" type="button">
+                <strong>Alternatief</strong><span data-route-metric="alternative">Andere beschikbare route</span>
+              </button>
+            </div>
+            <p id="routePreferenceNote" class="hint route-preference-note">Roadora zoekt beschikbare routes zodra je op Maak dagroute klikt.</p>
+          </div>
+          <p class="hint hotel-helper-note">Hotels en Camperplekken zoeken pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je gekozen route.</p>
           <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
         </article>
 
