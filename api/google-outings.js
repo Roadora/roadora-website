@@ -1,4 +1,4 @@
-// Roadora Google Uitjes API — v6.6.0
+// Roadora Google Uitjes API — v6.6.1
 // Server-side Google Places Nearby Search proxy voor uitjes langs de actieve reisdag.
 
 function roadoraRequestHeader(req, name) {
@@ -68,17 +68,17 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V660__',
+  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V661__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 6,
+  maxPoints: 10,
   maxResultsPerPoint: 10,
   maxTotalResults: 36,
   defaultRadiusMeters: 6500,
   minRadiusMeters: 2000,
   maxRadiusMeters: 10000,
   concurrency: 3,
-  routeEngine: 'outings-active-day-v1',
+  routeEngine: 'outings-active-day-zones-v2',
   placeMode: 'outings'
 };
 

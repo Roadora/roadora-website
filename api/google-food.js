@@ -1,4 +1,4 @@
-// Roadora Google Eten API — v6.5.0
+// Roadora Google Eten API — v6.6.1
 // Server-side Google Places Nearby Search proxy voor eetstops langs de actieve reisdag.
 
 
@@ -70,17 +70,17 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_FOOD_CACHE_V650__',
+  cacheName: '__ROADORA_GOOGLE_FOOD_CACHE_V661__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 6,
+  maxPoints: 10,
   maxResultsPerPoint: 10,
   maxTotalResults: 35,
   defaultRadiusMeters: 5000,
   minRadiusMeters: 1500,
   maxRadiusMeters: 9000,
   concurrency: 3,
-  routeEngine: 'food-active-day-v1',
+  routeEngine: 'food-active-day-zones-v2',
   placeMode: 'food'
 };
 
