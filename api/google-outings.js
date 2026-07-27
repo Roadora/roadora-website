@@ -1,4 +1,4 @@
-// Roadora Google Uitjes API — v6.6.1
+// Roadora Google Uitjes API — v6.6.2
 // Server-side Google Places Nearby Search proxy voor uitjes langs de actieve reisdag.
 
 function roadoraRequestHeader(req, name) {
@@ -68,17 +68,17 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V661__',
+  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V662__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 10,
-  maxResultsPerPoint: 10,
-  maxTotalResults: 36,
-  defaultRadiusMeters: 6500,
-  minRadiusMeters: 2000,
-  maxRadiusMeters: 10000,
-  concurrency: 3,
-  routeEngine: 'outings-active-day-zones-v2',
+  maxPoints: 1,
+  maxResultsPerPoint: 20,
+  maxTotalResults: 20,
+  defaultRadiusMeters: 25000,
+  minRadiusMeters: 5000,
+  maxRadiusMeters: 50000,
+  concurrency: 1,
+  routeEngine: 'outings-user-chosen-area-v1',
   placeMode: 'outings'
 };
 
@@ -177,8 +177,8 @@ function normalizePlace(hit, outingType) {
   const lng = Number(place?.location?.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   const openNow = typeof place?.regularOpeningHours?.openNow === 'boolean' ? place.regularOpeningHours.openNow : null;
-  const offRouteKm = hit?.point ? haversineKm(hit.point.lat, hit.point.lng, lat, lng) : null;
-  const detourMinutes = Number.isFinite(offRouteKm) ? Math.max(3, Math.min(30, Math.round(3 + offRouteKm * 2.3))) : 8;
+  const distanceFromSearchKm = hit?.point ? haversineKm(hit.point.lat, hit.point.lng, lat, lng) : null;
+  const detourMinutes = Number.isFinite(distanceFromSearchKm) ? Math.max(3, Math.min(60, Math.round(3 + distanceFromSearchKm * 1.4))) : 8;
   const outingLabel = inferOutingLabel(place, outingType);
   return {
     id: place?.id || place?.name || `${roundCoord(lat, 5)},${roundCoord(lng, 5)}`,
@@ -193,7 +193,9 @@ function normalizePlace(hit, outingType) {
     checkedAt: new Date().toISOString(),
     status: openNow === true ? 'nu open' : openNow === false ? 'nu mogelijk gesloten' : 'openingstijden controleren',
     detourMinutes,
-    detourLabel: `± ${detourMinutes} min van route`,
+    detourLabel: `± ${detourMinutes} min rijden`,
+    distanceFromSearchKm: Number.isFinite(distanceFromSearchKm) ? Math.round(distanceFromSearchKm * 10) / 10 : null,
+    searchAreaLabel: 'Zelf gekozen zoekgebied',
     amenities: inferAmenities(place, outingType),
     outingType,
     outingLabel,
@@ -279,30 +281,16 @@ function dedupeAndSpread(rawHits, outingType, maxTotal = CONFIG.maxTotalResults)
     if (!place) continue;
     const id = place.id || `${roundCoord(place.lat, 4)},${roundCoord(place.lng, 4)}`;
     if (seen.has(id)) continue;
-    seen.add(id);
-    normalized.push(place);
+    seen.add(id); normalized.push(place);
   }
-  const bySegment = new Map();
-  normalized.forEach((place, order) => {
-    const key = Number.isFinite(place.routeSampleIndex) ? place.routeSampleIndex : order;
-    if (!bySegment.has(key)) bySegment.set(key, []);
-    bySegment.get(key).push({ ...place, __order: order });
-  });
-  for (const list of bySegment.values()) list.sort((a, b) => scorePlace(b) - scorePlace(a) || a.__order - b.__order);
-  const keys = Array.from(bySegment.keys()).sort((a, b) => a - b);
-  const result = [];
-  let round = 0;
-  while (result.length < maxTotal && round < CONFIG.maxResultsPerPoint) {
-    for (const key of keys) {
-      const item = bySegment.get(key)?.[round];
-      if (item) result.push(item);
-      if (result.length >= maxTotal) break;
-    }
-    round += 1;
-  }
-  return result.sort((a, b) => (a.routeProgress ?? 0) - (b.routeProgress ?? 0)).map(({ __order, ...place }) => place);
+  return normalized.sort((a,b)=>{
+    const scoreDiff=scorePlace(b)-scorePlace(a);
+    if(Math.abs(scoreDiff)>0.2) return scoreDiff;
+    const ad=Number.isFinite(Number(a.distanceFromSearchKm))?Number(a.distanceFromSearchKm):999;
+    const bd=Number.isFinite(Number(b.distanceFromSearchKm))?Number(b.distanceFromSearchKm):999;
+    return ad-bd;
+  }).slice(0,maxTotal);
 }
-
 export default async function handler(req, res) {
   const security = roadoraSecureRequest(req, res, { methods: 'POST, OPTIONS', maxRequests: 60, bucket: 'OUTINGS' });
   if (security.handled) return;
@@ -310,7 +298,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return send(res, 200, { ok: false, status: 'misconfigured', source: 'backend', message: 'GOOGLE_MAPS_API_KEY ontbreekt in Vercel Environment Variables.', places: [] });
   const body = req.body || {};
-  const mode = String(body.mode || 'route_outings');
+  const mode = String(body.mode || 'manual_place');
   const outingType = normalizeOutingType(body.outingType);
   const points = Array.isArray(body.points) ? body.points.map(normalizePoint).filter(Boolean).slice(0, CONFIG.maxPoints) : [];
   const radiusMeters = Math.max(CONFIG.minRadiusMeters, Math.min(CONFIG.maxRadiusMeters, Number(body.radiusMeters) || CONFIG.defaultRadiusMeters));

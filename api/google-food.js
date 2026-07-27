@@ -1,5 +1,5 @@
-// Roadora Google Eten API — v6.6.1
-// Server-side Google Places Nearby Search proxy voor eetstops langs de actieve reisdag.
+// Roadora Google Eten API — v6.6.2
+// Server-side Google Places Nearby Search proxy voor eten rond de actuele locatie van de gebruiker.
 
 
 // Roadora v6.5.4 — basis misbruikbeveiliging voor serverless proxy's.
@@ -70,17 +70,17 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_FOOD_CACHE_V661__',
+  cacheName: '__ROADORA_GOOGLE_FOOD_CACHE_V662__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
-  maxPoints: 10,
-  maxResultsPerPoint: 10,
-  maxTotalResults: 35,
-  defaultRadiusMeters: 5000,
-  minRadiusMeters: 1500,
-  maxRadiusMeters: 9000,
-  concurrency: 3,
-  routeEngine: 'food-active-day-zones-v2',
+  maxPoints: 1,
+  maxResultsPerPoint: 20,
+  maxTotalResults: 20,
+  defaultRadiusMeters: 10000,
+  minRadiusMeters: 1000,
+  maxRadiusMeters: 12000,
+  concurrency: 1,
+  routeEngine: 'food-current-location-v1',
   placeMode: 'food'
 };
 
@@ -178,13 +178,13 @@ function normalizePlace(hit, foodType) {
   const openNow = typeof place?.regularOpeningHours?.openNow === 'boolean'
     ? place.regularOpeningHours.openNow
     : null;
-  const offRouteKm = hit?.point ? haversineKm(hit.point.lat, hit.point.lng, lat, lng) : null;
-  const detourMinutes = Number.isFinite(offRouteKm) ? Math.max(2, Math.min(20, Math.round(2 + offRouteKm * 2.2))) : 5;
+  const distanceFromSearchKm = hit?.point ? haversineKm(hit.point.lat, hit.point.lng, lat, lng) : null;
+  const detourMinutes = Number.isFinite(distanceFromSearchKm) ? Math.max(2, Math.min(25, Math.round(2 + distanceFromSearchKm * 1.2))) : 5;
 
   return {
     id: place?.id || place?.name || `${roundCoord(lat, 5)},${roundCoord(lng, 5)}`,
-    name: place?.displayName?.text || `${foodLabel(foodType)} langs route`,
-    address: place?.formattedAddress || 'Langs je route',
+    name: place?.displayName?.text || `${foodLabel(foodType)} in de buurt`,
+    address: place?.formattedAddress || 'Rond je huidige locatie',
     lat,
     lng,
     rating: typeof place?.rating === 'number' ? place.rating : null,
@@ -194,7 +194,8 @@ function normalizePlace(hit, foodType) {
     checkedAt: new Date().toISOString(),
     status: openNow === true ? 'nu open' : openNow === false ? 'nu mogelijk gesloten' : 'openingstijden controleren',
     detourMinutes,
-    detourLabel: `± ${detourMinutes} min van route`,
+    detourLabel: `± ${detourMinutes} min rijden`,
+    distanceFromSearchKm: Number.isFinite(distanceFromSearchKm) ? Math.round(distanceFromSearchKm * 10) / 10 : null,
     amenities: inferAmenities(place, foodType),
     foodType,
     foodLabel: inferFoodLabel(place, foodType),
@@ -290,32 +291,14 @@ function dedupeAndSpread(rawHits, foodType, maxTotal = CONFIG.maxTotalResults) {
     if (!place) continue;
     const id = place.id || `${roundCoord(place.lat, 4)},${roundCoord(place.lng, 4)}`;
     if (seen.has(id)) continue;
-    seen.add(id);
-    normalized.push(place);
+    seen.add(id); normalized.push(place);
   }
-
-  const bySegment = new Map();
-  normalized.forEach((place, order) => {
-    const key = Number.isFinite(place.routeSampleIndex) ? place.routeSampleIndex : order;
-    if (!bySegment.has(key)) bySegment.set(key, []);
-    bySegment.get(key).push({ ...place, __order: order });
-  });
-  for (const list of bySegment.values()) list.sort((a, b) => scorePlace(b) - scorePlace(a) || a.__order - b.__order);
-
-  const keys = Array.from(bySegment.keys()).sort((a, b) => a - b);
-  const result = [];
-  let round = 0;
-  while (result.length < maxTotal && round < CONFIG.maxResultsPerPoint) {
-    for (const key of keys) {
-      const item = bySegment.get(key)?.[round];
-      if (item) result.push(item);
-      if (result.length >= maxTotal) break;
-    }
-    round += 1;
-  }
-  return result.sort((a, b) => (a.routeProgress ?? 0) - (b.routeProgress ?? 0)).map(({ __order, ...place }) => place);
+  return normalized.sort((a,b)=>{
+    const ad=Number.isFinite(Number(a.distanceFromSearchKm))?Number(a.distanceFromSearchKm):999;
+    const bd=Number.isFinite(Number(b.distanceFromSearchKm))?Number(b.distanceFromSearchKm):999;
+    return ad-bd || scorePlace(b)-scorePlace(a) || Number(b.userRatingCount||0)-Number(a.userRatingCount||0);
+  }).slice(0,maxTotal);
 }
-
 export default async function handler(req, res) {
   const security = roadoraSecureRequest(req, res, { methods: 'POST, OPTIONS', maxRequests: 60, bucket: 'FOOD' });
   if (security.handled) return;
@@ -325,7 +308,7 @@ export default async function handler(req, res) {
   if (!apiKey) return send(res, 200, { ok: false, status: 'misconfigured', source: 'backend', message: 'GOOGLE_MAPS_API_KEY ontbreekt in Vercel Environment Variables.', places: [] });
 
   const body = req.body || {};
-  const mode = String(body.mode || 'route_food');
+  const mode = String(body.mode || 'current_location_food');
   const foodType = normalizeFoodType(body.foodType);
   const points = Array.isArray(body.points) ? body.points.map(normalizePoint).filter(Boolean).slice(0, CONFIG.maxPoints) : [];
   const radiusMeters = Math.max(CONFIG.minRadiusMeters, Math.min(CONFIG.maxRadiusMeters, Number(body.radiusMeters) || CONFIG.defaultRadiusMeters));

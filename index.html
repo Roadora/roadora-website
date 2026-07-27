@@ -8,13 +8,13 @@
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/webplanner-v661.css">
+  <link rel="stylesheet" href="css/webplanner-v662.css">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
   <script defer src="js/leaflet-fallback-v655.js"></script>
   <script defer src="js/trip-db-v654.js"></script>
-  <script defer src="js/webplanner-v661.js"></script>
+  <script defer src="js/webplanner-v662.js"></script>
 </head>
-<body data-roadora-build="v6.6.1">
+<body data-roadora-build="v6.6.2">
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
@@ -39,15 +39,24 @@
             <h1>Eerste dagroute</h1>
             <button id="resetDemo" class="mini-link" type="button">Reset</button>
           </div>
-          <p class="muted">Vul je route in. Stops en hotels staan standaard uit; je kiest later zelf wat je wilt zoeken.</p>
+          <p class="muted">Vul je route in. Roadora stelt niets voor en vult niets automatisch in; jij bepaalt iedere bestemming, stop en reisdag.</p>
+          <div class="trip-type-switch" role="group" aria-label="Soort roadtrip">
+            <button class="trip-type-btn active" data-trip-type="single" type="button" aria-pressed="true">Enkele reis</button>
+            <button class="trip-type-btn" data-trip-type="roundtrip" type="button" aria-pressed="false">Rondreis</button>
+          </div>
           <div class="divider"></div>
           <div class="field">
             <label for="origin">Vertrekpunt</label>
             <div class="input"><input id="origin" placeholder="Bijv. Amsterdam, Nederland" autocomplete="off"></div>
           </div>
           <div class="field">
-            <label for="destination">Bestemming</label>
+            <label for="destination">Bestemming / eindpunt</label>
             <div class="input"><input id="destination" placeholder="Bijv. Toscane, Italië" autocomplete="off"></div>
+          </div>
+          <div id="roundtripFields" class="roundtrip-fields hidden" aria-hidden="true">
+            <div class="roundtrip-head"><div><strong>Tussenbestemmingen rondreis</strong><span>Voeg alleen de plaatsen toe die je zelf wilt bezoeken, in jouw volgorde.</span></div><button id="useOriginAsDestination" class="mini-link" type="button">Eindig bij vertrekpunt</button></div>
+            <div id="roundtripStopList" class="roundtrip-stop-list"></div>
+            <button id="addRoundtripStop" class="btn" type="button">+ Tussenbestemming</button>
           </div>
           <div class="two">
             <div class="field">
@@ -226,13 +235,14 @@
           <div class="card-title stops-head">
             <div>
               <h2>Stops en overnachten</h2>
-              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Alles staat standaard uit. Hotels en Camperplekken zoeken pas na keuze van een aankomsttijdvak; Camperplekken verschijnen alleen bij Busje en Camper. Eten, WC en Uitjes zoeken live langs de actieve reisdag. Bij Eten en Uitjes kun je kiezen tussen gelijkmatig verspreide aanbevelingen en alle resultaten in routevolgorde. Geplande tussenstops kun je vervangen of tijdelijk overslaan.</p>
+              <p class="muted compact-copy">Kies zelf welke stops je wilt tonen. Alles staat standaard uit. Hotels en Camperplekken zoeken pas na keuze van een aankomsttijdvak; Camperplekken verschijnen alleen bij Busje en Camper. Eten zoekt alleen wanneer jij daarom vraagt, rond je actuele locatie. Uitjes zoek je handmatig rond je huidige locatie, een plaats, kaartpunt of routepunt. Geplande tussenstops kun je vervangen of tijdelijk overslaan.</p>
             </div>
             <span class="pill suggestion-paused">Resultaten op jouw keuze</span>
           </div>
           <div class="mode-switch hidden" aria-hidden="true"></div>
           <div id="categoryTabs" class="category-grid stops-cats"></div>
           <div id="foodFilters" class="food-filter-bar hidden" aria-hidden="true"></div>
+          <div id="contextSearchControls" class="context-search-controls hidden" aria-hidden="true"></div>
           <div id="recommendPanel" class="stops-results-panel hidden" aria-hidden="true">
             <div class="card-title stops-subhead"><h3 id="recommendTitle">Stops die je zelf aanzet</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
             <div id="recommendations" class="stop-list rich-stop-list"></div>
@@ -241,7 +251,7 @@
             <div class="card-title stops-subhead"><h3 id="allStopsTitle">Nog geen categorie gekozen</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
             <div id="allStops" class="stop-list rich-stop-list"></div>
           </div>
-          <div class="sticky-actions"><button id="addManualStop" class="btn primary" type="button">Stop toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
+          <div class="sticky-actions"><button id="addManualStop" class="btn primary" type="button">Zelf een plek toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
         </article>
       </div>
 
@@ -268,7 +278,7 @@
               <button id="startDayRoute" class="btn primary" type="button">Start dagroute in Maps</button>
               <button id="navigateNextStop" class="btn" type="button">Navigeer naar volgende stop</button>
             </div>
-            <p class="hint">Dag 1 gebruikt je huidige locatie. Latere dagen starten vanaf de overnachtingsplek van de vorige dag. Navigeer naar volgende stop gebruikt altijd je actuele locatie.</p>
+            <p class="hint">Dag 1 gebruikt je huidige locatie. Voor latere dagen kies je zelf het vertrekpunt; je kunt de vorige overnachting handmatig koppelen. Navigeer naar volgende stop gebruikt altijd je actuele locatie.</p>
           </article>
 
           <article class="card card-pad">
@@ -287,7 +297,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.6.1</span></div>
+      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.6.2</span></div>
       <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
     </div>
   </footer>
@@ -342,6 +352,24 @@
           <button class="btn" type="button" disabled>Bekijk aanbieder / boeken later</button>
         </div>
       </div>
+    </article>
+  </div>
+
+  <div id="manualPlaceModal" class="manual-place-modal" aria-hidden="true">
+    <div class="manual-place-backdrop" data-close-manual-place></div>
+    <article class="manual-place-card" role="dialog" aria-modal="true" aria-labelledby="manualPlaceTitle">
+      <button class="stop-modal-close" type="button" data-close-manual-place aria-label="Sluiten">×</button>
+      <div class="manual-place-head"><p class="eyebrow">Jouw keuze</p><h2 id="manualPlaceTitle">Zelf een plek toevoegen</h2><p>Roadora neemt deze plek mee in je route, tijden, opslag en Google Maps-export.</p></div>
+      <div class="manual-place-form">
+        <label for="manualPlaceType">Type plek</label>
+        <select id="manualPlaceType"><option value="camperplace">Camperplek / overnachting</option><option value="hotel">Hotel / overnachting</option><option value="food">Eten</option><option value="outing">Uitje</option><option value="stop">Tussenstop</option><option value="other">Anders</option></select>
+        <label for="manualPlaceName">Naam</label><input id="manualPlaceName" maxlength="120" placeholder="Bijv. Camperplaats Lago Blu">
+        <label for="manualPlaceLocation">Adres, Google Maps-link of coördinaten</label><input id="manualPlaceLocation" maxlength="400" placeholder="Adres, link of 47.123456, 11.123456">
+        <button id="pickManualPlaceOnMap" class="btn" type="button">Pin op kaart plaatsen</button>
+        <label for="manualPlaceNotes">Notitie (optioneel)</label><textarea id="manualPlaceNotes" maxlength="300" rows="3" placeholder="Bijv. betalen bij automaat"></textarea>
+        <p class="hint">Zelf toegevoegd — controleer toegang en beschikbaarheid bij de aanbieder.</p>
+      </div>
+      <div class="modal-actions"><button class="btn" type="button" data-close-manual-place>Annuleren</button><button id="saveManualPlace" class="btn primary" type="button">Toevoegen aan Dag <span id="manualPlaceDay">1</span></button></div>
     </article>
   </div>
 
