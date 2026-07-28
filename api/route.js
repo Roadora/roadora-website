@@ -1,4 +1,4 @@
-// Roadora v6.4 — routekeuze met Google primair + ORS fallback
+// Roadora v6.7.1 — route via actieve geselecteerde stops, Google primair + ORS fallback
 // - Leaflet blijft de kaartlaag; dit endpoint levert routegeometrie en samenvattingen.
 // - Google is primair, ORS is fallback.
 // - Variantenmodus levert waar beschikbaar: snelste, tol vermijden en een alternatief.
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
   const profile = sanitizeProfile(q.profile);
   const start = parseCoord(q.start);
   const end = parseCoord(q.end);
-  const via = parseWaypoints(q.waypoints || q.via || '').slice(0, 9);
+  const via = parseWaypoints(q.waypoints || q.via || '').slice(0, 25);
   const preference = sanitizePreference(q.preference || q.routePreference);
   const wantsVariants = ['1','true','yes'].includes(String(q.variants || '').toLowerCase());
 
