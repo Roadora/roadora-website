@@ -1,4 +1,4 @@
-// Roadora Google Uitjes API — v6.6.2
+// Roadora Google Uitjes API — v6.6.3
 // Server-side Google Places Nearby Search proxy voor uitjes langs de actieve reisdag.
 
 function roadoraRequestHeader(req, name) {
@@ -68,7 +68,7 @@ function roadoraSecureRequest(req, res, { methods, maxRequests, bucket }) {
 }
 
 const CONFIG = {
-  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V662__',
+  cacheName: '__ROADORA_GOOGLE_OUTINGS_CACHE_V663__',
   cacheTtlMs: 15 * 60 * 1000,
   requestTimeoutMs: 8000,
   maxPoints: 1,
@@ -78,7 +78,7 @@ const CONFIG = {
   minRadiusMeters: 5000,
   maxRadiusMeters: 50000,
   concurrency: 1,
-  routeEngine: 'outings-user-chosen-area-v1',
+  routeEngine: 'outings-user-chosen-area-v2',
   placeMode: 'outings'
 };
 
@@ -119,16 +119,39 @@ function normalizePoint(point, index = 0) {
     lng,
     index,
     progress: Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : index,
-    distanceFromStartMeters: Number.isFinite(distanceFromStartMeters) ? Math.max(0, Math.round(distanceFromStartMeters)) : null
+    distanceFromStartMeters: Number.isFinite(distanceFromStartMeters) ? Math.max(0, Math.round(distanceFromStartMeters)) : null,
+    label: String(point?.label || '').trim().slice(0, 120)
   };
 }
 function normalizeOutingType(value) {
   const id = String(value || 'highlights').toLowerCase();
   return Object.prototype.hasOwnProperty.call(OUTING_TYPES, id) ? id : 'highlights';
 }
-function cacheKey(points, radiusMeters, mode, outingType) {
+function sanitizeSearchTerm(value) {
+  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+function normalizeSearchText(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function exactNameStrength(name, query) {
+  const a = normalizeSearchText(name);
+  const b = normalizeSearchText(query);
+  if (!a || !b || b.length < 3) return 0;
+  if (a === b) return 3;
+  if (a.startsWith(b) || b.startsWith(a)) return Math.min(a.length, b.length) >= 5 ? 2 : 1;
+  if (a.includes(b) || b.includes(a)) return b.length >= 6 ? 1 : 0;
+  return 0;
+}
+function isLikelyExactNameQuery(query) {
+  const value = normalizeSearchText(query);
+  if (!value) return false;
+  const generic = new Set(['bergwandeling','wandeling','hiking','waterval','zwemmeer','zwemmen','museum','dierentuin','uitzichtpunt','pretpark','natuur','cultuur','kasteel','park','speeltuin','aquarium','bezienswaardigheid','bezienswaardigheden']);
+  if (generic.has(value)) return false;
+  return value.split(/\s+/).length >= 2 || value.length >= 8;
+}
+function cacheKey(points, radiusMeters, mode, outingType, searchTerm = '') {
   const compact = points.map(p => `${roundCoord(p.lat)},${roundCoord(p.lng)}`).join('|');
-  return `${CONFIG.placeMode}:${outingType}:${mode || 'default'}:${radiusMeters}:${compact}`;
+  return `${CONFIG.placeMode}:${outingType}:${normalizeSearchText(searchTerm)}:${mode || 'default'}:${radiusMeters}:${compact}`;
 }
 function haversineKm(lat1, lng1, lat2, lng2) {
   const values = [lat1, lng1, lat2, lng2].map(Number);
@@ -171,7 +194,7 @@ function suggestedDurationMinutes(label, selectedType) {
   if (/Uitzichtpunt|Historische plek|Kasteel/i.test(label)) return 45;
   return 60;
 }
-function normalizePlace(hit, outingType) {
+function normalizePlace(hit, outingType, searchTerm = '', radiusMeters = CONFIG.defaultRadiusMeters) {
   const place = hit?.place || hit;
   const lat = Number(place?.location?.latitude);
   const lng = Number(place?.location?.longitude);
@@ -180,9 +203,12 @@ function normalizePlace(hit, outingType) {
   const distanceFromSearchKm = hit?.point ? haversineKm(hit.point.lat, hit.point.lng, lat, lng) : null;
   const detourMinutes = Number.isFinite(distanceFromSearchKm) ? Math.max(3, Math.min(60, Math.round(3 + distanceFromSearchKm * 1.4))) : 8;
   const outingLabel = inferOutingLabel(place, outingType);
+  const name = place?.displayName?.text || `${outingTypeLabel(outingType)} rond zoekgebied`;
+  const exactStrength = searchTerm ? exactNameStrength(name, searchTerm) : 0;
+  const insideSearchArea = Number.isFinite(distanceFromSearchKm) ? distanceFromSearchKm <= (Number(radiusMeters) / 1000) + 0.25 : true;
   return {
     id: place?.id || place?.name || `${roundCoord(lat, 5)},${roundCoord(lng, 5)}`,
-    name: place?.displayName?.text || `${outingTypeLabel(outingType)} langs route`,
+    name,
     address: place?.formattedAddress || 'Langs je route',
     lat,
     lng,
@@ -195,7 +221,11 @@ function normalizePlace(hit, outingType) {
     detourMinutes,
     detourLabel: `± ${detourMinutes} min rijden`,
     distanceFromSearchKm: Number.isFinite(distanceFromSearchKm) ? Math.round(distanceFromSearchKm * 10) / 10 : null,
-    searchAreaLabel: 'Zelf gekozen zoekgebied',
+    searchAreaLabel: hit?.point?.label || 'Zelf gekozen zoekgebied',
+    searchTerm: searchTerm || '',
+    exactNameStrength: exactStrength,
+    exactNameMatch: exactStrength >= 2,
+    insideSearchArea,
     amenities: inferAmenities(place, outingType),
     outingType,
     outingLabel,
@@ -253,6 +283,46 @@ async function searchOutingsNearPoint({ apiKey, point, radiusMeters, outingType 
     clearTimeout(timer);
   }
 }
+async function searchOutingsByText({ apiKey, point, radiusMeters, outingType, searchTerm }) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+  try {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': [
+          'places.id', 'places.name', 'places.displayName', 'places.formattedAddress', 'places.location',
+          'places.rating', 'places.userRatingCount', 'places.regularOpeningHours.openNow',
+          'places.googleMapsUri', 'places.websiteUri', 'places.nationalPhoneNumber',
+          'places.photos.name', 'places.types', 'places.editorialSummary'
+        ].join(',')
+      },
+      body: JSON.stringify({
+        textQuery: searchTerm,
+        maxResultCount: CONFIG.maxResultsPerPoint,
+        rankPreference: 'RELEVANCE',
+        locationBias: {
+          circle: {
+            center: { latitude: point.lat, longitude: point.lng },
+            radius: radiusMeters
+          }
+        }
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = data?.error?.message || `Google Places ${response.status}`;
+      const code = data?.error?.status || 'GOOGLE_PLACES_ERROR';
+      throw new Error(`${code}: ${message}`);
+    }
+    return Array.isArray(data?.places) ? data.places.map(place => ({ place, sampleIndex: point.index, point })) : [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function runLimited(items, limit, worker) {
   const results = [];
   let cursor = 0;
@@ -273,23 +343,44 @@ function scorePlace(place) {
   const detourPenalty = Math.min(0.8, Number(place.detourMinutes || 0) / 45);
   return rating + reviews + openBonus - detourPenalty;
 }
-function dedupeAndSpread(rawHits, outingType, maxTotal = CONFIG.maxTotalResults) {
+function dedupeAndSpread(rawHits, outingType, searchTerm = '', radiusMeters = CONFIG.defaultRadiusMeters, maxTotal = CONFIG.maxTotalResults) {
   const seen = new Set();
   const normalized = [];
   for (const hit of rawHits) {
-    const place = normalizePlace(hit, outingType);
+    const place = normalizePlace(hit, outingType, searchTerm, radiusMeters);
     if (!place) continue;
     const id = place.id || `${roundCoord(place.lat, 4)},${roundCoord(place.lng, 4)}`;
     if (seen.has(id)) continue;
     seen.add(id); normalized.push(place);
   }
-  return normalized.sort((a,b)=>{
+  const inside = normalized.filter(place => place.insideSearchArea !== false);
+  inside.sort((a,b)=>{
+    const exactDiff = Number(b.exactNameStrength || 0) - Number(a.exactNameStrength || 0);
+    if (exactDiff) return exactDiff;
     const scoreDiff=scorePlace(b)-scorePlace(a);
     if(Math.abs(scoreDiff)>0.2) return scoreDiff;
     const ad=Number.isFinite(Number(a.distanceFromSearchKm))?Number(a.distanceFromSearchKm):999;
     const bd=Number.isFinite(Number(b.distanceFromSearchKm))?Number(b.distanceFromSearchKm):999;
     return ad-bd;
-  }).slice(0,maxTotal);
+  });
+  let outsideExact = null;
+  if (searchTerm && isLikelyExactNameQuery(searchTerm)) {
+    outsideExact = normalized
+      .filter(place => place.insideSearchArea === false && Number(place.exactNameStrength || 0) >= 2 && Number(place.distanceFromSearchKm || Infinity) <= 250)
+      .sort((a,b)=>Number(b.exactNameStrength||0)-Number(a.exactNameStrength||0) || Number(a.distanceFromSearchKm||999)-Number(b.distanceFromSearchKm||999))[0] || null;
+    if (outsideExact) {
+      outsideExact = {
+        ...outsideExact,
+        exactNameMatch: true,
+        exactOutsideSearchArea: true,
+        searchAreaLabel: `Exacte plek buiten gekozen zoekgebied`
+      };
+    }
+  }
+  const slots = Math.max(1, maxTotal - (outsideExact ? 1 : 0));
+  const places = inside.slice(0, slots);
+  if (outsideExact && !places.some(place => place.id === outsideExact.id)) places.unshift(outsideExact);
+  return { places: places.slice(0, maxTotal), exactOutsideCount: outsideExact ? 1 : 0 };
 }
 export default async function handler(req, res) {
   const security = roadoraSecureRequest(req, res, { methods: 'POST, OPTIONS', maxRequests: 60, bucket: 'OUTINGS' });
@@ -300,29 +391,33 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const mode = String(body.mode || 'manual_place');
   const outingType = normalizeOutingType(body.outingType);
+  const searchTerm = sanitizeSearchTerm(body.searchTerm);
   const points = Array.isArray(body.points) ? body.points.map(normalizePoint).filter(Boolean).slice(0, CONFIG.maxPoints) : [];
   const radiusMeters = Math.max(CONFIG.minRadiusMeters, Math.min(CONFIG.maxRadiusMeters, Number(body.radiusMeters) || CONFIG.defaultRadiusMeters));
   if (!points.length) return send(res, 200, { ok: true, status: 'no_route_points', source: 'google', routeEngine: CONFIG.routeEngine, outingType, places: [] });
-  const key = cacheKey(points, radiusMeters, mode, outingType);
+  const key = cacheKey(points, radiusMeters, mode, outingType, searchTerm);
   const cached = memoryCache.get(key);
   if (cached && Date.now() - cached.savedAt < CONFIG.cacheTtlMs) return send(res, 200, { ...cached.payload, cached: true });
   try {
-    const settled = await runLimited(points, CONFIG.concurrency, point => searchOutingsNearPoint({ apiKey, point, radiusMeters, outingType }));
+    const settled = await runLimited(points, CONFIG.concurrency, point => searchTerm
+      ? searchOutingsByText({ apiKey, point, radiusMeters, outingType, searchTerm })
+      : searchOutingsNearPoint({ apiKey, point, radiusMeters, outingType }));
     const rawHits = settled.flatMap(result => result.status === 'fulfilled' ? result.value : []);
     const errors = settled.filter(result => result.status === 'rejected').map(result => String(result.reason?.message || result.reason)).slice(0, 4);
     const requestedMax = Number(body.maxResults);
     const maxResults = Number.isFinite(requestedMax) ? Math.max(1, Math.min(CONFIG.maxTotalResults, Math.round(requestedMax))) : CONFIG.maxTotalResults;
-    const places = dedupeAndSpread(rawHits, outingType, maxResults);
+    const selected = dedupeAndSpread(rawHits, outingType, searchTerm, radiusMeters, maxResults);
+    const places = selected.places;
     const payload = {
       ok: true,
       status: places.length ? (errors.length ? 'partial_live' : 'live') : (errors.length ? 'partial_error' : 'empty'),
-      source: 'google', cached: false, routeEngine: CONFIG.routeEngine, outingType,
-      searchedPoints: points.length, radiusMeters, count: places.length, places, errors
+      source: 'google', cached: false, routeEngine: CONFIG.routeEngine, outingType, searchTerm,
+      searchedPoints: points.length, radiusMeters, count: places.length, exactOutsideCount: selected.exactOutsideCount, places, errors
     };
     trimCache();
     memoryCache.set(key, { savedAt: Date.now(), payload });
     return send(res, 200, payload);
   } catch (error) {
-    return send(res, 200, { ok: false, status: 'error', source: 'google', routeEngine: CONFIG.routeEngine, outingType, message: String(error?.message || error), places: [] });
+    return send(res, 200, { ok: false, status: 'error', source: 'google', routeEngine: CONFIG.routeEngine, outingType, searchTerm, message: String(error?.message || error), places: [] });
   }
 }
