@@ -8,13 +8,13 @@
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/webplanner-v6724.css">
+  <link rel="stylesheet" href="css/webplanner-v673.css">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
   <script defer src="js/leaflet-fallback-v655.js"></script>
   <script defer src="js/trip-db-v654.js"></script>
-  <script defer src="js/webplanner-v6726.js"></script>
+  <script defer src="js/webplanner-v673.js"></script>
 </head>
-<body data-roadora-build="v6.7.2.6">
+<body data-roadora-build="v6.7.3">
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
@@ -356,18 +356,55 @@
     <div class="manual-place-backdrop" data-close-manual-place></div>
     <article class="manual-place-card" role="dialog" aria-modal="true" aria-labelledby="manualPlaceTitle">
       <button class="stop-modal-close" type="button" data-close-manual-place aria-label="Sluiten">×</button>
-      <div class="manual-place-head"><p class="eyebrow">Jouw keuze</p><h2 id="manualPlaceTitle">Zelf een plek toevoegen</h2><p>Roadora neemt deze plek mee in je route, tijden, opslag en Google Maps-export.</p></div>
-      <div class="manual-place-form">
-        <label for="manualPlaceType">Type plek</label>
-        <select id="manualPlaceType"><option value="camperplace">Camperplek / overnachting</option><option value="hotel">Hotel / overnachting</option><option value="food">Eten</option><option value="outing">Uitje</option><option value="stop">Tussenstop</option><option value="other">Anders</option></select>
-        <label for="manualPlaceName">Naam</label><input id="manualPlaceName" maxlength="120" placeholder="Bijv. Camperplaats Lago Blu">
-        <label for="manualPlaceLocation">Adres, Google Maps-link of coördinaten</label><input id="manualPlaceLocation" maxlength="400" placeholder="Adres, link of 47.123456, 11.123456">
-        <div class="manual-place-actions"><button id="pickManualPlaceOnMap" class="btn" type="button">Pin op kaart plaatsen</button><button id="checkManualPlace" class="btn" type="button">Controleer locatie</button></div>
-        <div id="manualPlaceStatus" class="manual-place-status" role="status">Nog geen locatie gecontroleerd.</div>
-        <label for="manualPlaceNotes">Notitie (optioneel)</label><textarea id="manualPlaceNotes" maxlength="300" rows="3" placeholder="Bijv. betalen bij automaat"></textarea>
-        <p class="hint">Zelf toegevoegd — controleer toegang en beschikbaarheid bij de aanbieder.</p>
+      <div class="manual-place-head">
+        <p class="eyebrow">Jouw keuze</p>
+        <h2 id="manualPlaceTitle">Zelf een plek toevoegen</h2>
+        <p>Zoek op naam of adres, kies de juiste plek en bepaal zelf waar hij in je reis hoort.</p>
       </div>
-      <div class="modal-actions"><button class="btn" type="button" data-close-manual-place>Annuleren</button><button id="saveManualPlace" class="btn primary" type="button">Toevoegen aan Dag <span id="manualPlaceDay">1</span></button></div>
+      <div class="manual-place-form">
+        <label for="manualPlaceSearch">Naam of adres</label>
+        <div class="manual-place-search-row">
+          <input id="manualPlaceSearch" maxlength="160" autocomplete="off" placeholder="Bijv. Burg Eltz of Camping Lago Blu">
+          <button id="searchManualPlace" class="btn primary" type="button">Zoeken</button>
+        </div>
+        <div id="manualPlaceSearchStatus" class="manual-place-status" role="status">Vul een naam of adres in.</div>
+        <div id="manualPlaceResults" class="manual-place-results" aria-live="polite"></div>
+
+        <section id="manualPlaceSelection" class="manual-place-selection hidden" aria-hidden="true">
+          <strong id="manualPlaceSelectedName">Nog geen plek gekozen</strong>
+          <span id="manualPlaceSelectedAddress"></span>
+        </section>
+        <input id="manualPlaceName" type="hidden">
+
+        <div class="manual-place-choice-grid">
+          <div>
+            <label for="manualPlaceRole">Toevoegen als</label>
+            <select id="manualPlaceRole"><option value="stop">Tussenstop</option><option value="overnight">Overnachting</option></select>
+          </div>
+          <div>
+            <label for="manualPlaceType">Soort plek</label>
+            <select id="manualPlaceType"><option value="stop">Tussenstop</option><option value="outing">Uitje</option><option value="food">Eten</option><option value="hotel">Hotel</option><option value="camperplace">Camperplek / camping</option><option value="other">Anders</option></select>
+          </div>
+          <div>
+            <label for="manualPlaceDaySelect">Reisdag</label>
+            <select id="manualPlaceDaySelect"></select>
+          </div>
+        </div>
+
+        <label for="manualPlaceNotes">Notitie (optioneel)</label>
+        <textarea id="manualPlaceNotes" maxlength="300" rows="2" placeholder="Bijv. vooraf reserveren"></textarea>
+
+        <details class="manual-place-advanced">
+          <summary>Meer opties</summary>
+          <p class="hint">Alleen nodig wanneer zoeken op naam of adres geen goede match geeft.</p>
+          <label for="manualPlaceLocation">Google Maps-link of coördinaten</label>
+          <input id="manualPlaceLocation" maxlength="400" placeholder="Link of 47.123456, 11.123456">
+          <div class="manual-place-actions"><button id="pickManualPlaceOnMap" class="btn" type="button">Pin op kaart plaatsen</button><button id="checkManualPlace" class="btn" type="button">Controleer locatie</button></div>
+          <div id="manualPlaceStatus" class="manual-place-status" role="status">Nog geen geavanceerde locatie gecontroleerd.</div>
+        </details>
+        <p class="hint">Roadora rekent de route opnieuw uit. Controleer toegang, opening en beschikbaarheid bij de locatie.</p>
+      </div>
+      <div class="modal-actions"><button class="btn" type="button" data-close-manual-place>Annuleren</button><button id="saveManualPlace" class="btn primary" type="button" disabled>Toevoegen aan reisdag</button></div>
     </article>
   </div>
 
