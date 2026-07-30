@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadora — plan je roadtrip zonder gedoe</title>
+  <meta name="description" content="Plan je Europese roadtrip met dagroutes, slimme plekken om te overnachten, persoonlijke voorkeuren en keuzevrijheid op de kaart.">
+  <link rel="canonical" href="https://www.roadora.eu/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/webplanner.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+  <script defer src="js/leaflet-fallback.js"></script>
+  <script defer src="js/trip-db.js"></script>
+  <script defer src="js/webplanner.js"></script>
+</head>
+<body data-roadora-build="v6.7.4">
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="Roadora home">
+      <span class="brand-mark">R</span>
+      <span class="brand-copy">
+        <span class="brand-word">Roadora</span>
+        <span class="brand-slogan">Plan je roadtrip zonder gedoe</span>
+      </span>
+    </a>
+    <nav class="header-actions" aria-label="Hoofdnavigatie">
+      <a class="top-link optional" href="#planner">Plan route</a>
+      <a class="top-link optional" href="roadora-uitleg.html">Waarom Roadora</a>
+      <a class="top-link" href="contact.html">Contact</a>
+      <span class="profile-dot" title="Profiel komt later">P</span>
+    </nav>
+  </header>
+
+  <main id="planner" class="shell">
+    <section class="left-panel" aria-label="Roadtrip invoer">
+      <div class="panel-stack">
+        <article class="card card-pad">
+          <div class="card-title">
+            <h1>Eerste dagroute</h1>
+            <button id="resetDemo" class="mini-link" type="button">Reset</button>
+          </div>
+          <p class="muted">Vul je route in. Roadora stelt niets voor en vult niets automatisch in; jij bepaalt iedere bestemming, stop en reisdag.</p>
+          <div class="trip-type-switch" role="group" aria-label="Soort roadtrip">
+            <button class="trip-type-btn active" data-trip-type="single" type="button" aria-pressed="true">Enkele reis</button>
+            <button class="trip-type-btn" data-trip-type="roundtrip" type="button" aria-pressed="false">Rondreis</button>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <label for="origin">Vertrekpunt</label>
+            <div class="input"><input id="origin" placeholder="Bijv. Amsterdam, Nederland" autocomplete="off"></div>
+          </div>
+          <div class="field">
+            <label for="destination">Bestemming / eindpunt</label>
+            <div class="input"><input id="destination" placeholder="Bijv. Toscane, Italië" autocomplete="off"></div>
+          </div>
+          <div id="roundtripFields" class="roundtrip-fields hidden" aria-hidden="true">
+            <div class="roundtrip-head"><div><strong>Tussenbestemmingen rondreis</strong><span>Voeg alleen de plaatsen toe die je zelf wilt bezoeken, in jouw volgorde.</span></div><button id="useOriginAsDestination" class="mini-link" type="button">Eindig bij vertrekpunt</button></div>
+            <div id="roundtripStopList" class="roundtrip-stop-list"></div>
+            <button id="addRoundtripStop" class="btn" type="button">+ Tussenbestemming</button>
+          </div>
+          <div class="two">
+            <div class="field">
+              <label for="date">Vertrekdatum</label>
+              <div class="input"><input id="date" type="date"></div>
+            </div>
+            <div class="field compact-field">
+              <label for="departTime">Vertrektijd</label>
+              <div id="openDepartClock" class="input time-input-wrap clock-field-btn" role="button" tabindex="0" aria-label="Vertrektijd kiezen">
+                <input id="departTime" class="roadora-time-input" type="text" inputmode="none" readonly placeholder="Kies tijd" autocomplete="off">
+                <button class="clock-icon-btn" type="button" aria-label="Open tijdklok">◷</button>
+              </div>
+            </div>
+          </div>
+          <div class="two">
+            <div class="field compact-field hotel-arrival-field">
+              <label for="hotelArrival">Aankomsttijdvak overnachting</label>
+              <div class="input"><select id="hotelArrival">
+                <option value="" selected>Geen tijdvak</option>
+                <option value="12-14">12:00 - 14:00</option>
+                <option value="14-16">14:00 - 16:00</option>
+                <option value="16-18">16:00 - 18:00</option>
+                <option value="18-20">18:00 - 20:00</option>
+                <option value="20-22">20:00 - 22:00</option>
+              </select></div>
+            </div>
+            <div class="field">
+              <label for="tripDays">Aantal dagen</label>
+              <div class="input"><input id="tripDays" type="number" min="1" max="21" value="1"><strong>dag(en)</strong></div>
+            </div>
+          </div>
+          <div class="route-preference-block" aria-labelledby="routePreferenceLabel">
+            <label id="routePreferenceLabel">Kies je route</label>
+            <div id="routePreferenceGrid" class="route-preference-grid">
+              <button class="route-preference active" data-route-preference="fastest" type="button">
+                <strong>Snelste</strong><span data-route-metric="fastest">Meestal de kortste reistijd</span>
+              </button>
+              <button class="route-preference" data-route-preference="tollfree" type="button">
+                <strong>Tol vermijden</strong><span data-route-metric="tollfree">Probeert tolwegen te vermijden</span>
+              </button>
+              <button class="route-preference" data-route-preference="alternative" type="button">
+                <strong>Alternatief</strong><span data-route-metric="alternative">Andere beschikbare route</span>
+              </button>
+            </div>
+            <p id="routePreferenceNote" class="hint route-preference-note">Roadora zoekt beschikbare routes zodra je op Maak dagroute klikt.</p>
+          </div>
+          <p class="hint hotel-helper-note">Hotels en Camperplekken zoeken pas met vertrektijd én aankomsttijdvak. Zo zoekt Roadora rond het juiste deel van je gekozen route.</p>
+          <button id="planRoute" class="btn primary full" type="button">Maak dagroute</button>
+        </article>
+
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Reisprofiel</h2><p id="profileSummary" class="fold-summary">2 volwassenen · geen kinderen · geen hond</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="field">
+              <label>Met wie reis je?</label>
+              <div class="two">
+                <div class="input"><label class="sr-only" for="adults">Aantal volwassenen</label><input id="adults" name="adults" type="number" min="1" value="2"><strong>volw.</strong></div>
+                <div class="input"><label class="sr-only" for="children">Aantal kinderen</label><input id="children" name="children" type="number" min="0" value="0"><strong>kinderen</strong></div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Huisdieren</label>
+              <div class="choice-grid">
+                <button class="choice active" data-pet="none" type="button">Geen</button>
+                <button class="choice" data-pet="dog" type="button">Hond</button>
+                <button class="choice" data-pet="multiple" type="button">Meerdere</button>
+              </div>
+            </div>
+            <p class="hint">Geen leeftijden voor kinderen. Alleen het aantal kinderen telt mee voor familiekamers en kindvriendelijke stops.</p>
+          </div>
+        </article>
+
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Voertuig</h2><p id="vehicleSummary" class="fold-summary">geen voertuig gekozen</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="choice-grid vehicle-grid">
+              <button class="choice" data-vehicle="car" type="button">Auto</button>
+              <button class="choice" data-vehicle="electric" type="button">Elektrisch</button>
+              <button class="choice" data-vehicle="camper" type="button">Camper</button>
+              <button class="choice" data-vehicle="bus" type="button">Busje</button>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label id="rangeLabel" for="vehicleRangeKm">Hoe ver kun je ongeveer rijden?</label>
+              <div class="input"><input id="vehicleRangeKm" type="number" min="50" max="1200" placeholder="Bijv. 650"><strong>km</strong></div>
+              <p class="hint">Optioneel. Roadora gebruikt dit later voor tank- of laadmomenten.</p>
+            </div>
+            <div id="evFields" class="field hidden">
+              <label for="plug">Laadstekker</label>
+              <div class="input"><select id="plug"><option selected>CCS</option><option>Type 2</option><option>CHAdeMO</option><option>Weet ik niet</option></select></div>
+            </div>
+            <div class="field">
+              <label for="maxDetour">Maximaal omrijden</label>
+              <div class="range-row"><input id="maxDetour" type="range" min="5" max="45" value="20"><strong>20 min</strong></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card-pad left-fold" data-left-fold>
+          <div class="card-title left-fold-head">
+            <div><h2>Voorkeuren</h2><p id="prefSummary" class="fold-summary">geen voorkeuren gekozen</p></div>
+            <button class="mini-link left-edit-toggle" type="button" aria-expanded="false">Bewerken</button>
+          </div>
+          <div class="left-fold-body">
+            <div class="pref-grid">
+              <button class="pref" type="button">Familiekamers</button>
+              <button class="pref" type="button">Huisdieren</button>
+              <button class="pref" type="button">Kindvriendelijk</button>
+              <button class="pref" type="button">Parkeren</button>
+              <button class="pref" type="button">Laadpunt</button>
+              <button class="pref" type="button">Ontbijt</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="map-stage" aria-label="Interactieve kaart">
+      <div class="map-card">
+        <div id="roadoraMap" aria-label="Kaart met route en stopzones"></div>
+        <div class="map-controls" aria-label="Kaartbediening">
+          <button id="mapFit" type="button" title="Route centreren">⌖</button>
+          <button id="mapZoomIn" type="button" title="Inzoomen">+</button>
+          <button id="mapZoomOut" type="button" title="Uitzoomen">−</button>
+</div>
+        <div class="legend hidden" aria-hidden="true"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
+        <div class="map-summary">
+          <h3 id="mapRouteTitle">Nog geen route gepland</h3>
+          <div class="summary-row"><span>— km</span><span>—</span><span id="chargeDetail">Vul je route in</span></div>
+          <div id="profileTags" class="tag-row"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="right-panel" aria-label="Planning, stops en roadtrip">
+      <div class="right-tabs" role="tablist" aria-label="Roadora panelen">
+        <button class="tab active" data-tab="planningTab" type="button">Planning</button>
+        <button class="tab" data-tab="stopsTab" type="button">Stops</button>
+        <button class="tab" data-tab="roadtripTab" type="button">Roadtrip</button>
+      </div>
+
+      <div id="planningTab" class="tab-panel active">
+        <div class="panel-stack">
+          <article class="card card-pad">
+            <div class="card-title"><h2>Jouw roadtrip</h2><button id="saveRoute" class="btn" type="button">Bewaar</button></div>
+            <p id="summaryRoute" class="muted">Nog geen route gepland</p>
+            <div class="stats"><div class="stat"><span>Afstand</span><strong>— km</strong></div><div class="stat"><span>Rijtijd</span><strong>—</strong></div><div class="stat"><span>Routebasis</span><strong>Nog geen route</strong></div></div>
+            <div class="route-dots"><span class="dot start">✓</span><span class="dash"></span><span class="dot one">1</span><span class="dash"></span><span class="dot two">2</span><span class="dash"></span><span class="dot three">3</span><span class="dash"></span><span class="dot four">4</span><span class="dash"></span><span class="dot end">B</span></div>
+          </article>
+          <article class="card card-pad">
+            <div class="card-title"><h2>Dagroutes</h2><span id="dayCountPill" class="pill">1 dag</span></div>
+            <div id="dayTabs" class="day-tabs"></div>
+            <p id="activeDaySummary" class="muted" style="margin:10px 0 0">Dag 1 · nog niet gepland</p>
+            <div id="activeDayControls" class="active-day-controls" aria-live="polite"></div>
+          </article>
+          <article class="card card-pad">
+            <div class="card-title"><h2>Routeplanning</h2><span class="pill">handmatig uitbreiden</span></div>
+            <p class="muted plan-note">Eerst maken we je route. Daarna voeg je zelf stops, hotels, camperplekken, eten en uitjes toe.</p>
+            <div id="timeline" class="timeline editable-timeline"></div>
+            <div class="planning-actions">
+              <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
+              <button id="chooseHotelZone" class="btn" type="button">Zelf plek kiezen</button>
+              <button id="recalculatePlan" class="btn primary" type="button">Opnieuw berekenen</button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div id="stopsTab" class="tab-panel">
+        <article class="card card-pad stops-card">
+          <div class="stops-scroll-area">
+          <div class="mode-switch hidden" aria-hidden="true"></div>
+          <div id="categoryTabs" class="category-grid stops-cats"></div>
+          <div id="foodFilters" class="food-filter-bar hidden" aria-hidden="true"></div>
+          <div id="contextSearchControls" class="context-search-controls hidden" aria-hidden="true"></div>
+          <div id="recommendPanel" class="stops-results-panel hidden" aria-hidden="true">
+            <div class="card-title stops-subhead"><h3 id="recommendTitle">Stops die je zelf aanzet</h3><button class="mini-link" data-view="all" type="button">Alles tonen</button></div>
+            <div id="recommendations" class="stop-list rich-stop-list"></div>
+          </div>
+          <div id="allStopsPanel" class="stops-results-panel">
+            <div class="card-title stops-subhead"><h3 id="allStopsTitle">Nog geen categorie gekozen</h3><span class="tiny-muted">Gesorteerd op beste match</span></div>
+            <div id="allStops" class="stop-list rich-stop-list"></div>
+          </div>
+          </div>
+          <div class="sticky-actions"><button id="addManualStop" class="btn primary" type="button">Zelf een plek toevoegen</button><button id="saveRouteSide" class="btn" type="button">Opslaan</button></div>
+        </article>
+      </div>
+
+      <div id="roadtripTab" class="tab-panel">
+        <div class="panel-stack">
+          <article class="card card-pad trip-overview-card">
+            <div class="card-title"><h2>Reisoverzicht</h2><span id="overviewDaysPill" class="pill">1 dag</span></div>
+            <div class="trip-summary-box">
+              <strong id="tripOverviewTitle">Nog geen route gepland</strong>
+              <span id="tripOverviewMeta">Vul je route in om een roadtrip te maken</span>
+              <div id="tripOverviewTags" class="tag-row"></div>
+            </div>
+          </article>
+
+          <article class="card card-pad trip-days-card">
+            <div class="card-title"><h2>Dagroutes</h2><button id="addTripDay" class="mini-link" type="button">+ Dag</button></div>
+            <div id="overviewDayList" class="overview-day-list"></div>
+          </article>
+
+          <article class="card card-pad active-day-card">
+            <div class="card-title"><h2>Actieve dag</h2><span id="overviewDayPill" class="pill">Dag 1</span></div>
+            <div id="activeDayDetail" class="active-day-detail"></div>
+            <div class="day-navigation-actions">
+              <button id="startDayRoute" class="btn primary" type="button">Start dagroute in Maps</button>
+              <button id="navigateNextStop" class="btn" type="button">Navigeer naar volgende stop</button>
+            </div>
+            <p class="hint">Dag 1 gebruikt je huidige locatie. Voor latere dagen kies je zelf het vertrekpunt; je kunt de vorige overnachting handmatig koppelen. Navigeer naar volgende stop gebruikt altijd je actuele locatie.</p>
+          </article>
+
+          <article class="card card-pad">
+            <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">op dit apparaat</span></div>
+            <div class="trip-library-toolbar">
+              <button id="newRoadtrip" class="btn primary" type="button">+ Nieuwe roadtrip</button>
+              <span id="storageStatus" class="storage-status">Nog niet bewaard</span>
+            </div>
+            <div id="savedTrips" class="trip-list"></div>
+            <p class="hint storage-warning">Roadtrips worden lokaal in deze browser opgeslagen. Bij het wissen van browsergegevens kunnen ze verloren gaan.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.7.4</span></div>
+      <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
+    </div>
+  </footer>
+
+
+  <div id="departClockModal" class="clock-modal" aria-hidden="true">
+    <div class="clock-backdrop" data-clock-close></div>
+    <article class="clock-panel" role="dialog" aria-modal="true" aria-labelledby="departClockTitle">
+      <div class="clock-head">
+        <div>
+          <strong id="departClockTitle">Vertrektijd kiezen</strong>
+          <span>Tik eerst het uur aan, daarna eventueel de minuten.</span>
+        </div>
+        <button class="clock-close" type="button" data-clock-close aria-label="Sluiten">×</button>
+      </div>
+      <div id="clockDisplay" class="clock-display">09:00</div>
+      <div id="roundClock" class="round-clock" aria-label="Ronde klok voor uren"></div>
+      <div class="minute-row" aria-label="Minuten kiezen">
+        <button class="minute-chip" type="button" data-minute="00">00</button>
+        <button class="minute-chip" type="button" data-minute="15">15</button>
+        <button class="minute-chip" type="button" data-minute="30">30</button>
+        <button class="minute-chip" type="button" data-minute="45">45</button>
+      </div>
+      <div class="clock-actions">
+        <button id="clearDepartClock" class="btn" type="button">Wissen</button>
+        <button id="confirmDepartClock" class="btn primary" type="button">Klaar</button>
+      </div>
+    </article>
+  </div>
+
+  <div id="stopDetailModal" class="stop-modal" aria-hidden="true">
+    <div class="stop-modal-backdrop" data-close-stop-modal></div>
+    <article class="stop-modal-card" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle">
+      <button class="stop-modal-close" type="button" data-close-stop-modal aria-label="Sluiten">×</button>
+      <div id="stopModalPhoto" class="stop-modal-photo"></div>
+      <div class="stop-modal-body">
+        <p id="stopModalType" class="eyebrow">Stop langs je route</p>
+        <h2 id="stopModalTitle">Bekijk locatie</h2>
+        <p id="stopModalDescription" class="muted"></p>
+        <div id="stopModalTags" class="modal-tags"></div>
+        <div class="modal-why">
+          <strong>Waarom Roadora dit toont</strong>
+          <ul id="stopModalWhy"></ul>
+        </div>
+        <div class="modal-facts">
+          <div><span>Omrijden</span><strong id="stopModalDetour">+8 min</strong></div>
+          <div><span>Past rond</span><strong id="stopModalWindow">16:30 - 18:00</strong></div>
+          <div><span>Profiel</span><strong id="stopModalProfile">Nog geen profielvoorkeuren</strong></div>
+        </div>
+        <div class="modal-actions">
+          <button id="modalNavigateStop" class="btn" type="button">Navigeer</button>
+          <button id="modalAddStop" class="btn primary" type="button">Toevoegen aan dagroute</button>
+          <button class="btn" type="button" disabled>Bekijk aanbieder / boeken later</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="manualPlaceModal" class="manual-place-modal" aria-hidden="true">
+    <div class="manual-place-backdrop" data-close-manual-place></div>
+    <article class="manual-place-card" role="dialog" aria-modal="true" aria-labelledby="manualPlaceTitle">
+      <button class="stop-modal-close" type="button" data-close-manual-place aria-label="Sluiten">×</button>
+      <div class="manual-place-head">
+        <p class="eyebrow">Jouw keuze</p>
+        <h2 id="manualPlaceTitle">Zelf een plek toevoegen</h2>
+        <p>Zoek op naam of adres, kies de juiste plek en bepaal zelf waar hij in je reis hoort.</p>
+      </div>
+      <div class="manual-place-form">
+        <label for="manualPlaceSearch">Naam of adres</label>
+        <div class="manual-place-search-row">
+          <input id="manualPlaceSearch" maxlength="160" autocomplete="off" placeholder="Bijv. Burg Eltz of Camping Lago Blu">
+          <button id="searchManualPlace" class="btn primary" type="button">Zoeken</button>
+        </div>
+        <div id="manualPlaceSearchStatus" class="manual-place-status" role="status">Vul een naam of adres in.</div>
+        <div id="manualPlaceResults" class="manual-place-results" aria-live="polite"></div>
+
+        <section id="manualPlaceSelection" class="manual-place-selection hidden" aria-hidden="true">
+          <strong id="manualPlaceSelectedName">Nog geen plek gekozen</strong>
+          <span id="manualPlaceSelectedAddress"></span>
+        </section>
+        <input id="manualPlaceName" type="hidden">
+
+        <div class="manual-place-choice-grid">
+          <div>
+            <label for="manualPlaceRole">Toevoegen als</label>
+            <select id="manualPlaceRole"><option value="stop">Tussenstop</option><option value="overnight">Overnachting</option></select>
+          </div>
+          <div>
+            <label for="manualPlaceType">Soort plek</label>
+            <select id="manualPlaceType"><option value="stop">Tussenstop</option><option value="outing">Uitje</option><option value="food">Eten</option><option value="hotel">Hotel</option><option value="camperplace">Camperplek / camping</option><option value="other">Anders</option></select>
+          </div>
+          <div>
+            <label for="manualPlaceDaySelect">Reisdag</label>
+            <select id="manualPlaceDaySelect"></select>
+          </div>
+        </div>
+
+        <label for="manualPlaceNotes">Notitie (optioneel)</label>
+        <textarea id="manualPlaceNotes" maxlength="300" rows="2" placeholder="Bijv. vooraf reserveren"></textarea>
+
+        <details class="manual-place-advanced">
+          <summary>Meer opties</summary>
+          <p class="hint">Alleen nodig wanneer zoeken op naam of adres geen goede match geeft.</p>
+          <label for="manualPlaceLocation">Google Maps-link of coördinaten</label>
+          <input id="manualPlaceLocation" maxlength="400" placeholder="Link of 47.123456, 11.123456">
+          <div class="manual-place-actions"><button id="pickManualPlaceOnMap" class="btn" type="button">Pin op kaart plaatsen</button><button id="checkManualPlace" class="btn" type="button">Controleer locatie</button></div>
+          <div id="manualPlaceStatus" class="manual-place-status" role="status">Nog geen geavanceerde locatie gecontroleerd.</div>
+        </details>
+        <p class="hint">Roadora rekent de route opnieuw uit. Controleer toegang, opening en beschikbaarheid bij de locatie.</p>
+      </div>
+      <div class="modal-actions"><button class="btn" type="button" data-close-manual-place>Annuleren</button><button id="saveManualPlace" class="btn primary" type="button" disabled>Toevoegen aan reisdag</button></div>
+    </article>
+  </div>
+
+  <div id="cookieBanner" class="cookie" role="dialog" aria-label="Cookie melding">
+    <p><strong>Cookies.</strong> Roadora gebruikt noodzakelijke cookies en, na toestemming, analyse om de website te verbeteren.</p>
+    <div class="cookie-actions"><button id="rejectCookies" class="btn" type="button">Weigeren</button><button id="acceptCookies" class="btn primary" type="button">Accepteren</button></div>
+  </div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+</body>
+</html>
