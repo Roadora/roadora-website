@@ -1,4 +1,4 @@
-// Roadora v6.7.3 — zoeken op naam of adres via Google Places Text Search (New).
+// Zoeken op naam of adres via Google Places Text Search (New).
 // Server-side proxy zodat de Google Maps API-key nooit in de browser staat.
 
 function header(req, name) {

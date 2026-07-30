@@ -1,8 +1,8 @@
-// Roadora Google Eten API — v6.6.2
+// Google Eten API.
 // Server-side Google Places Nearby Search proxy voor eten rond de actuele locatie van de gebruiker.
 
 
-// Roadora v6.5.4 — basis misbruikbeveiliging voor serverless proxy's.
+// Basis misbruikbeveiliging voor serverless proxy's.
 function roadoraRequestHeader(req, name) {
   const headers = req?.headers || {};
   const value = headers[name] ?? headers[String(name).toLowerCase()] ?? headers[String(name).toUpperCase()];

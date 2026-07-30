@@ -1,4 +1,4 @@
-// Roadora v6.7.0 — veilige Google Maps-link resolver.
+// Veilige Google Maps-linkresolver.
 
 function header(req, name) {
   const headers = req?.headers || {};

@@ -1,11 +1,11 @@
-// Roadora v6.7.1 — route via actieve geselecteerde stops, Google primair + ORS fallback
+// Route via actieve geselecteerde stops, Google primair + ORS fallback.
 // - Leaflet blijft de kaartlaag; dit endpoint levert routegeometrie en samenvattingen.
 // - Google is primair, ORS is fallback.
 // - Variantenmodus levert waar beschikbaar: snelste, tol vermijden en een alternatief.
 // - Tol vermijden is een voorkeur en geen absolute garantie van de routeprovider.
 
 
-// Roadora v6.5.4 — basis misbruikbeveiliging voor serverless proxy's.
+// Basis misbruikbeveiliging voor serverless proxy's.
 function roadoraRequestHeader(req, name) {
   const headers = req?.headers || {};
   const value = headers[name] ?? headers[String(name).toLowerCase()] ?? headers[String(name).toUpperCase()];

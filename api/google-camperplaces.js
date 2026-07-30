@@ -1,9 +1,9 @@
-// Roadora Google Camperplekken API — v6.3
+// Google Camperplekken API.
 // Server-side Google Places Text Search proxy for camperplaatsen langs de gekozen route.
 // Safe for Vercel: API key stays in Environment Variables.
 
 
-// Roadora v6.5.4 — basis misbruikbeveiliging voor serverless proxy's.
+// Basis misbruikbeveiliging voor serverless proxy's.
 function roadoraRequestHeader(req, name) {
   const headers = req?.headers || {};
   const value = headers[name] ?? headers[String(name).toLowerCase()] ?? headers[String(name).toUpperCase()];

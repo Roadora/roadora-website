@@ -8,13 +8,13 @@
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/webplanner-v673.css">
+  <link rel="stylesheet" href="css/webplanner.css">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-  <script defer src="js/leaflet-fallback-v655.js"></script>
-  <script defer src="js/trip-db-v654.js"></script>
-  <script defer src="js/webplanner-v673.js"></script>
+  <script defer src="js/leaflet-fallback.js"></script>
+  <script defer src="js/trip-db.js"></script>
+  <script defer src="js/webplanner.js"></script>
 </head>
-<body data-roadora-build="v6.7.3">
+<body data-roadora-build="v6.7.4">
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
@@ -186,8 +186,7 @@
           <button id="mapFit" type="button" title="Route centreren">⌖</button>
           <button id="mapZoomIn" type="button" title="Inzoomen">+</button>
           <button id="mapZoomOut" type="button" title="Uitzoomen">−</button>
-          <button id="mapToggleStops" class="hidden" type="button" title="Stopmomenten staan tijdelijk uit" aria-hidden="true">▧</button>
-        </div>
+</div>
         <div class="legend hidden" aria-hidden="true"><span><i class="i-pause"></i>Pauze</span><span><i class="i-lunch"></i>Lunch</span><span><i class="i-charge"></i><span id="chargeLabel">Laadstop</span></span><span><i class="i-hotel"></i>Overnachten rond</span></div>
         <div class="map-summary">
           <h3 id="mapRouteTitle">Nog geen route gepland</h3>
@@ -220,7 +219,7 @@
           </article>
           <article class="card card-pad">
             <div class="card-title"><h2>Routeplanning</h2><span class="pill">handmatig uitbreiden</span></div>
-            <p class="muted plan-note">Eerst maken we alleen je route. Stops, hotels en suggesties staan tijdelijk uit; je zet later zelf categorieën aan.</p>
+            <p class="muted plan-note">Eerst maken we je route. Daarna voeg je zelf stops, hotels, camperplekken, eten en uitjes toe.</p>
             <div id="timeline" class="timeline editable-timeline"></div>
             <div class="planning-actions">
               <button id="addPlanStop" class="btn" type="button">+ Stop toevoegen</button>
@@ -293,7 +292,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.7.2.6</span></div>
+      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.7.4</span></div>
       <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
     </div>
   </footer>

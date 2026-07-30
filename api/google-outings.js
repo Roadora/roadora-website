@@ -1,4 +1,4 @@
-// Roadora Google Uitjes API — v6.6.3
+// Google Uitjes API.
 // Server-side Google Places Nearby Search proxy voor uitjes langs de actieve reisdag.
 
 function roadoraRequestHeader(req, name) {

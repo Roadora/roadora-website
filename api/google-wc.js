@@ -1,8 +1,8 @@
-// Roadora Google WC API — v6.5.0
+// Google WC API.
 // Server-side Google Places Nearby Search proxy voor openbare toiletten en praktische pauzeplekken.
 
 
-// Roadora v6.5.4 — basis misbruikbeveiliging voor serverless proxy's.
+// Basis misbruikbeveiliging voor serverless proxy's.
 function roadoraRequestHeader(req, name) {
   const headers = req?.headers || {};
   const value = headers[name] ?? headers[String(name).toLowerCase()] ?? headers[String(name).toUpperCase()];
