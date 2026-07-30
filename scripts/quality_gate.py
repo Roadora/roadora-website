@@ -59,9 +59,51 @@ for file in sorted([*ROOT.glob('js/*.js'),*ROOT.glob('api/*.js')]):
     if result.returncode:
         errors.append(f'JavaScript-syntaxfout in {file.relative_to(ROOT)}: {result.stderr.strip()}')
 
-# Ensure no obsolete bundles or patch reports remain in production root.
-obsolete=[*ROOT.glob('css/webplanner-v*.css'),*ROOT.glob('js/webplanner-v*.js'),*ROOT.glob('README_UPDATE_*.md'),*ROOT.glob('ROADORA_v*_WIJZIGINGEN.md'),*ROOT.glob('ROADORA_v*_TESTRAPPORT.md')]
-if obsolete: errors.append('Historische productiebestanden gevonden: '+', '.join(str(p.relative_to(ROOT)) for p in obsolete))
+# Ensure no obsolete bundles, patch reports or abandoned planner modules remain.
+obsolete_patterns = [
+    'css/webplanner-v*.css',
+    'js/webplanner-v*.js',
+    'js/trip-db-v*.js',
+    'js/leaflet-fallback-v*.js',
+    'css/v*-*.css',
+    'README_UPDATE_*.md',
+    'ROADORA_v*_WIJZIGINGEN.md',
+    'ROADORA_v*_TESTRAPPORT.md',
+    'ROADORA_V*_NOTES.md',
+    'ROADORA_v*_NOTES.md',
+    '**/*.bak',
+]
+obsolete = []
+for pattern in obsolete_patterns:
+    obsolete.extend(ROOT.glob(pattern))
+
+legacy_files = [
+    'css/compact-columns.css',
+    'css/product-ui.css',
+    'css/real-map.css',
+    'css/refinement.css',
+    'js/app.js',
+    'js/planner.js',
+    'js/real-map.js',
+    'js/recommendations.js',
+    'js/walkthrough.js',
+    'assets/cta-road.svg',
+    'assets/hero-road.svg',
+    'assets/map-pattern.svg',
+    'assets/roadtrip-card.svg',
+    'assets/route-illustration.svg',
+    'roadora-sitemap.xml',
+]
+obsolete.extend(ROOT / name for name in legacy_files if (ROOT / name).exists())
+if obsolete:
+    unique = sorted({p.relative_to(ROOT) for p in obsolete}, key=str)
+    errors.append('Historische of ongebruikte productiebestanden gevonden: ' + ', '.join(map(str, unique)))
+
+robots = (ROOT / 'robots.txt').read_text(encoding='utf-8')
+if 'https://www.roadora.eu/sitemap.xml' not in robots:
+    errors.append('robots.txt verwijst niet naar de actieve sitemap.xml')
+if (ROOT / 'roadora-sitemap.xml').exists():
+    errors.append('Dubbele oude sitemap gevonden: roadora-sitemap.xml')
 
 # Required endpoints.
 for endpoint in ['route.js','geocode.js','google-hotels.js','google-camperplaces.js','google-food.js','google-outings.js','google-place-search.js','google-fuel.js','google-charging.js','google-wc.js','google-photo.js','resolve-map-link.js']:
