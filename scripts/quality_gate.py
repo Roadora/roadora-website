@@ -53,6 +53,17 @@ values=[m.group(1).strip() if m else None for m in (body_build,footer_build,js_b
 if len(set(values))!=1: errors.append(f'Buildversies verschillen: HTML body/footer/JS = {values}')
 else: notes.append(f'Buildversie: {values[0]}')
 
+# Kaartpunt/routepunt regression checks.
+for required_snippet, label in [
+    ('bindMapPickCapture();', 'robuuste kaartklik-capture'),
+    ("requestAnimationFrame(()=>beginMapPick", 'direct starten van kaartpunt/routepunt'),
+    ("data-cancel-map-pick", 'annuleren van kaartselectie'),
+    ("nearestRouteProjection(clicked.lat,clicked.lng)", 'routepunt vastklikken op route'),
+]:
+    if required_snippet not in js: errors.append(f'webplanner.js mist {label}')
+if 'map-pick-banner' not in (ROOT/'css/webplanner.css').read_text(encoding='utf-8'):
+    errors.append('webplanner.css mist zichtbare kaartselectiebanner')
+
 # Syntax-check all JavaScript using Node.
 for file in sorted([*ROOT.glob('js/*.js'),*ROOT.glob('api/*.js')]):
     result=subprocess.run(['node','--check',str(file)],capture_output=True,text=True)

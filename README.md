@@ -1,6 +1,6 @@
-# Roadora v6.7.4 — Clean Stable Base
+# Roadora v6.7.5 — Kaartpunt en routepunt herstel
 
-Dit is de opgeschoonde volledige webplannerbasis na consolidatie van alle updates tot en met v6.7.3.
+Dit is de opgeschoonde webplannerbasis met het herstelde Kaartpunt- en Routepunt-selectieproces.
 
 ## Productieregel
 
@@ -24,3 +24,10 @@ python -m http.server 3000
 ```
 
 Open daarna `http://localhost:3000`. Voor echte API-resultaten zijn dezelfde Vercel-omgevingsvariabelen nodig als op productie.
+
+## Herstel in v6.7.5
+
+- Kaartpunt en Routepunt starten direct na het aanklikken.
+- Routepunt wordt vastgezet op de actieve route.
+- Een zichtbare kaartbanner laat zien dat Roadora op een kaartklik wacht.
+- Selecteren werkt ook wanneer de gebruiker op een route-lijn of bestaande marker klikt.

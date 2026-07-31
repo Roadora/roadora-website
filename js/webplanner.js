@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const build=$('#roadoraBuild'); if(build) build.textContent=ROADORA_BUILD;
 },{once:true});
 
-const ROADORA_BUILD='v6.7.4';
+const ROADORA_BUILD='v6.7.5';
 window.ROADORA_BUILD=ROADORA_BUILD;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -30,6 +30,7 @@ let manualResolvedCenter = null;
 let manualPlaceResults = [];
 let manualSelectedPlace = null;
 let mapPickMode = '';
+let mapPickCaptureBound = false;
 let pendingMapPickResolve = null;
 const recs = [
   ['Hotels rond je overnachting','Overnachten rond je stopmoment · parkeren · weinig omrijden'],
@@ -581,6 +582,7 @@ function initMap(){
   renderRouteZoneMarkers(false);
   renderPlaceMarkers();
   renderPlannedStopMarkers();
+  bindMapPickCapture();
   map.on('click',handleMapSelectionClick);
   fitMap(); setTimeout(()=>map.invalidateSize(),250); setTimeout(()=>map.invalidateSize(),900);
 }
@@ -1568,23 +1570,67 @@ async function resolveSearchCenter(value){
   const geo=await geocodePlace(raw);
   return {lat:Number(geo.lat??geo.location?.lat??geo.coord?.[1]),lng:Number(geo.lng??geo.location?.lng??geo.coord?.[0]),label:geo.formattedAddress||raw,placeId:geo.placeId||''};
 }
+function mapPickLabel(mode){
+  if(mode==='outing-route') return 'Klik op het gewenste deel van de route';
+  if(mode==='manual-place') return 'Klik op de gewenste plek op de kaart';
+  return 'Klik op de gewenste plek op de kaart';
+}
+function renderMapPickBanner(){
+  let banner=$('#mapPickBanner');
+  if(!mapPickMode){banner?.remove();return;}
+  const card=$('.map-card');
+  if(!card) return;
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='mapPickBanner';
+    banner.className='map-pick-banner';
+    banner.setAttribute('role','status');
+    card.appendChild(banner);
+  }
+  banner.innerHTML=`<strong>${escapeHtml(mapPickLabel(mapPickMode))}</strong><button type="button" data-cancel-map-pick aria-label="Punt kiezen annuleren">Annuleren</button>`;
+}
 function beginMapPick(mode){
-  if(!map){toast('De kaart is nog niet klaar');return;}
+  if(!map){toast('De kaart is nog niet klaar');return false;}
+  if(mode==='outing-route' && !hasRoute()){
+    finishMapPick();
+    toast('Plan eerst een route voordat je een routepunt kiest');
+    return false;
+  }
   mapPickMode=mode;
   document.body.classList.add('map-pick-active');
-  toast(mode==='outing-route'?'Tik op het gewenste deel van de route':'Tik op de gewenste plek op de kaart');
+  document.body.dataset.mapPickKind=mode==='outing-route'?'route':'map';
+  renderMapPickBanner();
+  map.invalidateSize();
+  map.getContainer()?.focus?.({preventScroll:true});
+  $('.map-card')?.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'});
+  toast(mapPickLabel(mode));
+  return true;
 }
-function finishMapPick(){mapPickMode=''; document.body.classList.remove('map-pick-active');}
+function finishMapPick(){
+  mapPickMode='';
+  document.body.classList.remove('map-pick-active');
+  delete document.body.dataset.mapPickKind;
+  renderMapPickBanner();
+}
 function handleMapSelectionClick(event){
-  if(!mapPickMode) return;
-  const clicked={lat:Number(event.latlng.lat),lng:Number(event.latlng.lng)};
+  if(!mapPickMode) return false;
+  const clicked={lat:Number(event?.latlng?.lat),lng:Number(event?.latlng?.lng)};
+  if(!Number.isFinite(clicked.lat)||!Number.isFinite(clicked.lng)) return false;
   if(mapPickMode==='outing-map' || mapPickMode==='outing-route'){
-    const center=mapPickMode==='outing-route'&&hasRoute()?nearestRouteProjection(clicked.lat,clicked.lng):null;
-    state.outingSearchCenter=center?{lat:center.lat,lng:center.lng,label:'Gekozen routepunt'}:{...clicked,label:'Gekozen kaartpunt'};
-    state.outingSearchMode=mapPickMode==='outing-route'?'route':'map';
-    finishMapPick(); showSearchCenter(state.outingSearchCenter,state.outingSearchCenter.label); renderStops(); saveDraftNow();
-    toast('Zoekpunt gekozen. Tik op Zoek uitjes.');
-    return;
+    const choosingRoute=mapPickMode==='outing-route';
+    const center=choosingRoute?nearestRouteProjection(clicked.lat,clicked.lng):null;
+    if(choosingRoute && !center){toast('Dit routepunt kon niet worden bepaald. Klik opnieuw op de route.');return false;}
+    const routeKm=center&&Number.isFinite(Number(state.routeDistanceKm))?Math.round(clampRouteProgress(center.progress)*Number(state.routeDistanceKm)):null;
+    state.outingSearchCenter=center
+      ? {lat:Number(center.lat),lng:Number(center.lng),progress:clampRouteProgress(center.progress),distanceFromStartMeters:routeKm===null?null:routeKm*1000,label:routeKm===null?'Gekozen routepunt':`Gekozen routepunt · ± ${routeKm} km vanaf vertrek`}
+      : {...clicked,label:'Gekozen kaartpunt'};
+    state.outingSearchMode=choosingRoute?'route':'map';
+    finishMapPick();
+    showSearchCenter(state.outingSearchCenter,state.outingSearchCenter.label);
+    renderStops();
+    saveDraftNow();
+    toast('Zoekpunt gekozen. Klik nu op Zoeken.');
+    return true;
   }
   if(mapPickMode==='manual-place'){
     const value=`${clicked.lat.toFixed(6)}, ${clicked.lng.toFixed(6)}`;
@@ -1600,7 +1646,25 @@ function handleMapSelectionClick(event){
     setText('#manualPlaceSelectedName',name);setText('#manualPlaceSelectedAddress',value);
     const save=$('#saveManualPlace');if(save)save.disabled=false;
     setManualPlaceStatus(`Gekozen kaartpunt: ${value}`,'ok');
+    return true;
   }
+  return false;
+}
+function bindMapPickCapture(){
+  if(!map || mapPickCaptureBound) return;
+  const container=map.getContainer?.();
+  if(!container) return;
+  container.setAttribute('tabindex','0');
+  container.addEventListener('click',event=>{
+    if(!mapPickMode || event.target?.closest?.('.leaflet-control')) return;
+    const latlng=map.mouseEventToLatLng?.(event);
+    if(!latlng) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    handleMapSelectionClick({latlng,originalEvent:event,source:'map-capture'});
+  },true);
+  mapPickCaptureBound=true;
 }
 function foodSearchCenterLabel(){return state.foodSearchCenter?'Huidige locatie vastgesteld':'Gebruik je actuele locatie om 10–15 opties binnen 10 km te laden.';}
 async function searchFoodNearCurrentLocation(){
@@ -3337,8 +3401,19 @@ function bind(){
       return;
     }
     if(e.target.closest('#searchFoodNow')){searchFoodNearCurrentLocation();return;}
+    if(e.target.closest('[data-cancel-map-pick]')){finishMapPick();toast('Punt kiezen geannuleerd');return;}
     const outingMode=e.target.closest('[data-outing-search-mode]');
-    if(outingMode){state.outingSearchMode=outingMode.dataset.outingSearchMode;state.outingSearchCenter=null;clearSearchCenterMarker();renderStops();saveDraftNow();return;}
+    if(outingMode){
+      const nextMode=outingMode.dataset.outingSearchMode;
+      finishMapPick();
+      state.outingSearchMode=nextMode;
+      state.outingSearchCenter=null;
+      clearSearchCenterMarker();
+      renderStops();
+      saveDraftNow();
+      if(nextMode==='map'||nextMode==='route') requestAnimationFrame(()=>beginMapPick(nextMode==='route'?'outing-route':'outing-map'));
+      return;
+    }
     if(e.target.closest('#chooseOutingPoint')){beginMapPick(state.outingSearchMode==='route'?'outing-route':'outing-map');return;}
     if(e.target.closest('#searchOutingsManual')){searchOutingsManually();return;}
     const tripTypeBtn=e.target.closest('[data-trip-type]');
@@ -3484,7 +3559,7 @@ function bind(){
   });
   $('#modalNavigateStop')?.addEventListener('click',()=>{if(state.activeStop)navigateToPlace(state.activeStop.cat,state.activeStop.index);});
   $('#modalAddStop')?.addEventListener('click',()=>{if(state.activeStop){void addStopToActiveDay(state.activeStop.cat,state.activeStop.index); closeStopDetail();}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeStopDetail();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(mapPickMode){finishMapPick();toast('Punt kiezen geannuleerd');return;}closeStopDetail();}});
   $('#chooseHotelZone')?.addEventListener('click',()=>{ state.category='hotels'; state.view='all'; state.suggestions=false; if(hasRoute()){ if(!hasValidDepartTime()){ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','empty','Vul eerst je vertrektijd in. Dan kunnen we bepalen waar je rond je aankomsttijdvak op de route bent.'); toast('Vul eerst je vertrektijd in'); } else if(!arrivalSlotLabel()){ stops.hotels=[]; clearPlaceMarkers(); setPlaceStatus('hotels','empty','Kies eerst een aankomsttijdvak. Dan zoeken we hotels rond het juiste deel van je route.'); toast('Kies eerst een aankomsttijdvak voor hotels'); } else if(Number(state.placeStatus.hotelsDay)!==Number(state.activeDay) || !['live','loading'].includes(state.placeStatus.hotels)){ resetLiveCategory('hotels','loading'); loadLivePlacesFor('hotels'); } } renderStops(); });
   $('#recalculatePlan')?.addEventListener('click',async()=>{const ok=await loadRealRoute({preservePlan:true}); renderAll(); if(ok) toast('Route opnieuw berekend; planning behouden');});
   $('#addTripDay')?.addEventListener('click',()=>{ if(setTripDayCount(Math.min(21,state.days+1),{confirmRemoval:false,activateNew:true})) toast('Dag toegevoegd'); });

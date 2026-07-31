@@ -1,5 +1,13 @@
 # Changelog
 
+## v6.7.5 — Kaartpunt en routepunt herstel
+
+- Klik op Kaartpunt of Routepunt start nu direct de kaartselectie.
+- Routepunt controleert eerst of een route beschikbaar is en klikt vast op de dichtstbijzijnde positie op die route.
+- Een zichtbare kaartbanner toont dat Roadora op een klik wacht en biedt Annuleren.
+- Kaartselectie werkt ook boven route-lijnen en bestaande kaartmarkeringen.
+- Cache-busting toegevoegd zodat browsers de herstelde planner direct laden.
+
 ## v6.7.4 — Clean Stable Base
 
 - Alle updates tot en met v6.7.3 samengevoegd in één volledige repository.
