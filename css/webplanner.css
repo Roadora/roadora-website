@@ -2724,3 +2724,57 @@ html,body{max-width:100%;overflow-x:clip}
   .manual-place-choice-grid{grid-template-columns:1fr}
   .manual-place-card>.modal-actions{position:sticky;bottom:-15px;z-index:3;margin:12px -15px -15px;padding:10px 15px calc(10px + env(safe-area-inset-bottom));background:#fffdf9;border-top:1px solid #e3d6c2}
 }
+
+
+/* v6.8.0 — installeerbare Roadora-app */
+.pwa-install-btn{
+  appearance:none;
+  border:1px solid rgba(12,111,113,.28);
+  background:#edf9f8;
+  color:var(--brand-dark);
+  font-weight:800;
+}
+.pwa-install-btn:hover{background:#dff3f2}
+.pwa-install-btn[hidden]{display:none!important}
+.pwa-notice{
+  position:fixed;
+  left:50%;
+  bottom:max(18px,env(safe-area-inset-bottom,0px));
+  z-index:180;
+  width:min(620px,calc(100vw - 28px));
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:13px 14px;
+  border:1px solid #9cc9c7;
+  border-radius:16px;
+  background:rgba(255,253,249,.98);
+  box-shadow:0 18px 44px rgba(20,34,34,.20);
+  backdrop-filter:blur(14px);
+}
+.pwa-notice[hidden]{display:none!important}
+.pwa-notice-copy{display:grid;gap:2px;min-width:0}
+.pwa-notice-copy strong{font-size:13px;color:var(--brand-dark)}
+.pwa-notice-copy span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.pwa-notice-actions{display:flex;gap:8px;flex:0 0 auto}
+.pwa-notice-actions .btn{height:36px;padding:0 12px}
+.pwa-standalone body{overscroll-behavior-y:none}
+.pwa-standalone .app-header{
+  padding-top:env(safe-area-inset-top,0px);
+  height:calc(60px + env(safe-area-inset-top,0px));
+}
+.pwa-standalone .shell{height:calc(100dvh - 60px - env(safe-area-inset-top,0px))}
+@media(max-width:760px){
+  .pwa-install-btn{padding:8px 10px;font-size:12px}
+  .pwa-notice{align-items:stretch;flex-direction:column;gap:10px;bottom:max(10px,env(safe-area-inset-bottom,0px))}
+  .pwa-notice-actions{display:grid;grid-template-columns:1fr 1fr}
+  .pwa-notice-actions .btn{width:100%}
+  .pwa-standalone .app-header{
+    min-height:calc(58px + env(safe-area-inset-top,0px));
+    height:auto;
+    padding-top:calc(12px + env(safe-area-inset-top,0px));
+  }
+  .pwa-standalone .shell{height:auto}
+}

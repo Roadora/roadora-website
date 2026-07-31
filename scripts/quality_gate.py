@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from html.parser import HTMLParser
-import json, re, subprocess, sys
+import json, re, struct, subprocess, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 errors=[]
@@ -53,6 +53,72 @@ values=[m.group(1).strip() if m else None for m in (body_build,footer_build,js_b
 if len(set(values))!=1: errors.append(f'Buildversies verschillen: HTML body/footer/JS = {values}')
 else: notes.append(f'Buildversie: {values[0]}')
 
+# PWA metadata and build versions.
+pwa_js=(ROOT/'js/pwa.js').read_text(encoding='utf-8') if (ROOT/'js/pwa.js').exists() else ''
+sw_js=(ROOT/'sw.js').read_text(encoding='utf-8') if (ROOT/'sw.js').exists() else ''
+pwa_build=re.search(r"const BUILD = '([^']+)'",pwa_js)
+sw_build=re.search(r"const BUILD = '([^']+)'",sw_js)
+app_values=[values[0], pwa_build.group(1) if pwa_build else None, sw_build.group(1) if sw_build else None]
+if len(set(app_values))!=1: errors.append(f'PWA-buildversies verschillen: planner/pwa/service-worker = {app_values}')
+
+required_pwa_files=['manifest.webmanifest','sw.js','offline.html','js/pwa.js','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/icon-maskable-192.png','assets/icons/icon-maskable-512.png','assets/icons/apple-touch-icon.png']
+for name in required_pwa_files:
+    if not (ROOT/name).exists(): errors.append(f'Ontbrekend PWA-bestand: {name}')
+
+for html in html_files:
+    source=html.read_text(encoding='utf-8')
+    if html.name!='offline.html':
+        for snippet,label in [
+            ('manifest.webmanifest','manifestkoppeling'),
+            ('apple-touch-icon.png','Apple touch icon'),
+            ('js/pwa.js','PWA-registratie'),
+            ('viewport-fit=cover','safe-area viewport'),
+        ]:
+            if snippet not in source: errors.append(f'{html.name} mist {label}')
+if 'id="installRoadoraApp"' not in index: errors.append('index.html mist installatieknop')
+
+# Manifest validation and PNG dimensions without third-party dependencies.
+def png_size(path):
+    with path.open('rb') as handle:
+        header=handle.read(24)
+    if len(header)<24 or header[:8]!=b'\x89PNG\r\n\x1a\n': return None
+    return struct.unpack('>II',header[16:24])
+try:
+    manifest=json.loads((ROOT/'manifest.webmanifest').read_text(encoding='utf-8'))
+    for key in ['id','name','short_name','start_url','scope','display','background_color','theme_color','icons']:
+        if not manifest.get(key): errors.append(f'manifest.webmanifest mist {key}')
+    if manifest.get('display')!='standalone': errors.append('manifest.webmanifest gebruikt niet display=standalone')
+    if manifest.get('scope')!='/': errors.append('manifest.webmanifest scope is niet /')
+    declared={(item.get('src'),item.get('sizes'),item.get('purpose','any')) for item in manifest.get('icons',[]) if isinstance(item,dict)}
+    for src,size,purpose in [
+        ('/assets/icons/icon-192.png','192x192','any'),
+        ('/assets/icons/icon-512.png','512x512','any'),
+        ('/assets/icons/icon-maskable-192.png','192x192','maskable'),
+        ('/assets/icons/icon-maskable-512.png','512x512','maskable'),
+    ]:
+        if (src,size,purpose) not in declared: errors.append(f'manifest mist icoon {src} ({purpose})')
+        path=ROOT/src.lstrip('/')
+        if path.exists():
+            expected=tuple(map(int,size.split('x')))
+            actual=png_size(path)
+            if actual!=expected: errors.append(f'{src} heeft afmeting {actual}, verwacht {expected}')
+except Exception as exc:
+    errors.append(f'manifest.webmanifest ongeldig: {exc}')
+
+for snippet,label in [
+    ("navigator.serviceWorker.register('/sw.js'",'service-workerregistratie'),
+    ('beforeinstallprompt','installatieprompt'),
+    ('controllerchange','gecontroleerde appupdate'),
+]:
+    if snippet not in pwa_js: errors.append(f'js/pwa.js mist {label}')
+for snippet,label in [
+    ("url.pathname.startsWith('/api/')",'network-only API-regel'),
+    ("caches.match('/offline.html')",'offline fallback'),
+    ("type === 'SKIP_WAITING'",'bevestigde updateactivatie'),
+    ('roadora-app-${BUILD}','versiegebonden appcache'),
+]:
+    if snippet not in sw_js: errors.append(f'sw.js mist {label}')
+
 # Kaartpunt/routepunt regression checks.
 for required_snippet, label in [
     ('bindMapPickCapture();', 'robuuste kaartklik-capture'),
@@ -65,7 +131,7 @@ if 'map-pick-banner' not in (ROOT/'css/webplanner.css').read_text(encoding='utf-
     errors.append('webplanner.css mist zichtbare kaartselectiebanner')
 
 # Syntax-check all JavaScript using Node.
-for file in sorted([*ROOT.glob('js/*.js'),*ROOT.glob('api/*.js')]):
+for file in sorted([*ROOT.glob('js/*.js'),*ROOT.glob('api/*.js'),ROOT/'sw.js']):
     result=subprocess.run(['node','--check',str(file)],capture_output=True,text=True)
     if result.returncode:
         errors.append(f'JavaScript-syntaxfout in {file.relative_to(ROOT)}: {result.stderr.strip()}')
@@ -126,6 +192,13 @@ try:
     text=json.dumps(vercel)
     for header in ['Content-Security-Policy','Referrer-Policy','X-Content-Type-Options','Permissions-Policy']:
         if header not in text: errors.append(f'vercel.json mist beveiligingsheader: {header}')
+    sw_headers=next((item.get('headers',[]) for item in vercel.get('headers',[]) if item.get('source')=='/sw.js'),[])
+    sw_header_text=json.dumps(sw_headers)
+    if 'no-cache' not in sw_header_text or 'Service-Worker-Allowed' not in sw_header_text:
+        errors.append('vercel.json mist veilige sw.js cache/scope headers')
+    manifest_headers=next((item.get('headers',[]) for item in vercel.get('headers',[]) if item.get('source')=='/manifest.webmanifest'),[])
+    if 'application/manifest+json' not in json.dumps(manifest_headers):
+        errors.append('vercel.json mist manifest content-type')
 except Exception as exc:
     errors.append(f'vercel.json ongeldig: {exc}')
 

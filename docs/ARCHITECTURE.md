@@ -1,8 +1,14 @@
-# Architectuur v6.7.4
+# Architectuur v6.8.0
 
-## Browser
+## Browser en geïnstalleerde app
 
-`index.html` laadt Leaflet, `trip-db.js` en `webplanner.js`. De planner bewaart roadtrips lokaal via IndexedDB en gebruikt serverless endpoints onder `/api`.
+`index.html` laadt Leaflet, `trip-db.js`, `webplanner.js` en `pwa.js`. Het manifest geeft browsers de appnaam, iconen, kleuren, scope en standalone weergave. `pwa.js` registreert de service worker en beheert installatie- en updateberichten.
+
+## Service worker
+
+`sw.js` bewaart alleen de statische app-shell en publieke inhoudspagina’s. Navigaties gebruiken network-first met `offline.html` als fallback. CSS, JavaScript en afbeeldingen gebruiken stale-while-revalidate. Requests naar `/api/` blijven network-only, zodat route-, geocode- en Places-resultaten niet verouderen in een cache.
+
+Een nieuwe service worker neemt de app niet stilzwijgend over. Roadora toont eerst een updatebericht en activeert de nieuwe worker pas na gebruikersbevestiging.
 
 ## Kaart en routing
 
@@ -14,4 +20,4 @@ De gebruiker kiest categorie, zoekgebied en locatie. Roadora voegt niets automat
 
 ## Opslag
 
-Roadtrips worden lokaal opgeslagen. Het centrale, versieerbare app-datamodel en import/export volgen in v6.8.
+Roadtrips worden lokaal opgeslagen in IndexedDB en blijven buiten de service-workercache. Daardoor verwijdert een appupdate geen opgeslagen roadtrips. Account-, cloud- en apparaatsynchronisatie zijn nog niet actief en volgen in een latere fase.

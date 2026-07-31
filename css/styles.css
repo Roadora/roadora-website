@@ -1,1 +1,9 @@
 @import url('./tokens.css');@import url('./base.css');@import url('./header.css');@import url('./layout.css');@import url('./components.css');@import url('./planner.css');@import url('./map.css');@import url('./content.css');@import url('./responsive.css');
+
+
+/* v6.8.0 PWA-safe-area en updatebericht */
+.pwa-standalone body{overscroll-behavior-y:none}
+.pwa-standalone .app-header{padding-top:env(safe-area-inset-top,0px);height:calc(64px + env(safe-area-inset-top,0px))}
+.pwa-notice{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:180;width:min(620px,calc(100vw - 28px));transform:translateX(-50%);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 14px;border:1px solid #9cc9c7;border-radius:16px;background:rgba(255,253,249,.98);box-shadow:0 18px 44px rgba(20,34,34,.20)}
+.pwa-notice[hidden]{display:none!important}.pwa-notice-copy{display:grid;gap:2px}.pwa-notice-copy strong{font-size:13px;color:#074f51}.pwa-notice-copy span{font-size:12px;color:#6d6254}.pwa-notice-actions{display:flex;gap:8px}.pwa-notice-actions .btn{height:36px;padding:0 12px}
+@media(max-width:760px){.pwa-notice{align-items:stretch;flex-direction:column;gap:10px}.pwa-notice-actions{display:grid;grid-template-columns:1fr 1fr}.pwa-notice-actions .btn{width:100%}}

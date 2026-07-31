@@ -1,6 +1,12 @@
 # Releasechecklist
 
 - [ ] `python scripts/quality_gate.py` volledig groen
+- [ ] Manifest opent zonder fout en toont alle Roadora-iconen
+- [ ] Installatie getest in Chrome/Edge en Zet op beginscherm getest op iOS
+- [ ] Geïnstalleerde app opent standalone en respecteert safe areas
+- [ ] Offline navigatie toont `offline.html`; lokale roadtrips blijven behouden
+- [ ] Nieuwe service worker toont updatebericht vóór activatie
+- [ ] `/api/` wordt niet door de service worker gecachet
 - [ ] Kaart zichtbaar op mobiel, tablet en desktop
 - [ ] Route berekenen met Google en ORS-fallback
 - [ ] Uitje/restaurant toevoegen en routelijn via waypoint
