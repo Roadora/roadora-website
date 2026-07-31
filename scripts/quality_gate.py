@@ -91,21 +91,31 @@ for snippet,label in [
     ('data-mobile-sheet="right"','mobiele rechter-bottom-sheet'),
 ]:
     if snippet not in index: errors.append(f'index.html mist {label}')
+main_match=re.search(r'<main\s+(?:id="planner"\s+class="shell"|class="shell"\s+id="planner")>', index)
+main_start=main_match.start() if main_match else -1
+main_end=index.find('</main>', main_start)
+scrim_pos=index.find('id="mobileSheetScrim"')
+if not (main_start >= 0 and main_end > main_start and main_start < scrim_pos < main_end):
+    errors.append('mobileSheetScrim staat niet binnen de mobiele shell-stacking-context')
 for snippet,label in [
     ("const MOBILE_QUERY = '(max-width: 760px)'",'mobiele breakpointcontroller'),
     ('openView(view','mobiele paneelnavigatie'),
     ('map-pick-active','kaartpunt/routepunt app-shellkoppeling'),
     ('syncRecentTrips','roadtrip-startschermkoppeling'),
+    ('updateVisualViewport','mobiele toetsenbord/viewportkoppeling'),
+    ('sheetScroller','interne bottom-sheet scrollcontainer'),
+    ("field.scrollIntoView({block:'center'",'focusveld zichtbaar boven toetsenbord'),
 ]:
     if snippet not in app_shell: errors.append(f'js/app-shell.js mist {label}')
 for snippet,label in [
-    ('v6.8.1 — mobiele app-shell','app-shell stijlblok'),
+    ('v6.8.2 — mobiele app-shell','app-shell stijlblok'),
+    ('v6.8.2 — mobiele interactie- en scrollfix','mobiele interactie/scrollfix'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
 ]:
     if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
-if '/js/app-shell.js?v=6.8.1' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
+if '/js/app-shell.js?v=6.8.2' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):

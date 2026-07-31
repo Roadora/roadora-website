@@ -1,4 +1,4 @@
-# Architectuur v6.8.1
+# Architectuur v6.8.2
 
 ## Browser en geïnstalleerde app
 
@@ -31,3 +31,8 @@ Roadtrips worden lokaal opgeslagen in IndexedDB en blijven buiten de service-wor
 - De bestaande tabs blijven de bron van waarheid; de mobiele bottom navigation activeert die tabs programmatisch.
 - Roadtripdata blijft in `js/webplanner.js` en `js/trip-db.js`; de app-shell dupliceert geen route- of opslagstatus.
 - Op desktop wordt de app-shell volledig verborgen en blijft de drielaagse planner actief.
+
+
+## Mobiele interactielaag v6.8.2
+
+De scrim is een kind van `main.shell`, zodat kaart, scrim en bottom sheets in één stacking-context worden gerangschikt. De sheet zelf scrollt niet meer: de vaste sheet-header blijft staan en alleen `panel-stack` of het actieve `tab-panel` scrolt. `visualViewport` levert de bruikbare hoogte wanneer het mobiele toetsenbord opent.

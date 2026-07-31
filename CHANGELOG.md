@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.8.2 — Mobiele interactie- en scrollfix
+
+- Transparante scrim binnen de mobiele shell geplaatst, zodat invoervelden en scrollbewegingen niet meer worden onderschept.
+- Bottom sheets omgebouwd naar vaste sheet-header met afzonderlijk scrollbare inhoud.
+- Paneelhoogte corrigeert nu voor topbar én bottom navigation.
+- Visual Viewport-afhandeling toegevoegd voor mobiel toetsenbord en oriëntatiewijzigingen.
+- Focusvelden worden zichtbaar gehouden; Nieuwe roadtrip reset Route instellen naar boven.
+- Paneeltitel ondersteunt tik en toetsenbord om te vergroten of verkleinen.
+- Quality gate uitgebreid met regressiecontroles voor de mobiele interactielaag.
+
 ## v6.8.1 — Mobiele app-shell
 
 - Mobiel startscherm toegevoegd met nieuwe roadtrip, huidige roadtrip en recente lokale roadtrips.

@@ -2779,7 +2779,7 @@ html,body{max-width:100%;overflow-x:clip}
   .pwa-standalone .shell{height:auto}
 }
 
-/* v6.8.1 — mobiele app-shell */
+/* v6.8.2 — mobiele app-shell */
 .mobile-app-heading,
 .mobile-header-more,
 .mobile-sheet-chrome,
@@ -3327,4 +3327,86 @@ html,body{max-width:100%;overflow-x:clip}
   .roadora-mobile-shell .right-panel{height:min(76dvh,700px)!important}
   .roadora-mobile-shell .left-panel .two{grid-template-columns:1fr}
   .roadora-mobile-shell .mobile-recent-trips .trip-card-actions{grid-template-columns:1fr 1fr}
+}
+
+
+/* v6.8.2 — mobiele interactie- en scrollfix */
+@media (max-width:760px){
+  .roadora-mobile-shell .shell{
+    isolation:isolate;
+  }
+
+  /* Kaart, scrim en sheets delen één stacking context. */
+  .roadora-mobile-shell .mobile-sheet-scrim{
+    position:absolute;
+    inset:0;
+    z-index:80;
+  }
+
+  .roadora-mobile-shell .left-panel,
+  .roadora-mobile-shell .right-panel{
+    display:flex!important;
+    flex-direction:column!important;
+    height:min(72dvh,720px)!important;
+    min-height:min(360px,calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - var(--mobile-nav-h) - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)))!important;
+    max-height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - var(--mobile-nav-h) - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+    overflow:hidden!important;
+    touch-action:pan-y;
+  }
+
+  .roadora-mobile-shell body.mobile-sheet-expanded .mobile-app-sheet.is-active{
+    height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - var(--mobile-nav-h) - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+  }
+
+  .roadora-mobile-shell .mobile-sheet-chrome{
+    position:relative;
+    top:auto;
+    flex:0 0 auto;
+  }
+  .roadora-mobile-shell .mobile-sheet-chrome>strong{
+    min-height:44px;
+    display:grid;
+    place-items:center;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  .roadora-mobile-shell .left-panel>.panel-stack,
+  .roadora-mobile-shell .right-panel>.tab-panel.active{
+    flex:1 1 auto;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    scroll-padding-top:12px;
+    scroll-padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
+    scrollbar-width:none;
+  }
+  .roadora-mobile-shell .left-panel>.panel-stack::-webkit-scrollbar,
+  .roadora-mobile-shell .right-panel>.tab-panel.active::-webkit-scrollbar{display:none}
+
+  .roadora-mobile-shell body.mobile-keyboard-open .mobile-app-nav{
+    transform:translateY(110%);
+    pointer-events:none;
+  }
+  .roadora-mobile-shell body.mobile-keyboard-open .mobile-app-sheet{
+    bottom:0!important;
+    min-height:0!important;
+    max-height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - 8px - env(safe-area-inset-top,0px))!important;
+  }
+  .roadora-mobile-shell body.mobile-keyboard-open.mobile-sheet-open .mobile-app-sheet.is-active,
+  .roadora-mobile-shell body.mobile-keyboard-open.mobile-sheet-expanded .mobile-app-sheet.is-active{
+    height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - 8px - env(safe-area-inset-top,0px))!important;
+  }
+
+  .roadora-mobile-shell .mobile-app-sheet input,
+  .roadora-mobile-shell .mobile-app-sheet select,
+  .roadora-mobile-shell .mobile-app-sheet textarea,
+  .roadora-mobile-shell .mobile-app-sheet button{
+    touch-action:manipulation;
+  }
 }

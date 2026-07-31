@@ -23,6 +23,7 @@
   let mapPickReturnView = '';
   let routeWasEmpty = true;
   let dragState = null;
+  let viewportTimer = 0;
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -30,6 +31,31 @@
   function isMobile(){ return mobileMedia.matches; }
   function shellOpen(){ return body.classList.contains('mobile-sheet-open'); }
   function homeOpen(){ return body.classList.contains('mobile-home-open'); }
+  function activeSheet(){ return $('.mobile-app-sheet.is-active'); }
+  function sheetScroller(sheet = activeSheet()){
+    if(!sheet) return null;
+    return sheet.matches('.left-panel') ? sheet.querySelector(':scope > .panel-stack') : sheet.querySelector(':scope > .tab-panel.active');
+  }
+
+  function updateVisualViewport(){
+    if(!isMobile()) return;
+    const viewport = window.visualViewport;
+    const height = Math.max(320, Math.round(viewport?.height || window.innerHeight));
+    html.style.setProperty('--mobile-visual-height', `${height}px`);
+    const covered = viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
+    body.classList.toggle('mobile-keyboard-open', covered > 120);
+  }
+
+  function scheduleViewportUpdate(){
+    window.clearTimeout(viewportTimer);
+    updateVisualViewport();
+    viewportTimer = window.setTimeout(updateVisualViewport, 120);
+  }
+
+  function resetSheetScroll(){
+    const scroller = sheetScroller();
+    if(scroller) scroller.scrollTop = 0;
+  }
 
   function dispatchMapResize(){
     window.setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
@@ -49,6 +75,8 @@
   }
 
   function closeSheet({keepView = true} = {}){
+    const focused = document.activeElement;
+    if(focused?.closest?.('.mobile-app-sheet')) focused.blur();
     body.classList.remove('mobile-sheet-open', 'mobile-sheet-expanded');
     body.removeAttribute('data-mobile-sheet');
     $$('.mobile-app-sheet').forEach(sheet => sheet.classList.remove('is-active'));
@@ -65,7 +93,7 @@
 
   function openView(view, options = {}){
     if(!isMobile()) return;
-    const {expand = false, toggle = false} = options;
+    const {expand = false, toggle = false, resetScroll = false} = options;
     closeHome({silent:true});
 
     if(toggle && currentView === view && shellOpen()){
@@ -91,6 +119,8 @@
       $('.right-panel')?.classList.add('is-active');
       $('.left-panel')?.classList.remove('is-active');
     }
+    scheduleViewportUpdate();
+    if(resetScroll) window.requestAnimationFrame(resetSheetScroll);
     dispatchMapResize();
   }
 
@@ -208,6 +238,15 @@
     $('#mobileSheetScrim')?.addEventListener('click', () => closeSheet());
     $$('[data-mobile-sheet-close]').forEach(button => button.addEventListener('click', () => closeSheet()));
     $$('[data-mobile-sheet-toggle]').forEach(button => bindSheetDrag(button));
+    $$('.mobile-sheet-chrome>strong').forEach(title => {
+      title.setAttribute('role','button');
+      title.setAttribute('tabindex','0');
+      title.setAttribute('aria-label','Paneel vergroten of verkleinen');
+      title.addEventListener('click', toggleSheetSize);
+      title.addEventListener('keydown', event => {
+        if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); toggleSheetSize(); }
+      });
+    });
 
     $('#mobileHeaderMore')?.addEventListener('click', () => openView('more', {toggle:true}));
     $('.brand')?.addEventListener('click', event => {
@@ -219,7 +258,7 @@
     $('.mobile-new-roadtrip')?.addEventListener('click', () => {
       $('#newRoadtrip')?.click();
       closeHome({silent:true});
-      window.setTimeout(() => openView('route', {expand:true}), 80);
+      window.setTimeout(() => openView('route', {expand:true, resetScroll:true}), 80);
     });
     $('#mobileContinueTrip')?.addEventListener('click', () => {
       closeHome({silent:true});
@@ -238,6 +277,19 @@
         }, 160);
       }
     });
+
+    document.addEventListener('focusin', event => {
+      if(!isMobile()) return;
+      const field = event.target.closest?.('.mobile-app-sheet input, .mobile-app-sheet select, .mobile-app-sheet textarea, .mobile-app-sheet [contenteditable="true"]');
+      if(!field) return;
+      body.classList.add('mobile-sheet-expanded');
+      scheduleViewportUpdate();
+      window.setTimeout(() => field.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'}), 160);
+    });
+
+    window.visualViewport?.addEventListener('resize', scheduleViewportUpdate);
+    window.visualViewport?.addEventListener('scroll', scheduleViewportUpdate);
+    window.addEventListener('orientationchange', scheduleViewportUpdate);
 
     document.addEventListener('keydown', event => {
       if(event.key !== 'Escape' || !isMobile()) return;
@@ -287,6 +339,7 @@
     mobileMedia.addEventListener?.('change', event => {
       if(event.matches){
         html.classList.add('roadora-mobile-shell');
+        updateVisualViewport();
         syncHeader();
         syncRecentTrips();
         syncInstallButton();
@@ -309,6 +362,7 @@
 
     if(isMobile()){
       html.classList.add('roadora-mobile-shell');
+      updateVisualViewport();
       currentView = 'route';
       updateNav();
       window.setTimeout(() => {
