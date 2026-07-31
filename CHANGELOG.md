@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.8.1 — Mobiele app-shell
+
+- Mobiel startscherm toegevoegd met nieuwe roadtrip, huidige roadtrip en recente lokale roadtrips.
+- De kaart is op mobiel het vaste hoofdscherm geworden.
+- Vaste mobiele topbar toont actieve dag, kilometers en reistijd.
+- Vaste bottom navigation toegevoegd voor Route, Stops, Planning en Meer.
+- Route-, stop-, planning- en roadtrippanelen openen als bottom sheets boven de kaart.
+- Bottom sheets kunnen worden gesloten, vergroot en met een neerwaartse veeg gesloten.
+- Kaartpunt en Routepunt sluiten het paneel tijdens kaartselectie en herstellen daarna het juiste paneel.
+- Geïnstalleerde PWA opent via `?source=pwa` op het mobiele startscherm.
+- Desktopopmaak en bestaande plannerlogica blijven ongewijzigd.
+- Service-worker-cache en quality gate uitgebreid met de mobiele app-shell.
+
 ## v6.8.0 — Installeerbare appbasis
 
 - Web app manifest toegevoegd met standalone weergave, appkleuren en Roadora-iconen.

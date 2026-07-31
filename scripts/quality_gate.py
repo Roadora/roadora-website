@@ -38,7 +38,7 @@ for html in html_files:
 
 # Active asset references must be stable and unversioned.
 index=(ROOT/'index.html').read_text(encoding='utf-8')
-required=['css/webplanner.css','js/webplanner.js','js/trip-db.js','js/leaflet-fallback.js']
+required=['css/webplanner.css','js/webplanner.js','js/trip-db.js','js/leaflet-fallback.js','js/app-shell.js']
 for ref in required:
     if ref not in index: errors.append(f'index.html mist actieve verwijzing: {ref}')
 if re.search(r'(webplanner|trip-db|leaflet-fallback)-v\d+', index):
@@ -61,7 +61,7 @@ sw_build=re.search(r"const BUILD = '([^']+)'",sw_js)
 app_values=[values[0], pwa_build.group(1) if pwa_build else None, sw_build.group(1) if sw_build else None]
 if len(set(app_values))!=1: errors.append(f'PWA-buildversies verschillen: planner/pwa/service-worker = {app_values}')
 
-required_pwa_files=['manifest.webmanifest','sw.js','offline.html','js/pwa.js','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/icon-maskable-192.png','assets/icons/icon-maskable-512.png','assets/icons/apple-touch-icon.png']
+required_pwa_files=['manifest.webmanifest','sw.js','offline.html','js/pwa.js','js/app-shell.js','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/icon-maskable-192.png','assets/icons/icon-maskable-512.png','assets/icons/apple-touch-icon.png']
 for name in required_pwa_files:
     if not (ROOT/name).exists(): errors.append(f'Ontbrekend PWA-bestand: {name}')
 
@@ -76,6 +76,36 @@ for html in html_files:
         ]:
             if snippet not in source: errors.append(f'{html.name} mist {label}')
 if 'id="installRoadoraApp"' not in index: errors.append('index.html mist installatieknop')
+
+# Mobile app-shell regression checks.
+app_shell=(ROOT/'js/app-shell.js').read_text(encoding='utf-8') if (ROOT/'js/app-shell.js').exists() else ''
+app_css=(ROOT/'css/webplanner.css').read_text(encoding='utf-8')
+for snippet,label in [
+    ('id="mobileAppHome"','mobiel startscherm'),
+    ('id="mobileAppNav"','vaste mobiele appnavigatie'),
+    ('data-mobile-view="route"','mobiele Route-navigatie'),
+    ('data-mobile-view="stops"','mobiele Stops-navigatie'),
+    ('data-mobile-view="planning"','mobiele Planning-navigatie'),
+    ('data-mobile-view="more"','mobiele Meer-navigatie'),
+    ('data-mobile-sheet="route"','mobiele route-bottom-sheet'),
+    ('data-mobile-sheet="right"','mobiele rechter-bottom-sheet'),
+]:
+    if snippet not in index: errors.append(f'index.html mist {label}')
+for snippet,label in [
+    ("const MOBILE_QUERY = '(max-width: 760px)'",'mobiele breakpointcontroller'),
+    ('openView(view','mobiele paneelnavigatie'),
+    ('map-pick-active','kaartpunt/routepunt app-shellkoppeling'),
+    ('syncRecentTrips','roadtrip-startschermkoppeling'),
+]:
+    if snippet not in app_shell: errors.append(f'js/app-shell.js mist {label}')
+for snippet,label in [
+    ('v6.8.1 — mobiele app-shell','app-shell stijlblok'),
+    ('.mobile-app-nav','vaste bottom navigation'),
+    ('.mobile-app-home','mobiel startscherm'),
+    ('.mobile-app-sheet','mobiele bottom sheet'),
+]:
+    if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
+if '/js/app-shell.js?v=6.8.1' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):

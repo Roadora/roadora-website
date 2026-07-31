@@ -1,37 +1,39 @@
-# Roadora v6.8.0 — Installeerbare appbasis
+# Roadora v6.8.1 — Mobiele app-shell
 
-Roadora v6.8.0 maakt de bestaande planner installeerbaar als Progressive Web App, zonder de stabiele route-, stop- en opslaglogica van v6.7.5 te wijzigen.
+Roadora v6.8.1 bouwt boven op de installeerbare v6.8.0-basis en maakt van de mobiele planner een echte kaartgerichte app-interface. De bestaande route-, stop-, meerdaagse en lokale opslaglogica blijft behouden.
 
 ## Productieregel
 
-Gebruik deze volledige repository als enige basis voor volgende versies. Oudere compacte patches hoeven niet meer over deze map te worden gelegd.
+Gebruik deze volledige repository als enige basis voor volgende versies. Leg geen oudere compacte patches over deze versie heen.
 
 ## Actieve hoofdonderdelen
 
-- `index.html` — webplanner
-- `css/webplanner.css` — volledige plannerstijl
-- `js/webplanner.js` — plannerinterface en gebruikersflow
+- `index.html` — webplanner en mobiele appstructuur
+- `css/webplanner.css` — desktopplanner plus mobiele app-shell
+- `js/webplanner.js` — route-, stop-, dag- en opslaglogica
+- `js/app-shell.js` — mobiel startscherm, bottom navigation en bottom sheets
 - `js/trip-db.js` — lokale roadtripbibliotheek
 - `js/leaflet-fallback.js` — Leaflet CDN-fallback
-- `js/pwa.js` — installatie- en updateflow van de app
+- `js/pwa.js` — installatie- en updateflow
 - `manifest.webmanifest` — appnaam, kleuren, startadres en iconen
-- `sw.js` — veilige app-shellcache en offline fallback
-- `offline.html` — uitleg bij ontbrekende internetverbinding
-- `api/` — beveiligde route-, geocode- en Places-endpoints
+- `sw.js` — app-shellcache en offline fallback
+- `api/` — route-, geocode- en Places-endpoints
 
-## Wat v6.8.0 toevoegt
+## Wat v6.8.1 toevoegt
 
-- Installeren op Android, iPhone/iPad en desktop.
-- Openen in standalone appmodus zonder normale browserbalk.
-- Roadora-appiconen, inclusief maskable iconen en Apple touch icon.
-- Veilige app-shellcache; API-resultaten worden bewust niet gecachet.
-- Offline foutpagina terwijl lokaal opgeslagen roadtrips behouden blijven.
-- Gecontroleerde melding wanneer een nieuwe Roadora-versie klaarstaat.
-- Safe-area ondersteuning voor notch en onderste systeembalk.
+- Een echt mobiel Roadora-startscherm voor de geïnstalleerde app.
+- Nieuwe roadtrip, doorgaan met de huidige roadtrip en recente lokale roadtrips.
+- Vaste mobiele topbar met actieve dag, kilometers en reistijd.
+- Kaart als permanent hoofdscherm.
+- Vaste bottom navigation: Route, Stops, Planning en Meer.
+- Route- en rechterpanelen als bottom sheets boven de kaart.
+- Panelen sluiten, vergroten en met een neerwaartse veeg sluiten.
+- Kaartpunt en Routepunt verbergen het paneel tijdelijk en openen Stops daarna opnieuw.
+- De desktopweergave blijft de bestaande drielaagse planner.
 
-## Belangrijke opslaggrens
+## Opslaggrens
 
-Roadtrips blijven in deze fase lokaal in IndexedDB staan. Desktop en telefoon synchroniseren nog niet automatisch. Account- en cloudsynchronisatie volgt als aparte, gecontroleerde fase.
+Roadtrips staan nog lokaal in IndexedDB. Desktop en telefoon synchroniseren nog niet automatisch. Account- en cloudsynchronisatie volgt in een latere fase.
 
 ## Lokaal controleren
 
@@ -40,4 +42,8 @@ python scripts/quality_gate.py
 python -m http.server 3000
 ```
 
-Open daarna `http://localhost:3000`. Service workers werken op localhost. Voor echte route- en Places-resultaten zijn dezelfde Vercel-omgevingsvariabelen nodig als op productie.
+Open voor het mobiele app-startscherm:
+
+```text
+http://localhost:3000/?source=pwa
+```

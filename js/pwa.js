@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = 'v6.8.0';
+  const BUILD = 'v6.8.1';
   const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   const canRegister = 'serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname));

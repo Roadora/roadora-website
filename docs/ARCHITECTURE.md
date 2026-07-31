@@ -1,4 +1,4 @@
-# Architectuur v6.8.0
+# Architectuur v6.8.1
 
 ## Browser en geïnstalleerde app
 
@@ -21,3 +21,13 @@ De gebruiker kiest categorie, zoekgebied en locatie. Roadora voegt niets automat
 ## Opslag
 
 Roadtrips worden lokaal opgeslagen in IndexedDB en blijven buiten de service-workercache. Daardoor verwijdert een appupdate geen opgeslagen roadtrips. Account-, cloud- en apparaatsynchronisatie zijn nog niet actief en volgen in een latere fase.
+
+
+## Mobiele app-shell v6.8.1
+
+- `js/app-shell.js` is uitsluitend een presentatielaag boven de bestaande plannerlogica.
+- Op schermen tot 760 px blijft de Leaflet-kaart permanent onder de interface staan.
+- De linker routekolom en de rechter tabpanelen worden als bottom sheets getoond.
+- De bestaande tabs blijven de bron van waarheid; de mobiele bottom navigation activeert die tabs programmatisch.
+- Roadtripdata blijft in `js/webplanner.js` en `js/trip-db.js`; de app-shell dupliceert geen route- of opslagstatus.
+- Op desktop wordt de app-shell volledig verborgen en blijft de drielaagse planner actief.

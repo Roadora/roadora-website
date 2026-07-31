@@ -2778,3 +2778,553 @@ html,body{max-width:100%;overflow-x:clip}
   }
   .pwa-standalone .shell{height:auto}
 }
+
+/* v6.8.1 — mobiele app-shell */
+.mobile-app-heading,
+.mobile-header-more,
+.mobile-sheet-chrome,
+.mobile-app-home,
+.mobile-sheet-scrim,
+.mobile-app-nav{display:none}
+
+@media (max-width:760px){
+  :root{
+    --mobile-header-h:64px;
+    --mobile-nav-h:72px;
+    --mobile-sheet-radius:24px;
+  }
+
+  html.roadora-mobile-shell,
+  html.roadora-mobile-shell body{
+    width:100%;
+    height:100%;
+    min-height:100%;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+    background:#e7efeb;
+  }
+
+  .roadora-mobile-shell body{
+    padding:0;
+  }
+
+  .roadora-mobile-shell .app-header{
+    position:fixed;
+    inset:0 0 auto 0;
+    z-index:120;
+    height:calc(var(--mobile-header-h) + env(safe-area-inset-top,0px));
+    min-height:0;
+    padding:env(safe-area-inset-top,0px) 14px 0;
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) 42px;
+    align-items:center;
+    gap:8px;
+    border-bottom:0;
+    background:linear-gradient(135deg,#072f45,#081f38 68%,#062e43);
+    color:#fff;
+    box-shadow:0 5px 20px rgba(5,31,48,.22);
+    backdrop-filter:none;
+  }
+
+  .roadora-mobile-shell .brand{
+    width:38px;
+    min-width:38px;
+    height:38px;
+    gap:0;
+    position:relative;
+    z-index:2;
+  }
+  .roadora-mobile-shell .brand-mark{
+    width:38px;
+    height:38px;
+    border-radius:13px;
+    background:#0f8f92;
+    box-shadow:0 7px 16px rgba(0,0,0,.18);
+  }
+  .roadora-mobile-shell .brand-copy{display:none}
+  .roadora-mobile-shell .header-actions{display:none!important}
+
+  .roadora-mobile-shell .mobile-app-heading{
+    display:grid;
+    justify-items:center;
+    align-content:center;
+    min-width:0;
+    line-height:1.05;
+  }
+  .roadora-mobile-shell .mobile-app-heading strong{
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#fff;
+    font-size:16px;
+    font-weight:850;
+    letter-spacing:-.01em;
+  }
+  .roadora-mobile-shell .mobile-app-heading span{
+    max-width:100%;
+    margin-top:4px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:rgba(255,255,255,.74);
+    font-size:11px;
+    font-weight:650;
+  }
+  .roadora-mobile-shell .mobile-header-more{
+    display:grid;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:13px;
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    font-weight:900;
+    letter-spacing:0;
+    font-size:24px;
+  }
+
+  .roadora-mobile-shell .shell{
+    position:fixed!important;
+    inset:calc(var(--mobile-header-h) + env(safe-area-inset-top,0px)) 0 calc(var(--mobile-nav-h) + env(safe-area-inset-bottom,0px)) 0!important;
+    display:block!important;
+    width:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    border:0!important;
+    background:#dfeae6;
+  }
+
+  .roadora-mobile-shell .map-stage{
+    position:absolute!important;
+    inset:0!important;
+    z-index:1;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    padding:0!important;
+    background:#dfeae6!important;
+  }
+  .roadora-mobile-shell .map-card{
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  .roadora-mobile-shell #roadoraMap{height:100%!important}
+  .roadora-mobile-shell .map-controls{
+    top:14px;
+    left:auto;
+    right:14px;
+    border:0;
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(18,45,45,.19);
+  }
+  .roadora-mobile-shell .map-controls button{
+    width:42px;
+    height:42px;
+    color:#073f48;
+  }
+  .roadora-mobile-shell .map-summary{
+    left:14px!important;
+    right:14px!important;
+    bottom:14px!important;
+    max-width:520px;
+    min-width:0!important;
+    padding:12px 14px!important;
+    border:1px solid rgba(255,255,255,.62)!important;
+    border-radius:18px!important;
+    background:rgba(255,253,249,.93)!important;
+    box-shadow:0 14px 34px rgba(17,48,46,.17)!important;
+    backdrop-filter:blur(16px);
+  }
+  .roadora-mobile-shell .map-summary h3{
+    font-size:14px;
+    color:#082f36;
+  }
+  .roadora-mobile-shell .map-summary .tag-row{display:none}
+
+  .roadora-mobile-shell .left-panel,
+  .roadora-mobile-shell .right-panel{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom,0px))!important;
+    top:auto!important;
+    z-index:90!important;
+    display:block!important;
+    width:100%!important;
+    height:min(72dvh,720px)!important;
+    min-height:360px!important;
+    max-height:calc(100dvh - var(--mobile-header-h) - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+    margin:0!important;
+    padding:0 12px 14px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch;
+    border:0!important;
+    border-radius:var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0!important;
+    background:#fffdf9!important;
+    box-shadow:0 -18px 50px rgba(8,38,43,.25)!important;
+    transform:translateY(calc(100% + var(--mobile-nav-h) + 32px));
+    opacity:.98;
+    pointer-events:none;
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),height .24s ease;
+    scrollbar-width:none;
+  }
+  .roadora-mobile-shell .left-panel::-webkit-scrollbar,
+  .roadora-mobile-shell .right-panel::-webkit-scrollbar{display:none}
+  .roadora-mobile-shell body.mobile-sheet-open .mobile-app-sheet.is-active{
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  .roadora-mobile-shell body.mobile-sheet-expanded .mobile-app-sheet.is-active{
+    height:calc(100dvh - var(--mobile-header-h) - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+  }
+
+  .roadora-mobile-shell .mobile-sheet-chrome{
+    position:sticky;
+    top:0;
+    z-index:70;
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) 42px;
+    align-items:center;
+    min-height:58px;
+    margin:0 -12px 12px;
+    padding:0 12px;
+    border-bottom:1px solid #eadfce;
+    background:rgba(255,253,249,.96);
+    backdrop-filter:blur(16px);
+  }
+  .roadora-mobile-shell .mobile-sheet-chrome>strong{
+    text-align:center;
+    font-size:15px;
+    color:#092f34;
+  }
+  .roadora-mobile-shell .mobile-sheet-handle{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:42px;
+    height:42px;
+    border:0;
+    background:transparent;
+    touch-action:none;
+  }
+  .roadora-mobile-shell .mobile-sheet-handle span{
+    width:34px;
+    height:5px;
+    border-radius:999px;
+    background:#c5cbc7;
+  }
+  .roadora-mobile-shell .mobile-sheet-close{
+    display:grid;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border:1px solid #dbe2de;
+    border-radius:13px;
+    background:#fff;
+    color:#315054;
+    font-size:24px;
+    line-height:1;
+  }
+  .roadora-mobile-shell .right-tabs{display:none!important}
+  .roadora-mobile-shell .left-panel>.panel-stack,
+  .roadora-mobile-shell .right-panel>.tab-panel.active{
+    padding-bottom:18px;
+  }
+  .roadora-mobile-shell .right-panel>.tab-panel.active{display:block!important}
+  .roadora-mobile-shell .right-panel>.tab-panel:not(.active){display:none!important}
+  .roadora-mobile-shell .card{
+    box-shadow:none;
+    border-color:#e7ded0;
+    background:#fff;
+  }
+  .roadora-mobile-shell .card-pad{padding:14px}
+  .roadora-mobile-shell .panel-stack{gap:10px}
+  .roadora-mobile-shell .left-panel .card:first-child{border-radius:18px}
+  .roadora-mobile-shell .left-panel .two{grid-template-columns:1fr 1fr}
+
+  .roadora-mobile-shell #stopsTab .card.card-pad.stops-card,
+  .roadora-mobile-shell #stopsTab .stops-scroll-area,
+  .roadora-mobile-shell #stopsTab .stops-results-panel,
+  .roadora-mobile-shell #stopsTab .rich-stop-list{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  .roadora-mobile-shell #stopsTab .card.card-pad.stops-card{
+    display:block!important;
+    padding-bottom:0!important;
+  }
+  .roadora-mobile-shell #stopsTab .sticky-actions{
+    position:sticky!important;
+    bottom:-14px!important;
+    z-index:74!important;
+    margin:0 -14px!important;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px))!important;
+    background:rgba(255,253,249,.97)!important;
+  }
+  .roadora-mobile-shell #stopsTab .stops-results-panel:last-child,
+  .roadora-mobile-shell #stopsTab .rich-stop-list:last-child{
+    padding-bottom:18px!important;
+  }
+
+  .roadora-mobile-shell .mobile-sheet-scrim{
+    position:fixed;
+    inset:calc(var(--mobile-header-h) + env(safe-area-inset-top,0px)) 0 calc(var(--mobile-nav-h) + env(safe-area-inset-bottom,0px)) 0;
+    z-index:80;
+    display:block;
+    border:0;
+    background:rgba(4,26,34,.18);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .24s ease;
+  }
+  .roadora-mobile-shell body.mobile-sheet-open .mobile-sheet-scrim{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .roadora-mobile-shell .mobile-app-nav{
+    position:fixed;
+    inset:auto 0 0 0;
+    z-index:130;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    height:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom,0px));
+    padding:7px 10px env(safe-area-inset-bottom,0px);
+    border-top:1px solid rgba(12,83,84,.14);
+    background:rgba(255,255,255,.97);
+    box-shadow:0 -10px 28px rgba(8,39,43,.10);
+    backdrop-filter:blur(18px);
+    transition:transform .22s ease;
+  }
+  .roadora-mobile-shell .mobile-app-nav button{
+    display:grid;
+    grid-template-rows:30px 18px;
+    place-items:center;
+    align-content:center;
+    gap:1px;
+    min-width:0;
+    border:0;
+    border-radius:14px;
+    background:transparent;
+    color:#5d6d6b;
+    font-size:10.5px;
+    font-weight:780;
+  }
+  .roadora-mobile-shell .mobile-app-nav button svg{
+    width:24px;
+    height:24px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.9;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .roadora-mobile-shell .mobile-app-nav button.active{
+    color:#057478;
+    background:#e9f7f6;
+  }
+  .roadora-mobile-shell .mobile-app-nav button.active svg{stroke-width:2.25}
+  .roadora-mobile-shell body.map-pick-active .mobile-app-nav{transform:translateY(110%)}
+
+  .roadora-mobile-shell .mobile-app-home{
+    position:fixed;
+    inset:calc(var(--mobile-header-h) + env(safe-area-inset-top,0px)) 0 calc(var(--mobile-nav-h) + env(safe-area-inset-bottom,0px)) 0;
+    z-index:75;
+    display:block;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    background:#f4f5f1;
+    opacity:0;
+    transform:translateY(16px);
+    pointer-events:none;
+    transition:opacity .22s ease,transform .22s ease;
+  }
+  .roadora-mobile-shell body.mobile-home-open .mobile-app-home{
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  .roadora-mobile-shell .mobile-home-hero{
+    position:relative;
+    min-height:180px;
+    padding:28px 24px 78px;
+    overflow:hidden;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    color:#fff;
+    background:
+      radial-gradient(circle at 82% 20%,rgba(18,166,166,.28),transparent 27%),
+      linear-gradient(145deg,#072d45,#08364a 55%,#064f58);
+  }
+  .roadora-mobile-shell .mobile-home-mark{
+    width:44px;
+    height:44px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border-radius:14px;
+    background:#10a0a2;
+    color:#fff;
+    font-size:21px;
+    font-weight:900;
+    box-shadow:0 10px 22px rgba(0,0,0,.18);
+  }
+  .roadora-mobile-shell .mobile-home-hero h1{
+    margin:2px 0 2px;
+    font-size:31px;
+    letter-spacing:-.04em;
+  }
+  .roadora-mobile-shell .mobile-home-hero p{
+    margin:0;
+    color:rgba(255,255,255,.76);
+    font-size:14px;
+  }
+  .roadora-mobile-shell .mobile-home-road{
+    position:absolute;
+    left:-8%;
+    right:-8%;
+    bottom:-68px;
+    height:142px;
+    border-radius:50% 50% 0 0;
+    background:linear-gradient(180deg,#0b6470,#043847);
+    transform:rotate(-4deg);
+  }
+  .roadora-mobile-shell .mobile-home-road::before{
+    content:"";
+    position:absolute;
+    left:13%;
+    right:11%;
+    top:20px;
+    height:90px;
+    border:4px solid rgba(255,255,255,.34);
+    border-left-color:transparent;
+    border-bottom-color:transparent;
+    border-radius:50%;
+    transform:rotate(8deg);
+  }
+  .roadora-mobile-shell .mobile-home-road i{
+    position:absolute;
+    width:0;
+    height:0;
+    border-left:24px solid transparent;
+    border-right:24px solid transparent;
+    border-bottom:64px solid rgba(7,47,63,.92);
+    bottom:60px;
+  }
+  .roadora-mobile-shell .mobile-home-road i:nth-child(1){left:12%}
+  .roadora-mobile-shell .mobile-home-road i:nth-child(2){left:29%;transform:scale(.72)}
+  .roadora-mobile-shell .mobile-home-road i:nth-child(3){right:12%;transform:scale(1.2)}
+
+  .roadora-mobile-shell .mobile-home-content{
+    position:relative;
+    z-index:2;
+    margin:-42px 12px 20px;
+    padding:14px;
+    border:1px solid #e2e5df;
+    border-radius:24px;
+    background:#fff;
+    box-shadow:0 18px 38px rgba(12,47,51,.13);
+  }
+  .roadora-mobile-shell .mobile-new-roadtrip{
+    width:100%;
+    height:48px;
+    border-color:#078b8e;
+    background:linear-gradient(135deg,#079498,#06767a);
+    font-size:14px;
+  }
+  .roadora-mobile-shell .mobile-continue-trip{
+    width:100%;
+    height:44px;
+    margin-top:8px;
+    color:#086568;
+    border-color:#a9d3d1;
+    background:#eff9f8;
+  }
+  .roadora-mobile-shell .mobile-home-section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:end;
+    gap:12px;
+    margin:18px 2px 10px;
+  }
+  .roadora-mobile-shell .mobile-home-section-head>div{display:grid;gap:2px}
+  .roadora-mobile-shell .mobile-home-section-head strong{font-size:16px}
+  .roadora-mobile-shell .mobile-home-section-head span{font-size:11px;color:#78827e}
+  .roadora-mobile-shell .mobile-recent-trips{display:grid;gap:9px}
+  .roadora-mobile-shell .mobile-recent-trips .trip-card{
+    padding:13px;
+    border-color:#e1e6e2;
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 7px 18px rgba(14,47,47,.055);
+  }
+  .roadora-mobile-shell .mobile-recent-trips .trip-card>span{
+    line-height:1.4;
+    color:#66726f;
+  }
+  .roadora-mobile-shell .mobile-recent-trips .trip-card-actions{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+  }
+  .roadora-mobile-shell .mobile-recent-trips .trip-card-actions button{
+    min-width:0;
+    padding:7px 3px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:10px;
+  }
+  .roadora-mobile-shell .mobile-home-install{
+    width:100%;
+    margin-top:12px;
+    color:#075f62;
+    border-color:#9bc9c7;
+    background:#edf8f7;
+  }
+  .roadora-mobile-shell .mobile-home-storage-note{
+    margin:12px 4px 2px;
+    color:#78817e;
+    font-size:10.5px;
+    line-height:1.4;
+    text-align:center;
+  }
+
+  .roadora-mobile-shell .footer{display:none!important}
+  .roadora-mobile-shell .toast{
+    left:14px;
+    right:14px;
+    bottom:calc(var(--mobile-nav-h) + 14px + env(safe-area-inset-bottom,0px));
+    width:auto;
+    text-align:center;
+  }
+  .roadora-mobile-shell .cookie{
+    bottom:calc(var(--mobile-nav-h) + 10px + env(safe-area-inset-bottom,0px));
+    z-index:160;
+  }
+  .roadora-mobile-shell .pwa-notice{
+    bottom:calc(var(--mobile-nav-h) + 10px + env(safe-area-inset-bottom,0px));
+    z-index:170;
+  }
+  .roadora-mobile-shell .manual-place-modal,
+  .roadora-mobile-shell .stop-modal,
+  .roadora-mobile-shell .clock-modal{z-index:2200}
+}
+
+@media (max-width:390px){
+  .roadora-mobile-shell .left-panel,
+  .roadora-mobile-shell .right-panel{height:min(76dvh,700px)!important}
+  .roadora-mobile-shell .left-panel .two{grid-template-columns:1fr}
+  .roadora-mobile-shell .mobile-recent-trips .trip-card-actions{grid-template-columns:1fr 1fr}
+}
