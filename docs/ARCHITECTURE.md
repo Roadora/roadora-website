@@ -1,4 +1,4 @@
-# Architectuur v6.8.2
+# Architectuur v6.8.3
 
 ## Browser en geïnstalleerde app
 
@@ -36,3 +36,8 @@ Roadtrips worden lokaal opgeslagen in IndexedDB en blijven buiten de service-wor
 ## Mobiele interactielaag v6.8.2
 
 De scrim is een kind van `main.shell`, zodat kaart, scrim en bottom sheets in één stacking-context worden gerangschikt. De sheet zelf scrollt niet meer: de vaste sheet-header blijft staan en alleen `panel-stack` of het actieve `tab-panel` scrolt. `visualViewport` levert de bruikbare hoogte wanneer het mobiele toetsenbord opent.
+
+
+## Mobiele interactielaag v6.8.3
+
+Stops gebruikt `#stopsTab.tab-panel.active` als enige verticale scrollcontainer. Deze ID-specifieke override voorkomt dat oudere Stops-layoutregels met `overflow: visible` het scrollen uitschakelen. De routesheet krijgt een hogere standaardhoogte. Focus op invoervelden zet expliciet de mobiele toetsenbordstatus, zodat ook geïnstalleerde Android-PWA's met afwijkend viewportgedrag correct reageren.

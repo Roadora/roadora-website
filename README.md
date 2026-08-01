@@ -1,26 +1,16 @@
-# Roadora v6.8.2 — Mobiele interactie- en scrollfix
+# Roadora v6.8.3 — Mobiele Stops-scroll en hogere routesheet
 
-Roadora v6.8.2 herstelt de blokkerende bediening van de mobiele app-shell. Het routeformulier, de overige bottom sheets en het mobiele toetsenbord werken nu binnen een vaste kaartgerichte app-interface.
+Roadora v6.8.3 herstelt het scrollen van het mobiele Stops-paneel en opent Route instellen duidelijk hoger. De toetsenborddetectie werkt nu ook op Android/PWA-installaties waarbij `visualViewport` en `innerHeight` tegelijk verkleinen.
 
-## Opgelost
+## Gewijzigd
 
-- Vertrekpunt en bestemming zijn weer aanklikbaar en invulbaar.
-- De transparante sluitlaag ligt niet meer boven de bottom sheets.
-- Route, Stops, Planning en Meer scrollen in een eigen interne scrollbody.
-- De volledig geopende sheet blijft onder de vaste topbar en boven de bottom navigation.
-- Bij het openen van het telefoontoetsenbord wordt de beschikbare schermhoogte opnieuw berekend.
-- Het actieve invoerveld wordt automatisch zichtbaar gehouden.
-- Nieuwe roadtrip opent Route instellen bovenaan.
-- De paneeltitel kan naast de greep ook worden gebruikt om het paneel te vergroten of verkleinen.
+- Stops heeft één ID-specifieke, echte scrollcontainer.
+- Stops opent standaard volledig zodat categorieën en resultaten direct bruikbaar zijn.
+- Route instellen opent standaard hoger.
+- Bij focus op een invoerveld verdwijnt de bottom navigation.
+- De routesheet gebruikt dan alle zichtbare ruimte boven het toetsenbord.
+- Geen wijzigingen aan route-, stop-, dag- of opslaglogica.
 
-## Behouden
+## Installatie
 
-- Desktopindeling en bestaande route-, stop-, dag- en opslaglogica.
-- PWA-installatie, offline app-shell en lokaal opgeslagen roadtrips.
-- Kaartpunt- en Routepuntselectie.
-
-## Controle
-
-```bash
-python scripts/quality_gate.py
-```
+Pak de compacte update uit in de hoofdmap van de Roadora-repository, vervang bestaande bestanden, commit en push via GitHub Desktop.

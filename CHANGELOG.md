@@ -1,5 +1,13 @@
 # Changelog
 
+## v6.8.3 — Mobiele Stops-scroll en hogere routesheet
+
+- Herstelt verticaal scrollen in het volledige Stops-paneel en na het kiezen van een stopcategorie.
+- Laat Stops standaard volledig geopend starten.
+- Opent Route instellen merkbaar hoger.
+- Verbetert Android-toetsenborddetectie met focus- en viewportstatus.
+- Verbergt de onderste navigatie tijdens tekstinvoer en houdt het actieve veld zichtbaar.
+
 ## v6.8.2 — Mobiele interactie- en scrollfix
 
 - Transparante scrim binnen de mobiele shell geplaatst, zodat invoervelden en scrollbewegingen niet meer worden onderschept.

@@ -3410,3 +3410,69 @@ html,body{max-width:100%;overflow-x:clip}
     touch-action:manipulation;
   }
 }
+
+
+/* v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie */
+@media (max-width:760px){
+  /* Route invoeren opent merkbaar hoger, maar blijft onder de vaste topbar. */
+  .roadora-mobile-shell body[data-mobile-sheet="route"] .left-panel.is-active{
+    height:min(82dvh,820px)!important;
+  }
+
+  /* Stops gebruikt één duidelijke scrollcontainer. Deze ID-specifieke regel
+     wint bewust van oudere Stops-overrides die overflow:visible gebruikten. */
+  .roadora-mobile-shell #stopsTab.tab-panel.active{
+    display:block!important;
+    flex:1 1 0!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y!important;
+    scroll-padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));
+    scrollbar-width:none;
+  }
+  .roadora-mobile-shell #stopsTab.tab-panel.active::-webkit-scrollbar{display:none}
+  .roadora-mobile-shell #stopsTab .card.card-pad.stops-card,
+  .roadora-mobile-shell #stopsTab .stops-scroll-area,
+  .roadora-mobile-shell #stopsTab .stops-results-panel,
+  .roadora-mobile-shell #stopsTab .rich-stop-list{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+  }
+  .roadora-mobile-shell #stopsTab .card.card-pad.stops-card{
+    display:block!important;
+    flex:none!important;
+  }
+  .roadora-mobile-shell #stopsTab .stops-scroll-area{
+    display:block!important;
+    touch-action:auto!important;
+    padding-bottom:calc(94px + env(safe-area-inset-bottom,0px))!important;
+  }
+
+  /* Zodra een invoerveld focus heeft, wordt de navigatie verborgen en
+     gebruikt de routesheet alle zichtbare ruimte boven het toetsenbord. */
+  .roadora-mobile-shell body.mobile-input-focused .mobile-app-nav,
+  .roadora-mobile-shell body.mobile-keyboard-open .mobile-app-nav{
+    transform:translateY(110%);
+    pointer-events:none;
+  }
+  .roadora-mobile-shell body.mobile-input-focused .mobile-app-sheet,
+  .roadora-mobile-shell body.mobile-keyboard-open .mobile-app-sheet{
+    bottom:0!important;
+    min-height:0!important;
+    max-height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - 8px - env(safe-area-inset-top,0px))!important;
+  }
+  .roadora-mobile-shell body.mobile-input-focused.mobile-sheet-open .mobile-app-sheet.is-active,
+  .roadora-mobile-shell body.mobile-input-focused.mobile-sheet-expanded .mobile-app-sheet.is-active,
+  .roadora-mobile-shell body.mobile-keyboard-open.mobile-sheet-open .mobile-app-sheet.is-active,
+  .roadora-mobile-shell body.mobile-keyboard-open.mobile-sheet-expanded .mobile-app-sheet.is-active{
+    height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - 8px - env(safe-area-inset-top,0px))!important;
+  }
+}

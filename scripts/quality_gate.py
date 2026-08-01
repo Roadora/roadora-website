@@ -110,12 +110,13 @@ for snippet,label in [
 for snippet,label in [
     ('v6.8.2 — mobiele app-shell','app-shell stijlblok'),
     ('v6.8.2 — mobiele interactie- en scrollfix','mobiele interactie/scrollfix'),
+    ('v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie','mobiele v6.8.3 stops/toetsenbordfix'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
 ]:
     if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
-if '/js/app-shell.js?v=6.8.2' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
+if '/js/app-shell.js?v=6.8.3' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const build=$('#roadoraBuild'); if(build) build.textContent=ROADORA_BUILD;
 },{once:true});
 
-const ROADORA_BUILD='v6.8.2';
+const ROADORA_BUILD='v6.8.3';
 window.ROADORA_BUILD=ROADORA_BUILD;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];

@@ -24,6 +24,7 @@
   let routeWasEmpty = true;
   let dragState = null;
   let viewportTimer = 0;
+  let stableViewportHeight = 0;
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -32,6 +33,10 @@
   function shellOpen(){ return body.classList.contains('mobile-sheet-open'); }
   function homeOpen(){ return body.classList.contains('mobile-home-open'); }
   function activeSheet(){ return $('.mobile-app-sheet.is-active'); }
+  function activeEditable(){
+    const element = document.activeElement;
+    return element?.closest?.('.mobile-app-sheet input, .mobile-app-sheet select, .mobile-app-sheet textarea, .mobile-app-sheet [contenteditable="true"]') || null;
+  }
   function sheetScroller(sheet = activeSheet()){
     if(!sheet) return null;
     return sheet.matches('.left-panel') ? sheet.querySelector(':scope > .panel-stack') : sheet.querySelector(':scope > .tab-panel.active');
@@ -41,9 +46,16 @@
     if(!isMobile()) return;
     const viewport = window.visualViewport;
     const height = Math.max(320, Math.round(viewport?.height || window.innerHeight));
+    const focused = Boolean(activeEditable());
+
+    if(!stableViewportHeight) stableViewportHeight = Math.max(height, Math.round(window.innerHeight || height));
+    if(!focused && height > stableViewportHeight) stableViewportHeight = height;
+
     html.style.setProperty('--mobile-visual-height', `${height}px`);
     const covered = viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
-    body.classList.toggle('mobile-keyboard-open', covered > 120);
+    const reduced = Math.max(0, stableViewportHeight - height);
+    const keyboardOpen = focused && (body.classList.contains('mobile-input-focused') || covered > 80 || reduced > 80);
+    body.classList.toggle('mobile-keyboard-open', keyboardOpen);
   }
 
   function scheduleViewportUpdate(){
@@ -77,7 +89,7 @@
   function closeSheet({keepView = true} = {}){
     const focused = document.activeElement;
     if(focused?.closest?.('.mobile-app-sheet')) focused.blur();
-    body.classList.remove('mobile-sheet-open', 'mobile-sheet-expanded');
+    body.classList.remove('mobile-sheet-open', 'mobile-sheet-expanded', 'mobile-input-focused', 'mobile-keyboard-open');
     body.removeAttribute('data-mobile-sheet');
     $$('.mobile-app-sheet').forEach(sheet => sheet.classList.remove('is-active'));
     $('#mobileSheetScrim')?.setAttribute('aria-hidden', 'true');
@@ -103,7 +115,7 @@
 
     currentView = view;
     updateNav(view);
-    body.classList.toggle('mobile-sheet-expanded', Boolean(expand));
+    body.classList.toggle('mobile-sheet-expanded', Boolean(expand || view === 'stops'));
     body.classList.add('mobile-sheet-open');
     $('#mobileSheetScrim')?.setAttribute('aria-hidden', 'false');
 
@@ -282,9 +294,19 @@
       if(!isMobile()) return;
       const field = event.target.closest?.('.mobile-app-sheet input, .mobile-app-sheet select, .mobile-app-sheet textarea, .mobile-app-sheet [contenteditable="true"]');
       if(!field) return;
-      body.classList.add('mobile-sheet-expanded');
+      body.classList.add('mobile-sheet-expanded', 'mobile-input-focused', 'mobile-keyboard-open');
       scheduleViewportUpdate();
       window.setTimeout(() => field.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'}), 160);
+    });
+
+    document.addEventListener('focusout', () => {
+      if(!isMobile()) return;
+      window.setTimeout(() => {
+        const focused = Boolean(activeEditable());
+        body.classList.toggle('mobile-input-focused', focused);
+        if(!focused) body.classList.remove('mobile-keyboard-open');
+        scheduleViewportUpdate();
+      }, 120);
     });
 
     window.visualViewport?.addEventListener('resize', scheduleViewportUpdate);
