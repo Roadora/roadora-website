@@ -234,11 +234,14 @@
     const day = $('#overviewDayPill')?.textContent?.trim() || 'Dag 1';
     const metrics = $$('.map-summary .summary-row span').map(item => item.textContent.trim()).filter(Boolean);
     const hasRoute = routeTitle && !/^nog geen route/i.test(routeTitle);
+    const routeLoading = body.classList.contains('route-loading');
 
     title.textContent = hasRoute ? day : 'Roadora';
-    meta.textContent = hasRoute
-      ? metrics.slice(0, 2).filter(value => value !== '—').join(' • ') || routeTitle
-      : 'Jouw roadtrip planner';
+    meta.textContent = routeLoading
+      ? 'Route berekenen…'
+      : hasRoute
+        ? metrics.slice(0, 2).filter(value => value !== '—').join(' • ') || routeTitle
+        : 'Jouw roadtrip planner';
 
     const continueButton = $('#mobileContinueTrip');
     if(continueButton){
@@ -248,11 +251,19 @@
     routeWasEmpty = !hasRoute;
   }
 
+  function syncBuildInfo(){
+    const build = window.ROADORA_BUILD || body.dataset.roadoraBuild || 'v6.8.5';
+    ['mobileBuildVersion','mobileHomeVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=build;});
+  }
+
   function syncInstallButton(){
     const source = $('#installRoadoraApp');
-    const target = $('#mobileInstallApp');
-    if(!source || !target) return;
-    target.hidden = source.hidden;
+    if(!source) return;
+    $$('[data-pwa-install]').forEach(button => {
+      if(button === source) return;
+      button.hidden = source.hidden;
+      button.setAttribute('aria-hidden', String(source.hidden));
+    });
   }
 
   function syncRecentTrips(){
@@ -262,9 +273,10 @@
     target.innerHTML = source.innerHTML;
     const cards = [...target.querySelectorAll('.trip-card')];
     cards.slice(3).forEach(card => card.remove());
-    if(cards.length > 3){
-      [...target.querySelectorAll('.trip-card')].slice(3).forEach(card => card.remove());
-    }
+    target.querySelectorAll('[data-trip-action="delete"]').forEach(button => button.remove());
+    target.querySelectorAll('.trip-card-actions').forEach(actions => {
+      if(!actions.children.length) actions.remove();
+    });
   }
 
   function shouldOpenHomeInitially(){
@@ -336,6 +348,7 @@
     syncHeader();
     syncRecentTrips();
     syncInstallButton();
+    syncBuildInfo();
     syncAccessibility();
   }
 
@@ -396,9 +409,14 @@
       openView('planning', {trigger:event.currentTarget});
     });
     $('#mobileOpenLibrary')?.addEventListener('click', event => openView('more', {expand:true, trigger:event.currentTarget}));
-    $('#mobileInstallApp')?.addEventListener('click', () => $('#installRoadoraApp')?.click());
 
     $('#mobileRecentTrips')?.addEventListener('click', event => {
+      if(event.target.closest('[data-start-new-roadtrip]')){
+        event.preventDefault();
+        event.stopPropagation();
+        $('.mobile-new-roadtrip')?.click();
+        return;
+      }
       const action = event.target.closest('[data-trip-action]');
       if(action?.dataset.tripAction === 'open'){
         window.setTimeout(() => {
@@ -470,6 +488,7 @@
 
     new MutationObserver(() => {
       if(!isMobile()) return;
+      syncHeader();
       const picking = body.classList.contains('map-pick-active');
       if(picking === mapPickingState) return;
       mapPickingState = picking;
@@ -494,6 +513,7 @@
     syncHeader();
     syncRecentTrips();
     syncInstallButton();
+    syncBuildInfo();
     syncFromExistingTabs();
     syncAccessibility();
 

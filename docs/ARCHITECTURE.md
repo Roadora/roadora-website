@@ -1,4 +1,4 @@
-# Architectuur v6.8.4
+# Architectuur v6.8.5
 
 ## Browser en geïnstalleerde app
 
@@ -48,3 +48,10 @@ Stops gebruikt `#stopsTab.tab-panel.active` als enige verticale scrollcontainer.
 De app-shell wordt niet langer uitsluitend door schermbreedte bepaald. `APP_SHELL_QUERY` combineert smalle schermen, coarse-pointer touchapparaten tot tabletbreedte en standalone touch-PWA's. De CSS voor de app-shell is volledig aan `html.roadora-mobile-shell` gekoppeld, zodat telefoonlandschap en tablets dezelfde vaste kaart, topbar, bottom navigation en sheets krijgen zonder desktop te beïnvloeden.
 
 De body-classobserver bewaart de vorige `map-pick-active`-status en reageert uitsluitend op een echte overgang. `closeSheet()` is idempotent, waardoor een sheetwijziging de kaartselectieobserver niet opnieuw kan laten rondlopen. Inactieve sheets en achterliggende lagen worden met `aria-hidden` en `inert` uit de focus- en toegankelijkheidsboom gehaald.
+
+
+## Mobiele productlaag v6.8.5
+
+De lokale roadtripbibliotheek blijft volledig uit `webplanner.js` en IndexedDB komen. `app-shell.js` projecteert maximaal drie recente kaarten naar het mobiele startscherm en verwijdert daar bewust de destructieve verwijderactie; beheer blijft beschikbaar onder **Meer**.
+
+`pwa.js` is de centrale controller voor alle installatieknoppen en voor handmatige en automatische updatecontrole. De appstatuskaart leest de actieve build uit `window.ROADORA_BUILD`. Route- en opslagknoppen gebruiken `aria-busy` om dubbele acties te voorkomen. Verwijderen gebruikt een eigen `alertdialog` met focusherstel en Escape-ondersteuning.

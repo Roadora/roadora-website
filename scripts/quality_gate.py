@@ -116,6 +116,7 @@ for snippet,label in [
     ('v6.8.2 — mobiele interactie- en scrollfix','mobiele interactie/scrollfix'),
     ('v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie','mobiele v6.8.3 stops/toetsenbordfix'),
     ('v6.8.4 — stabiliteit, touchdoelen, tablet/landschap en meldingstack','mobiele v6.8.4 stabiliteitsfix'),
+    ('v6.8.5 — mobiele afwerking, roadtripkaarten, appstatus en bevestigingen','mobiele v6.8.5 afwerking'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
@@ -138,6 +139,37 @@ for snippet,label in [
     if snippet not in pwa_js and snippet not in app_css: errors.append(f'PWA/CSS mist {label}')
 if '@media all{' not in app_css: errors.append('webplanner.css activeert app-shell niet onafhankelijk van schermbreedte')
 if 'min-height:48px' not in app_css: errors.append('webplanner.css mist groter primair mobiel touchdoel')
+
+# v6.8.5 mobile polish regression checks.
+for snippet,label in [
+    ('id="mobileBuildVersion"','zichtbaar appversienummer'),
+    ('id="pwaUpdateStatus"','PWA-updatestatus'),
+    ('id="checkRoadoraUpdate"','handmatige updatecontrole'),
+    ('id="roadoraConfirm"','eigen bevestigingsdialoog'),
+    ('data-pwa-install','gedeelde installatieknoppen'),
+]:
+    if snippet not in index: errors.append(f'index.html mist {label}')
+for snippet,label in [
+    ('setRouteLoading','busy-status routeberekening'),
+    ('friendlyRouteError','gebruiksvriendelijke routefout'),
+    ('requestRoadoraConfirmation','toegankelijke verwijderen-bevestiging'),
+    ('trip-empty-state','lege roadtripbibliotheek'),
+    ('trip-card-main','uitgebreide roadtripkaart'),
+]:
+    if snippet not in js: errors.append(f'webplanner.js mist {label}')
+for snippet,label in [
+    ('checkForUpdate','handmatige PWA-updatecontrole'),
+    ('window.RoadoraPWA','publieke PWA-controller'),
+    ('installButtons()','centrale installatieknoppen'),
+]:
+    if snippet not in pwa_js: errors.append(f'js/pwa.js mist {label}')
+for snippet,label in [
+    ('.app-about-card','Over Roadora-kaart'),
+    ('.roadora-confirm','bevestigingsdialoogstijl'),
+    ('.trip-empty-state','lege roadtripstatusstijl'),
+    ('.toast.toast-error','fouttoaststijl'),
+]:
+    if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):

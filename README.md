@@ -1,20 +1,21 @@
-# Roadora v6.8.4 — Stabiliteitsfix mobiele app
+# Roadora v6.8.5 — Mobiele afwerking
 
-Roadora v6.8.4 herstelt de blokkerende kaartpunt-/routepuntvastloper en maakt de app-shell bruikbaar in telefoonlandschap en op tablets. Daarnaast zijn datumvalidatie, mobiele tikdoelen, meldingstapeling en toegankelijkheid aangescherpt.
+Roadora v6.8.5 werkt de stabiele mobiele basis van v6.8.4 af tot een duidelijker en professioneler appproduct. De release verbetert het startscherm, de lokale roadtripbibliotheek, laad- en foutstatussen, verwijderen-bevestiging en de installatie-/updateflow zonder de route-, stop- of meerdaagse logica te herschrijven.
 
 ## Gewijzigd
 
-- Kaartpunt, Routepunt en Pin op kaart sluiten de sheet zonder een oneindige body-classobserverlus.
-- De sheet wordt alleen aangepast bij een echte overgang naar of uit kaartselectie.
-- De app-shell wordt ook actief op touchtablets, telefoonlandschap en geïnstalleerde touch-PWA's.
-- Vertrekdatums vóór vandaag worden geblokkeerd bij een nieuwe routeberekening.
-- Oude opgeslagen roadtrips blijven gewoon leesbaar.
-- Primaire mobiele knoppen zijn minimaal 48 px hoog; overige belangrijke tikdoelen minimaal 44 px.
-- PWA-installatie- en updateberichten worden automatisch boven een zichtbare cookiebanner geplaatst.
-- Inactieve sheets, de kaart achter een open sheet en de planner achter het startscherm krijgen `aria-hidden` en `inert`.
-- Focus gaat naar de geopende sheet en keert na sluiten terug naar de knop die de sheet opende.
-- Quality gate uitgebreid met regressiecontroles voor deze stabiliteitsfixes.
+- Versienummer en appstatus toegevoegd onder **Meer → Over Roadora**.
+- Handmatige knop toegevoegd om op een nieuwe Roadora-versie te controleren.
+- Installatieknoppen worden vanuit één PWA-controller aangestuurd.
+- Mobiel startscherm verfijnd met lokale-opslagstatus, buildversie en duidelijkere recente roadtrips.
+- Roadtripkaarten tonen naam, route, aantal dagen en laatste wijziging in een rustiger kaartontwerp.
+- Lege en ladende toestanden toegevoegd aan de roadtripbibliotheek.
+- Routeberekening en lokaal opslaan tonen een echte busy-status en blokkeren dubbele tikken.
+- Routefouten zijn vertaald naar korte, bruikbare Nederlandse meldingen.
+- Verwijderen van een roadtrip gebruikt een eigen toegankelijke bevestiging in plaats van een kaal browservenster.
+- Toastmeldingen onderscheiden informatie, succes en fouten.
+- Quality gate uitgebreid met regressiecontroles voor de mobiele afwerking.
 
 ## Installatie
 
-Pak de compacte update uit in de hoofdmap van de Roadora-repository, vervang bestaande bestanden, commit en push via GitHub Desktop. Sluit de geïnstalleerde app na de groene Vercel-deployment volledig af en accepteer daarna de Roadora-update.
+Pak de compacte update uit in de hoofdmap van de Roadora-repository, vervang bestaande bestanden, commit en push via GitHub Desktop. Sluit de geïnstalleerde app na de groene Vercel-deployment volledig af en kies **Nu bijwerken** wanneer Roadora de nieuwe versie aanbiedt.

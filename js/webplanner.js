@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const build=$('#roadoraBuild'); if(build) build.textContent=ROADORA_BUILD;
 },{once:true});
 
-const ROADORA_BUILD='v6.8.4';
+const ROADORA_BUILD='v6.8.5';
 window.ROADORA_BUILD=ROADORA_BUILD;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -112,6 +112,8 @@ let tripAutosaveTimer = null;
 let restoringDraft = false;
 let savedTripsCache = [];
 let tripLibraryLoaded = false;
+let toastTimer = 0;
+let activeConfirmationCleanup = null;
 function cloneJsonSafe(value){
   try{return JSON.parse(JSON.stringify(value));}catch(_){return value;}
 }
@@ -2113,6 +2115,34 @@ function recalculateRouteThroughSelectedStops(reason='wijziging'){
   return plannedRouteRecalcQueue;
 }
 
+function setButtonBusy(button,busy,label='Even geduld…'){
+  if(!button) return;
+  if(busy){
+    if(!button.dataset.idleLabel) button.dataset.idleLabel=button.textContent.trim();
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent=label;
+  }else{
+    button.disabled=false;
+    button.removeAttribute('aria-busy');
+    if(button.dataset.idleLabel){button.textContent=button.dataset.idleLabel; delete button.dataset.idleLabel;}
+  }
+}
+function setRouteLoading(loading,label='Route berekenen…'){
+  document.body.classList.toggle('route-loading',Boolean(loading));
+  setButtonBusy($('#planRoute'),loading,label);
+  if(loading && $('#recalculatePlan')) $('#recalculatePlan').setAttribute('aria-busy','true');
+  else $('#recalculatePlan')?.removeAttribute('aria-busy');
+}
+function friendlyRouteError(error){
+  const raw=String(error?.message||error||'').trim();
+  if(navigator.onLine===false) return 'Geen internetverbinding. Je bestaande planning blijft bewaard.';
+  if(/failed to fetch|network|load failed|internet/i.test(raw)) return 'Roadora kon de route niet ophalen. Controleer je verbinding en probeer opnieuw.';
+  if(/geocod|plaats|address|zero_results|not found/i.test(raw)) return 'Vertrekpunt of bestemming kon niet goed worden gevonden. Voeg een plaatsnaam of volledig adres toe.';
+  if(/maximaal|routepunten/i.test(raw)) return raw;
+  return 'De route kon niet worden geladen. Controleer je invoer en probeer het opnieuw.';
+}
+
 async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
   readForm();
   const previousPreference=state.routePreference||'fastest';
@@ -2133,6 +2163,7 @@ async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
     return false;
   }
   dateInput?.setCustomValidity('');
+  setRouteLoading(true,'Plaatsen zoeken…');
   const routeBackup={
     routeCoords:cloneJsonSafe(routeCoords), routeVariants:cloneJsonSafe(routeVariants),
     routeSource:state.routeSource, routeDistanceKm:state.routeDistanceKm, routeDurationMin:state.routeDurationMin,
@@ -2152,6 +2183,8 @@ async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
     if(waypointCandidates.length>ROUTE_WAYPOINT_LIMIT) throw new Error(`Deze roadtrip bevat ${waypointCandidates.length} actieve routepunten. Roadora ondersteunt maximaal ${ROUTE_WAYPOINT_LIMIT} routepunten per berekening; sla enkele tussenstops over of verdeel de reis.`);
     const endpointKeys=new Set([routeCoordKey(startGeo.coord),routeCoordKey(endGeo.coord)]);
     const viaGeo=waypointCandidates.filter(item=>!endpointKeys.has(routeCoordKey(item.coord)));
+    const routeLoadingLabel=viaGeo.length?`Route via ${viaGeo.length} routepunten…`:'Routevarianten laden…';
+    setRouteLoading(true,routeLoadingLabel);
     toast(viaGeo.length?`Route berekenen via ${viaGeo.length} gekozen routepunten…`:'Routevarianten laden…');
     const params=new URLSearchParams({start:startGeo.coord.join(','),end:endGeo.coord.join(','),profile:'driving-car',variants:'1',preference});
     if(viaGeo.length) params.set('waypoints',viaGeo.map(x=>x.coord.join(',')).join('|'));
@@ -2204,8 +2237,11 @@ async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
     setPlaceStatus('restaurants','error','Route of geocoding niet geladen; live eetstops zijn daarom niet opgehaald.');
     setPlaceStatus('wc','error','Route of geocoding niet geladen; live WC-plekken zijn daarom niet opgehaald.');
     updateTexts(); renderStops(); renderRouteChoices();
-    toast(hasRoute()?'Nieuwe route niet geladen; bestaande route blijft staan':'Route niet geladen: open console voor Roadora route API detail JSON');
+    const friendly=friendlyRouteError(err);
+    toast(hasRoute()?`Nieuwe route niet geladen. ${friendly}`:friendly,{kind:'error',duration:4200});
     return false;
+  }finally{
+    setRouteLoading(false);
   }
 }
 window.RoadoraPlanner = window.RoadoraPlanner || {};
@@ -2224,7 +2260,19 @@ window.RoadoraPlanner.setGoogleRoute = function(routeData){
     }
   }catch(err){console.warn('setGoogleRoute fout:',err);}
 };
-function toast(msg){ const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function toast(msg,options={}){
+  const t=$('#toast'); if(!t) return;
+  const text=String(msg||'').trim();
+  const inferred=/mislukt|niet geladen|geen internet|kon niet|fout/i.test(text)?'error':/opgeslagen|geopend|geladen|toegevoegd|gewijzigd|verwijderd/i.test(text)?'success':'info';
+  const kind=options.kind||inferred;
+  const duration=Number(options.duration)|| (kind==='error'?3600:2200);
+  window.clearTimeout(toastTimer);
+  t.textContent=text;
+  t.classList.remove('toast-info','toast-success','toast-error');
+  t.classList.add('show',`toast-${kind}`);
+  t.setAttribute('role',kind==='error'?'alert':'status');
+  toastTimer=window.setTimeout(()=>t.classList.remove('show'),duration);
+}
 function activateTab(tabId){
   $$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===tabId));
   $$('.tab-panel').forEach(x=>x.classList.toggle('active',x.id===tabId));
@@ -3063,6 +3111,9 @@ async function saveCurrentTripToLibrary({silent=false,name=''}={}){
     if(!silent) toast('Vul eerst minimaal een vertrekpunt of bestemming in');
     return null;
   }
+  const saveButtons=[$('#saveRoute'),$('#saveRouteSide')].filter(Boolean);
+  saveButtons.forEach(button=>setButtonBusy(button,true,'Opslaan…'));
+  setStorageStatus('Opslaan op dit apparaat…');
   const previousTripId=state.tripId;
   const previousTripName=state.tripName;
   if(!state.tripId) state.tripId=createTripId();
@@ -3085,8 +3136,10 @@ async function saveCurrentTripToLibrary({silent=false,name=''}={}){
     state.tripId=previousTripId;
     state.tripName=previousTripName;
     setStorageStatus('Opslaan mislukt');
-    if(!silent) toast('Roadtrip kon niet worden opgeslagen');
+    if(!silent) toast('Roadtrip kon niet worden opgeslagen',{kind:'error'});
     return null;
+  }finally{
+    saveButtons.forEach(button=>setButtonBusy(button,false));
   }
 }
 function resetWorkingPlannerState(){
@@ -3163,9 +3216,54 @@ async function duplicateSavedTrip(id){
   await db.put(copy); await refreshTripsCache();
   toast('Roadtrip gedupliceerd');
 }
+function requestRoadoraConfirmation({title='Weet je het zeker?',message='Deze actie kan niet ongedaan worden gemaakt.',confirmLabel='Bevestigen'}={}){
+  const modal=$('#roadoraConfirm');
+  if(!modal) return Promise.resolve(window.confirm(message));
+  activeConfirmationCleanup?.(false);
+  const titleEl=$('#roadoraConfirmTitle');
+  const messageEl=$('#roadoraConfirmMessage');
+  const accept=$('#roadoraConfirmAccept');
+  if(titleEl) titleEl.textContent=title;
+  if(messageEl) messageEl.textContent=message;
+  if(accept) accept.textContent=confirmLabel;
+  const previousFocus=document.activeElement;
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=result=>{
+      if(settled) return;
+      settled=true;
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      document.body.classList.remove('roadora-confirm-open');
+      modal.removeEventListener('click',onClick);
+      document.removeEventListener('keydown',onKey);
+      activeConfirmationCleanup=null;
+      if(previousFocus?.isConnected) window.setTimeout(()=>previousFocus.focus({preventScroll:true}),30);
+      resolve(Boolean(result));
+    };
+    const onClick=event=>{
+      if(event.target.closest('#roadoraConfirmAccept')) finish(true);
+      else if(event.target.closest('[data-confirm-cancel]')) finish(false);
+    };
+    const onKey=event=>{if(event.key==='Escape'){event.preventDefault();finish(false);}};
+    activeConfirmationCleanup=finish;
+    modal.addEventListener('click',onClick);
+    document.addEventListener('keydown',onKey);
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('roadora-confirm-open');
+    window.setTimeout(()=>accept?.focus({preventScroll:true}),40);
+  });
+}
+
 async function deleteSavedTrip(id){
   const record=savedTripsCache.find(t=>t.id===id); if(!record) return;
-  if(!confirm(`Roadtrip “${record.name}” verwijderen?`)) return;
+  const confirmed=await requestRoadoraConfirmation({
+    title:'Roadtrip verwijderen?',
+    message:`“${record.name || 'Roadtrip'}” wordt alleen van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.`,
+    confirmLabel:'Verwijderen'
+  });
+  if(!confirmed) return;
   await tripDb()?.remove(id);
   if(state.tripId===id){state.tripId=''; state.tripName=''; saveDraftNow(); setStorageStatus('Niet meer in Mijn roadtrips');}
   await refreshTripsCache();
@@ -3242,19 +3340,45 @@ function formatTripUpdated(value){
   const d=new Date(value); if(Number.isNaN(d.getTime())) return 'onbekend';
   return d.toLocaleDateString('nl-NL',{day:'2-digit',month:'short',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric'});
 }
+function tripDestinationLabel(record){
+  const route=String(record?.route||'').replace(/^Rondreis:\s*/i,'');
+  const parts=route.split('→').map(value=>value.trim()).filter(Boolean);
+  return parts[parts.length-1] || 'Roadtrip';
+}
 function renderTrips(){
   const el=$('#savedTrips'); if(!el) return;
-  if(!tripLibraryLoaded){el.innerHTML='<p class="muted">Opgeslagen roadtrips laden…</p>'; return;}
-  el.innerHTML = savedTripsCache.length ? savedTripsCache.map(t=>`<article class="trip-card ${t.id===state.tripId?'active-trip':''}">
-    <div class="trip-card-head"><strong>${escapeHtml(t.name||'Roadtrip')}</strong>${t.id===state.tripId?'<span class="trip-active-pill">geopend</span>':''}</div>
-    <span>${escapeHtml(t.days||1)} ${(t.days||1)===1?'dag':'dagen'} · ${escapeHtml(t.route||'route nog niet compleet')} · gewijzigd ${escapeHtml(formatTripUpdated(t.updatedAt))}</span>
-    <div class="trip-card-actions">
-      <button type="button" data-trip-action="open" data-trip-id="${escapeHtml(t.id)}">Openen</button>
-      <button type="button" data-trip-action="rename" data-trip-id="${escapeHtml(t.id)}">Naam</button>
-      <button type="button" data-trip-action="duplicate" data-trip-id="${escapeHtml(t.id)}">Dupliceren</button>
-      <button type="button" class="danger" data-trip-action="delete" data-trip-id="${escapeHtml(t.id)}">Verwijderen</button>
-    </div>
-  </article>`).join('') : '<p class="muted">Nog geen opgeslagen roadtrips. Maak een route en kies Bewaar.</p>';
+  if(!tripLibraryLoaded){
+    el.innerHTML='<div class="trip-library-loading"><span></span><p>Opgeslagen roadtrips laden…</p></div>';
+    return;
+  }
+  if(!savedTripsCache.length){
+    el.innerHTML=`<div class="trip-empty-state">
+      <span class="trip-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3Zm14-8c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3ZM7.5 16h3.2c2.1 0 3.8-1.7 3.8-3.8V11"/></svg></span>
+      <strong>Nog geen opgeslagen roadtrips</strong>
+      <span>Maak je eerste route en kies Bewaar. Daarna staat hij hier direct klaar.</span>
+    </div>`;
+    return;
+  }
+  el.innerHTML=savedTripsCache.map(t=>{
+    const days=Number(t.days)||1;
+    const destination=tripDestinationLabel(t);
+    return `<article class="trip-card ${t.id===state.tripId?'active-trip':''}" data-trip-card data-trip-id="${escapeHtml(t.id)}">
+      <div class="trip-card-main">
+        <span class="trip-card-visual" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 24c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4Zm18-10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4ZM10.5 20H15c3.3 0 6-2.7 6-6v-1"/></svg></span>
+        <div class="trip-card-copy">
+          <div class="trip-card-head"><strong>${escapeHtml(t.name||destination)}</strong>${t.id===state.tripId?'<span class="trip-active-pill">geopend</span>':''}</div>
+          <span class="trip-card-route">${escapeHtml(t.route||'Route nog niet compleet')}</span>
+          <span class="trip-card-meta">${days} ${days===1?'dag':'dagen'} · gewijzigd ${escapeHtml(formatTripUpdated(t.updatedAt))}</span>
+        </div>
+      </div>
+      <div class="trip-card-actions">
+        <button type="button" class="trip-action-primary" data-trip-action="open" data-trip-id="${escapeHtml(t.id)}"><span aria-hidden="true">↗</span>Openen</button>
+        <button type="button" data-trip-action="rename" data-trip-id="${escapeHtml(t.id)}"><span aria-hidden="true">✎</span>Naam</button>
+        <button type="button" data-trip-action="duplicate" data-trip-id="${escapeHtml(t.id)}"><span aria-hidden="true">⧉</span>Kopie</button>
+        <button type="button" class="danger" data-trip-action="delete" data-trip-id="${escapeHtml(t.id)}"><span aria-hidden="true">×</span>Verwijder</button>
+      </div>
+    </article>`;
+  }).join('');
 }
 function renderAll(){updateTexts();renderRoundtripStops();renderRouteChoices();renderDays();renderTimeline();renderActiveDayControls();renderStops();renderTripOverview();renderTrips(); if(map) setTimeout(()=>map.invalidateSize(),80); scheduleAutosave();}
 
@@ -3339,6 +3463,8 @@ function bind(){
   document.addEventListener('click',e=>{
     const clockTarget=e.target.closest('#openDepartClock, .clock-icon-btn');
     if(clockTarget){ e.preventDefault(); openClockPicker(); return; }
+    const startEmptyTrip=e.target.closest('[data-start-new-roadtrip]');
+    if(startEmptyTrip){ $('#newRoadtrip')?.click(); return; }
     const tripAction=e.target.closest('[data-trip-action]');
     if(tripAction){
       const id=tripAction.dataset.tripId; const action=tripAction.dataset.tripAction;

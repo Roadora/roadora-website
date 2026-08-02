@@ -1,7 +1,7 @@
-/* Roadora PWA service worker v6.8.4 */
+/* Roadora PWA service worker v6.8.5 */
 'use strict';
 
-const BUILD = 'v6.8.4';
+const BUILD = 'v6.8.5';
 const APP_CACHE = `roadora-app-${BUILD}`;
 const RUNTIME_CACHE = `roadora-runtime-${BUILD}`;
 const APP_SHELL = [
@@ -16,13 +16,13 @@ const APP_SHELL = [
   '/assets/icons/icon-512.png',
   '/assets/icons/icon-maskable-192.png',
   '/assets/icons/icon-maskable-512.png',
-  '/css/webplanner.css?v=6.8.4',
+  '/css/webplanner.css?v=6.8.5',
   '/css/styles.css',
-  '/js/leaflet-fallback.js?v=6.8.4',
-  '/js/trip-db.js?v=6.8.4',
-  '/js/webplanner.js?v=6.8.4',
-  '/js/app-shell.js?v=6.8.4',
-  '/js/pwa.js?v=6.8.4',
+  '/js/leaflet-fallback.js?v=6.8.5',
+  '/js/trip-db.js?v=6.8.5',
+  '/js/webplanner.js?v=6.8.5',
+  '/js/app-shell.js?v=6.8.5',
+  '/js/pwa.js?v=6.8.5',
   '/js/main.js',
   '/js/analytics-consent.js',
   '/js/navigation.js',

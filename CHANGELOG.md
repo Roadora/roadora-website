@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.8.5 — Mobiele afwerking
+
+- Voegt **Meer → Over Roadora** toe met actief versienummer en appstatus.
+- Voegt een handmatige updatecontrole toe en bundelt alle installatieknoppen in één PWA-flow.
+- Verfijnt het mobiele startscherm en de recente-roadtripkaarten.
+- Voegt nette laad- en lege toestanden toe aan de lokale roadtripbibliotheek.
+- Toont busy-status tijdens routeberekening en lokaal opslaan en voorkomt dubbele acties.
+- Vervangt technische routefouten door korte Nederlandse herstelmeldingen.
+- Vervangt de browserbevestiging bij verwijderen door een eigen toegankelijke confirmatie.
+- Geeft informatie-, succes- en foutmeldingen een herkenbare visuele status.
+
 ## v6.8.4 — Stabiliteitsfix mobiele app
 
 - Verwijdert de oneindige observerlus bij Kaartpunt, Routepunt en Pin op kaart.

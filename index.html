@@ -2,20 +2,20 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c6f71"><meta name="application-name" content="Roadora"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Roadora"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><script defer src="/js/pwa.js?v=6.8.4"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c6f71"><meta name="application-name" content="Roadora"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Roadora"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><script defer src="/js/pwa.js?v=6.8.5"></script>
   <title>Roadora — plan je roadtrip zonder gedoe</title>
   <meta name="description" content="Plan je Europese roadtrip met dagroutes, slimme plekken om te overnachten, persoonlijke voorkeuren en keuzevrijheid op de kaart.">
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/webplanner.css?v=6.8.4">
+  <link rel="stylesheet" href="css/webplanner.css?v=6.8.5">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-  <script defer src="js/leaflet-fallback.js?v=6.8.4"></script>
-  <script defer src="js/trip-db.js?v=6.8.4"></script>
-  <script defer src="js/webplanner.js?v=6.8.4"></script>
-  <script defer src="js/app-shell.js?v=6.8.4"></script>
+  <script defer src="js/leaflet-fallback.js?v=6.8.5"></script>
+  <script defer src="js/trip-db.js?v=6.8.5"></script>
+  <script defer src="js/webplanner.js?v=6.8.5"></script>
+  <script defer src="js/app-shell.js?v=6.8.5"></script>
 </head>
-<body data-roadora-build="v6.8.4">
+<body data-roadora-build="v6.8.5">
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
@@ -33,7 +33,7 @@
       <a class="top-link optional" href="#planner">Plan route</a>
       <a class="top-link optional" href="roadora-uitleg.html">Waarom Roadora</a>
       <a class="top-link" href="contact.html">Contact</a>
-      <button id="installRoadoraApp" class="top-link pwa-install-btn" type="button" hidden aria-hidden="true">Installeer app</button>
+      <button id="installRoadoraApp" class="top-link pwa-install-btn" data-pwa-install type="button" hidden aria-hidden="true">Installeer app</button>
       <span class="profile-dot" title="Profiel komt later">P</span>
     </nav>
   </header>
@@ -294,14 +294,38 @@
             <p class="hint">Dag 1 gebruikt je huidige locatie. Voor latere dagen kies je zelf het vertrekpunt; je kunt de vorige overnachting handmatig koppelen. Navigeer naar volgende stop gebruikt altijd je actuele locatie.</p>
           </article>
 
-          <article class="card card-pad">
+          <article class="card card-pad trip-library-card">
             <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">op dit apparaat</span></div>
             <div class="trip-library-toolbar">
               <button id="newRoadtrip" class="btn primary" type="button">+ Nieuwe roadtrip</button>
-              <span id="storageStatus" class="storage-status">Nog niet bewaard</span>
+              <span id="storageStatus" class="storage-status" role="status">Nog niet bewaard</span>
             </div>
-            <div id="savedTrips" class="trip-list"></div>
+            <div id="savedTrips" class="trip-list" aria-live="polite"></div>
             <p class="hint storage-warning">Roadtrips worden lokaal in deze browser opgeslagen. Bij het wissen van browsergegevens kunnen ze verloren gaan.</p>
+          </article>
+
+          <article class="card card-pad app-about-card">
+            <div class="card-title">
+              <h2>Over Roadora</h2>
+              <span id="mobileBuildVersion" class="pill app-build-pill">v6.8.5</span>
+            </div>
+            <div class="app-health-row">
+              <span class="app-health-dot" aria-hidden="true"></span>
+              <div>
+                <strong>App gereed voor gebruik</strong>
+                <span id="pwaUpdateStatus" role="status">Je gebruikt de geladen Roadora-versie.</span>
+              </div>
+            </div>
+            <div class="app-about-actions">
+              <button id="checkRoadoraUpdate" class="btn" type="button">Controleer op update</button>
+              <button class="btn" type="button" data-pwa-install hidden aria-hidden="true">Installeer app</button>
+            </div>
+            <nav class="app-about-links" aria-label="Over Roadora">
+              <a href="roadora-uitleg.html">Uitleg</a>
+              <a href="privacy.html">Privacy</a>
+              <a href="voorwaarden.html">Voorwaarden</a>
+              <a href="contact.html">Contact</a>
+            </nav>
           </article>
         </div>
       </div>
@@ -318,15 +342,19 @@
       <div class="mobile-home-road" aria-hidden="true"><i></i><i></i><i></i></div>
     </div>
     <div class="mobile-home-content">
+      <div class="mobile-home-status-row">
+        <span class="mobile-home-status"><i aria-hidden="true"></i>Lokaal opgeslagen</span>
+        <span id="mobileHomeVersion" class="mobile-home-version">v6.8.5</span>
+      </div>
       <button class="btn primary mobile-new-roadtrip" type="button">+ Nieuwe roadtrip</button>
       <button id="mobileContinueTrip" class="btn mobile-continue-trip" type="button" hidden>Verder met huidige roadtrip</button>
       <div class="mobile-home-section-head">
-        <div><strong>Recente roadtrips</strong><span>Op dit apparaat</span></div>
+        <div><strong>Recente roadtrips</strong><span>Plan thuis en ga onderweg verder op dit apparaat</span></div>
         <button id="mobileOpenLibrary" class="mini-link" type="button">Alles bekijken</button>
       </div>
-      <div id="mobileRecentTrips" class="mobile-recent-trips"><p class="muted">Opgeslagen roadtrips laden…</p></div>
-      <button id="mobileInstallApp" class="btn mobile-home-install" type="button" hidden>Installeer Roadora</button>
-      <p class="mobile-home-storage-note">Je roadtrips blijven in deze fase lokaal op dit apparaat opgeslagen.</p>
+      <div id="mobileRecentTrips" class="mobile-recent-trips" aria-live="polite"><div class="trip-library-loading"><span></span><p>Opgeslagen roadtrips laden…</p></div></div>
+      <button id="mobileInstallApp" class="btn mobile-home-install" type="button" data-pwa-install hidden aria-hidden="true">Installeer Roadora</button>
+      <p class="mobile-home-storage-note">Cloudsynchronisatie volgt later. Tot die tijd blijven roadtrips op dit apparaat bewaard.</p>
     </div>
   </section>
 
@@ -352,7 +380,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.8.4</span></div>
+      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.8.5</span></div>
       <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
     </div>
   </footer>
@@ -464,6 +492,19 @@
         <p class="hint">Roadora rekent de route opnieuw uit. Controleer toegang, opening en beschikbaarheid bij de locatie.</p>
       </div>
       <div class="modal-actions"><button class="btn" type="button" data-close-manual-place>Annuleren</button><button id="saveManualPlace" class="btn primary" type="button" disabled>Toevoegen aan reisdag</button></div>
+    </article>
+  </div>
+
+  <div id="roadoraConfirm" class="roadora-confirm" aria-hidden="true">
+    <button class="roadora-confirm-backdrop" type="button" data-confirm-cancel aria-label="Annuleren"></button>
+    <article class="roadora-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="roadoraConfirmTitle" aria-describedby="roadoraConfirmMessage">
+      <span class="roadora-confirm-icon" aria-hidden="true">!</span>
+      <h2 id="roadoraConfirmTitle">Weet je het zeker?</h2>
+      <p id="roadoraConfirmMessage">Deze actie kan niet ongedaan worden gemaakt.</p>
+      <div class="roadora-confirm-actions">
+        <button class="btn" type="button" data-confirm-cancel>Annuleren</button>
+        <button id="roadoraConfirmAccept" class="btn danger-action" type="button">Verwijderen</button>
+      </div>
     </article>
   </div>
 
