@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.9.0 — Accounts en cloudsynchronisatie
+
+- Voegt wachtwoordloos Roadora-inloggen via e-mail toe.
+- Synchroniseert lokale roadtrips automatisch tussen ingelogde apparaten.
+- Houdt IndexedDB als offline-first bron en bewaart wijzigingen in een synchronisatiewachtrij.
+- Toont account-, online- en synchronisatiestatus in Meer, Mijn roadtrips en het mobiele startscherm.
+- Voegt handmatige synchronisatie en veilig uitloggen toe.
+- Beschermt tegen stil overschrijven: bij echte gelijktijdige wijzigingen blijven cloud- en lokale versie behouden.
+- Synchroniseert verwijderingen met een soft-delete/tombstone.
+- Voegt een beveiligd Supabase-schema met Row Level Security toe.
+- Voegt `/api/app-config` toe voor uitsluitend publieke browserconfiguratie.
+- Blijft zonder Supabase-configuratie volledig lokaal werken.
+- Werkt privacy, voorwaarden, architectuur en quality gate bij.
+
 ## v6.8.5 — Mobiele afwerking
 
 - Voegt **Meer → Over Roadora** toe met actief versienummer en appstatus.

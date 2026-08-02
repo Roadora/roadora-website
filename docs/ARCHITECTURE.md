@@ -1,8 +1,8 @@
-# Architectuur v6.8.5
+# Architectuur v6.9.0
 
 ## Browser en geïnstalleerde app
 
-`index.html` laadt Leaflet, `trip-db.js`, `webplanner.js` en `pwa.js`. Het manifest geeft browsers de appnaam, iconen, kleuren, scope en standalone weergave. `pwa.js` registreert de service worker en beheert installatie- en updateberichten.
+`index.html` laadt Leaflet, `trip-db.js`, `cloud-sync.js`, `webplanner.js` en `pwa.js`. Het manifest geeft browsers de appnaam, iconen, kleuren, scope en standalone weergave. `pwa.js` registreert de service worker en beheert installatie- en updateberichten.
 
 ## Service worker
 
@@ -18,9 +18,15 @@ Leaflet/OpenStreetMap verzorgt de kaartweergave. `/api/route` gebruikt Google pr
 
 De gebruiker kiest categorie, zoekgebied en locatie. Roadora voegt niets automatisch toe. Alleen actieve stops worden als waypoint gebruikt; overslaan, hervatten, verwijderen en verplaatsen leiden tot een nieuwe routeberekening.
 
-## Opslag
+## Opslag en synchronisatie
 
-Roadtrips worden lokaal opgeslagen in IndexedDB en blijven buiten de service-workercache. Daardoor verwijdert een appupdate geen opgeslagen roadtrips. Account-, cloud- en apparaatsynchronisatie zijn nog niet actief en volgen in een latere fase.
+Roadtrips worden altijd eerst lokaal opgeslagen in IndexedDB en blijven buiten de service-workercache. `trip-db.js` gebruikt databaseversie 2 met aparte stores voor roadtrips, synchronisatiewachtrij en apparaatsmetadata. Daardoor verwijdert een appupdate geen opgeslagen roadtrips en blijven wijzigingen zonder internet beschikbaar.
+
+`cloud-sync.js` is een optionele laag. Het haalt uitsluitend de publieke Supabase-URL en publishable key op via `/api/app-config`. Wanneer deze configuratie ontbreekt, blijft Roadora volledig lokaal werken. Na login verwerkt de synchronisatielaag de wachtrij, haalt cloudwijzigingen op en werkt lokale records bij.
+
+De Supabase-tabel gebruikt een samengestelde sleutel van `user_id` en lokaal roadtrip-ID. Row Level Security beperkt select, insert en update tot `auth.uid() = user_id`. De browser krijgt nooit een service-role-key. Verwijderingen zijn soft deletes, zodat andere apparaten de verwijdering ontvangen.
+
+Ieder cloudrecord heeft een revisienummer en inhoudshash. Wanneer een lokaal record en de cloudversie beide sinds de laatste synchronisatie zijn gewijzigd, overschrijft Roadora niets stil: de cloudversie blijft op het oorspronkelijke ID staan en de lokale versie wordt als aparte roadtrip bewaard.
 
 
 ## Mobiele app-shell v6.8.1
@@ -55,3 +61,14 @@ De body-classobserver bewaart de vorige `map-pick-active`-status en reageert uit
 De lokale roadtripbibliotheek blijft volledig uit `webplanner.js` en IndexedDB komen. `app-shell.js` projecteert maximaal drie recente kaarten naar het mobiele startscherm en verwijdert daar bewust de destructieve verwijderactie; beheer blijft beschikbaar onder **Meer**.
 
 `pwa.js` is de centrale controller voor alle installatieknoppen en voor handmatige en automatische updatecontrole. De appstatuskaart leest de actieve build uit `window.ROADORA_BUILD`. Route- en opslagknoppen gebruiken `aria-busy` om dubbele acties te voorkomen. Verwijderen gebruikt een eigen `alertdialog` met focusherstel en Escape-ondersteuning.
+
+
+## Account- en cloudlaag v6.9.0
+
+- `api/app-config.js` publiceert alleen de Supabase Project URL en publishable key uit Vercel Environment Variables.
+- `js/cloud-sync.js` laadt `supabase-js` pas wanneer cloudconfiguratie aanwezig is.
+- Authenticatie gebruikt een magic link/PKCE-flow en een blijvende browsersessie.
+- `trip-db.js` verzendt lokale wijzigingen als events; de cloudlaag verwerkt die zonder de plannerlogica te dupliceren.
+- Synchronisatie draait bij login, lokale wijzigingen, online komen, zichtbaarheid van de app, handmatige actie en periodiek tijdens actief gebruik.
+- Cloudpulls worden via `source: cloud` teruggeschreven, zodat zij niet opnieuw in de uploadwachtrij terechtkomen.
+- De mobiele startpagina en roadtripkaarten tonen de actuele lokale/cloudstatus.

@@ -2,20 +2,21 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c6f71"><meta name="application-name" content="Roadora"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Roadora"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><script defer src="/js/pwa.js?v=6.8.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c6f71"><meta name="application-name" content="Roadora"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Roadora"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><script defer src="/js/pwa.js?v=6.9.0"></script>
   <title>Roadora — plan je roadtrip zonder gedoe</title>
   <meta name="description" content="Plan je Europese roadtrip met dagroutes, slimme plekken om te overnachten, persoonlijke voorkeuren en keuzevrijheid op de kaart.">
   <link rel="canonical" href="https://www.roadora.eu/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/webplanner.css?v=6.8.5">
+  <link rel="stylesheet" href="css/webplanner.css?v=6.9.0">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-  <script defer src="js/leaflet-fallback.js?v=6.8.5"></script>
-  <script defer src="js/trip-db.js?v=6.8.5"></script>
-  <script defer src="js/webplanner.js?v=6.8.5"></script>
-  <script defer src="js/app-shell.js?v=6.8.5"></script>
+  <script defer src="js/leaflet-fallback.js?v=6.9.0"></script>
+  <script defer src="js/trip-db.js?v=6.9.0"></script>
+  <script defer src="js/cloud-sync.js?v=6.9.0"></script>
+  <script defer src="js/webplanner.js?v=6.9.0"></script>
+  <script defer src="js/app-shell.js?v=6.9.0"></script>
 </head>
-<body data-roadora-build="v6.8.5">
+<body data-roadora-build="v6.9.0">
   <header class="app-header">
     <a class="brand" href="/" aria-label="Roadora home">
       <span class="brand-mark">R</span>
@@ -294,20 +295,38 @@
             <p class="hint">Dag 1 gebruikt je huidige locatie. Voor latere dagen kies je zelf het vertrekpunt; je kunt de vorige overnachting handmatig koppelen. Navigeer naar volgende stop gebruikt altijd je actuele locatie.</p>
           </article>
 
+          <article class="card card-pad account-card" id="roadoraAccountCard">
+            <div class="card-title"><h2>Roadora-account</h2><span id="accountStatePill" class="pill account-state-pill" data-state="signed-out">Niet ingelogd</span></div>
+            <p class="account-intro">Plan op desktop en ga op je telefoon verder. Roadora bewaart je roadtrips lokaal en synchroniseert ze beveiligd wanneer je bent ingelogd.</p>
+            <div class="account-login-row">
+              <label for="roadoraAccountEmail">E-mailadres</label>
+              <div class="account-login-controls">
+                <input id="roadoraAccountEmail" type="email" inputmode="email" autocomplete="email" maxlength="180" placeholder="jij@voorbeeld.nl">
+                <button id="sendRoadoraLoginLink" class="btn primary" type="button">Stuur inloglink</button>
+              </div>
+            </div>
+            <div class="account-actions">
+              <button id="syncRoadoraNow" class="btn" type="button" hidden aria-hidden="true">Nu synchroniseren</button>
+              <button id="roadoraSignOut" class="btn" type="button" hidden aria-hidden="true">Uitloggen</button>
+            </div>
+            <div id="cloudSyncStatus" class="cloud-sync-status" role="status" aria-live="polite">Roadtrips blijven veilig lokaal op dit apparaat.</div>
+            <p class="hint account-privacy-note">Inloggen gaat via een beveiligde link per e-mail. Roadora slaat geen wachtwoord op in deze app.</p>
+          </article>
+
           <article class="card card-pad trip-library-card">
-            <div class="card-title"><h2>Mijn roadtrips</h2><span class="pill">op dit apparaat</span></div>
+            <div class="card-title"><h2>Mijn roadtrips</h2><span id="tripStorageModePill" class="pill">op dit apparaat</span></div>
             <div class="trip-library-toolbar">
               <button id="newRoadtrip" class="btn primary" type="button">+ Nieuwe roadtrip</button>
               <span id="storageStatus" class="storage-status" role="status">Nog niet bewaard</span>
             </div>
             <div id="savedTrips" class="trip-list" aria-live="polite"></div>
-            <p class="hint storage-warning">Roadtrips worden lokaal in deze browser opgeslagen. Bij het wissen van browsergegevens kunnen ze verloren gaan.</p>
+            <p id="tripStorageWarning" class="hint storage-warning">Roadtrips worden lokaal in deze browser opgeslagen. Log in om ze ook op andere apparaten te zien.</p>
           </article>
 
           <article class="card card-pad app-about-card">
             <div class="card-title">
               <h2>Over Roadora</h2>
-              <span id="mobileBuildVersion" class="pill app-build-pill">v6.8.5</span>
+              <span id="mobileBuildVersion" class="pill app-build-pill">v6.9.0</span>
             </div>
             <div class="app-health-row">
               <span class="app-health-dot" aria-hidden="true"></span>
@@ -343,18 +362,18 @@
     </div>
     <div class="mobile-home-content">
       <div class="mobile-home-status-row">
-        <span class="mobile-home-status"><i aria-hidden="true"></i>Lokaal opgeslagen</span>
-        <span id="mobileHomeVersion" class="mobile-home-version">v6.8.5</span>
+        <span class="mobile-home-status"><i aria-hidden="true"></i><span id="mobileHomeStorageStatus">Lokaal opgeslagen</span></span>
+        <span id="mobileHomeVersion" class="mobile-home-version">v6.9.0</span>
       </div>
       <button class="btn primary mobile-new-roadtrip" type="button">+ Nieuwe roadtrip</button>
       <button id="mobileContinueTrip" class="btn mobile-continue-trip" type="button" hidden>Verder met huidige roadtrip</button>
       <div class="mobile-home-section-head">
-        <div><strong>Recente roadtrips</strong><span>Plan thuis en ga onderweg verder op dit apparaat</span></div>
+        <div><strong>Recente roadtrips</strong><span>Plan thuis en ga onderweg verder op ieder ingelogd apparaat</span></div>
         <button id="mobileOpenLibrary" class="mini-link" type="button">Alles bekijken</button>
       </div>
       <div id="mobileRecentTrips" class="mobile-recent-trips" aria-live="polite"><div class="trip-library-loading"><span></span><p>Opgeslagen roadtrips laden…</p></div></div>
       <button id="mobileInstallApp" class="btn mobile-home-install" type="button" data-pwa-install hidden aria-hidden="true">Installeer Roadora</button>
-      <p class="mobile-home-storage-note">Cloudsynchronisatie volgt later. Tot die tijd blijven roadtrips op dit apparaat bewaard.</p>
+      <p class="mobile-home-storage-note">Zonder account blijven roadtrips lokaal beschikbaar. Log in via Meer om desktop en telefoon gelijk te houden.</p>
     </div>
   </section>
 
@@ -380,7 +399,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.8.5</span></div>
+      <div>© 2026 Roadora <span id="roadoraBuild" class="build-version">v6.9.0</span></div>
       <nav><a href="roadora-uitleg.html">Roadora uitleg</a><a href="privacy.html">Privacy</a><a href="voorwaarden.html">Voorwaarden</a><a href="contact.html">Contact</a></nav>
     </div>
   </footer>

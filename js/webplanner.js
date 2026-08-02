@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const build=$('#roadoraBuild'); if(build) build.textContent=ROADORA_BUILD;
 },{once:true});
 
-const ROADORA_BUILD='v6.8.5';
+const ROADORA_BUILD='v6.9.0';
 window.ROADORA_BUILD=ROADORA_BUILD;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -3066,6 +3066,9 @@ async function addStopToActiveDay(cat,index){
   if(recalculated)applyRouteImpactToStop(navMeta.id||navMeta.placeId,routeDurationBefore);
 }
 function tripDb(){return window.RoadoraTripDB || null;}
+function cloudSync(){return window.RoadoraCloudSync || null;}
+function cloudSignedIn(){return Boolean(cloudSync()?.isSignedIn?.());}
+function storageStatusLabel(){return cloudSignedIn()?'Lokaal opgeslagen · synchroniseren…':'Opgeslagen op dit apparaat';}
 function createTripId(){return globalThis.crypto?.randomUUID ? crypto.randomUUID() : `trip-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
 function shortPlace(value){return String(value||'').split(',')[0].trim();}
 function defaultTripName(){
@@ -3113,7 +3116,7 @@ async function saveCurrentTripToLibrary({silent=false,name=''}={}){
   }
   const saveButtons=[$('#saveRoute'),$('#saveRouteSide')].filter(Boolean);
   saveButtons.forEach(button=>setButtonBusy(button,true,'Opslaan…'));
-  setStorageStatus('Opslaan op dit apparaat…');
+  setStorageStatus(cloudSignedIn()?'Lokaal opslaan en synchroniseren…':'Opslaan op dit apparaat…');
   const previousTripId=state.tripId;
   const previousTripName=state.tripName;
   if(!state.tripId) state.tripId=createTripId();
@@ -3128,8 +3131,8 @@ async function saveCurrentTripToLibrary({silent=false,name=''}={}){
     savedTripsCache.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
     saveDraftNow();
     renderTrips();
-    setStorageStatus(`Opgeslagen op dit apparaat · ${new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`);
-    if(!silent) toast('Roadtrip opgeslagen op dit apparaat');
+    setStorageStatus(`${cloudSignedIn()?'Lokaal opgeslagen · synchroniseren':'Opgeslagen op dit apparaat'} · ${new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`);
+    if(!silent) toast(cloudSignedIn()?'Roadtrip opgeslagen en klaargezet voor synchronisatie':'Roadtrip opgeslagen op dit apparaat');
     return record;
   }catch(err){
     console.warn('Roadora opslaan mislukt:',err);
@@ -3191,7 +3194,7 @@ async function openSavedTrip(id){
   updateMapRoute();
   setTimeout(()=>{if(hasRoute()) fitMap();},120);
   activateTab(record.snapshot.activeTab || 'planningTab');
-  setStorageStatus('Opgeslagen op dit apparaat');
+  setStorageStatus(record?._cloud?.status==='synced'?'Lokaal + cloud opgeslagen':storageStatusLabel());
   toast(`${state.tripName} geopend`);
 }
 async function renameSavedTrip(id){
@@ -3209,6 +3212,7 @@ async function duplicateSavedTrip(id){
   const db=tripDb(); if(!db) return;
   const source=await db.get(id); if(!source?.snapshot) return;
   const copy=cloneJsonSafe(source);
+  delete copy._cloud;
   copy.id=createTripId();
   copy.name=`${source.name || 'Roadtrip'} (kopie)`;
   copy.createdAt=new Date().toISOString(); copy.updatedAt=copy.createdAt;
@@ -3260,14 +3264,14 @@ async function deleteSavedTrip(id){
   const record=savedTripsCache.find(t=>t.id===id); if(!record) return;
   const confirmed=await requestRoadoraConfirmation({
     title:'Roadtrip verwijderen?',
-    message:`“${record.name || 'Roadtrip'}” wordt alleen van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.`,
+    message:cloudSignedIn()?`“${record.name || 'Roadtrip'}” wordt van dit apparaat en uit je Roadora-account verwijderd.`:`“${record.name || 'Roadtrip'}” wordt alleen van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.`,
     confirmLabel:'Verwijderen'
   });
   if(!confirmed) return;
   await tripDb()?.remove(id);
   if(state.tripId===id){state.tripId=''; state.tripName=''; saveDraftNow(); setStorageStatus('Niet meer in Mijn roadtrips');}
   await refreshTripsCache();
-  toast('Roadtrip verwijderd');
+  toast(cloudSignedIn()?'Roadtrip verwijderd en klaargezet voor synchronisatie':'Roadtrip verwijderd');
 }
 function navPointFromRow(row){
   if(!row) return null;
@@ -3369,6 +3373,7 @@ function renderTrips(){
           <div class="trip-card-head"><strong>${escapeHtml(t.name||destination)}</strong>${t.id===state.tripId?'<span class="trip-active-pill">geopend</span>':''}</div>
           <span class="trip-card-route">${escapeHtml(t.route||'Route nog niet compleet')}</span>
           <span class="trip-card-meta">${days} ${days===1?'dag':'dagen'} · gewijzigd ${escapeHtml(formatTripUpdated(t.updatedAt))}</span>
+          ${(()=>{const status=t?._cloud?.status||'local';const label=status==='synced'?'Cloud bijgewerkt':status==='pending'?'Wacht op synchronisatie':status==='conflict'?'Beide versies bewaard':status==='error'?'Synchronisatie mislukt':'Alleen lokaal';return `<span class="trip-cloud-pill" data-sync="${escapeHtml(status)}">${escapeHtml(label)}</span>`;})()}
         </div>
       </div>
       <div class="trip-card-actions">
@@ -3459,6 +3464,9 @@ function openClockPicker(){
 }
 
 function bind(){
+  window.addEventListener('roadora:cloud-message',event=>{const detail=event.detail||{};toast(detail.message||'Cloudstatus bijgewerkt',{kind:detail.kind==='error'?'error':detail.kind==='success'?'success':'info'});});
+  window.addEventListener('roadora:cloud-sync-changed',()=>{refreshTripsCache().catch(()=>{});});
+  window.addEventListener('roadora:cloud-state',()=>{renderTrips();});
   $$('.tab').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
   document.addEventListener('click',e=>{
     const clockTarget=e.target.closest('#openDepartClock, .clock-icon-btn');

@@ -3597,3 +3597,38 @@ body.roadora-confirm-open{overflow:hidden}
   .roadora-mobile-shell .mobile-recent-trips .trip-card-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
   .app-about-actions{grid-template-columns:1fr}
 }
+
+/* =========================================================
+   Roadora v6.9.0 — account en cloudsynchronisatie
+   ========================================================= */
+.account-card{position:relative;overflow:hidden}
+.account-card::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#0c7779,#d59b20)}
+.account-intro{margin:0 0 14px;color:var(--muted,#5f6b6b);line-height:1.55}
+.account-login-row{display:grid;gap:7px}
+.account-login-row label{font-weight:800;font-size:.88rem;color:#1a2929}
+.account-login-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}
+.account-login-controls input{min-width:0;height:46px;border:1px solid #d9d1bd;border-radius:13px;padding:0 13px;background:#fff;font:inherit;color:#172626;outline:none}
+.account-login-controls input:focus{border-color:#0c7779;box-shadow:0 0 0 3px rgba(12,119,121,.13)}
+.account-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.cloud-sync-status{margin-top:12px;padding:11px 12px;border-radius:13px;background:#f1f7f6;border:1px solid #d7e9e7;color:#304b4a;font-size:.86rem;line-height:1.45}
+.account-privacy-note{margin-top:10px!important}
+.account-state-pill[data-state="signed-in"]{background:#def3eb;color:#146348;border-color:#b8e3d4}
+.account-state-pill[data-state="setup"]{background:#fff2d2;color:#77520b;border-color:#efd391}
+.trip-cloud-pill{display:inline-flex;align-items:center;gap:5px;width:max-content;border-radius:999px;padding:3px 8px;font-size:.7rem;font-weight:800;line-height:1.1;border:1px solid #d8e3e2;background:#f6f9f9;color:#566565}
+.trip-cloud-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#9aa8a7}
+.trip-cloud-pill[data-sync="synced"]{background:#e7f6ef;color:#176149;border-color:#c8eadc}
+.trip-cloud-pill[data-sync="synced"]::before{background:#2a9a70}
+.trip-cloud-pill[data-sync="pending"]{background:#fff4d8;color:#765515;border-color:#efdba4}
+.trip-cloud-pill[data-sync="pending"]::before{background:#d69a20;box-shadow:0 0 0 3px rgba(214,154,32,.13)}
+.trip-cloud-pill[data-sync="error"],.trip-cloud-pill[data-sync="conflict"]{background:#fdecea;color:#8b3029;border-color:#f3c9c4}
+.trip-cloud-pill[data-sync="error"]::before,.trip-cloud-pill[data-sync="conflict"]::before{background:#c84d42}
+.trip-card-copy .trip-cloud-pill{margin-top:5px}
+.mobile-home-status[data-cloud="synced"] i{background:#2a9a70}
+.mobile-home-status[data-cloud="pending"] i{background:#d69a20}
+.mobile-home-status[data-cloud="error"] i{background:#c84d42}
+@media(max-width:760px),(display-mode:standalone){
+  .account-login-controls{grid-template-columns:1fr}
+  .account-login-controls .btn{width:100%;min-height:48px}
+  .account-actions .btn{flex:1 1 150px;min-height:44px}
+  .account-card{scroll-margin-top:70px}
+}

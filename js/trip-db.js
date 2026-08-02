@@ -1,9 +1,13 @@
 (function(){
   'use strict';
   const DB_NAME='roadora-roadtrips';
-  const DB_VERSION=1;
+  const DB_VERSION=2;
   const STORE='trips';
+  const QUEUE_STORE='syncQueue';
+  const META_STORE='meta';
   const FALLBACK_KEY='roadoraTripsFallbackV1';
+  const FALLBACK_QUEUE_KEY='roadoraSyncQueueFallbackV1';
+  const FALLBACK_META_KEY='roadoraSyncMetaFallbackV1';
 
   function openDb(){
     return new Promise((resolve,reject)=>{
@@ -15,36 +19,32 @@
           const store=db.createObjectStore(STORE,{keyPath:'id'});
           store.createIndex('updatedAt','updatedAt',{unique:false});
         }
+        if(!db.objectStoreNames.contains(QUEUE_STORE)){
+          const queue=db.createObjectStore(QUEUE_STORE,{keyPath:'tripId'});
+          queue.createIndex('queuedAt','queuedAt',{unique:false});
+        }
+        if(!db.objectStoreNames.contains(META_STORE)) db.createObjectStore(META_STORE,{keyPath:'key'});
       };
       req.onsuccess=()=>resolve(req.result);
       req.onerror=()=>reject(req.error || new Error('IndexedDB openen mislukt'));
     });
   }
 
-  function fallbackRead(){
-    try{return JSON.parse(localStorage.getItem(FALLBACK_KEY)||'[]');}catch(_){return [];}
+  function readJson(key,fallback){
+    try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(_){return fallback;}
   }
-  function fallbackWrite(items){
-    try{localStorage.setItem(FALLBACK_KEY,JSON.stringify(items)); return true;}
-    catch(_){return false;}
+  function writeJson(key,value){
+    try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}
   }
-  async function withStore(mode,fn){
-    const db=await openDb();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE,mode);
-      const store=tx.objectStore(STORE);
-      let result;
-      try{result=fn(store);}catch(err){db.close();reject(err);return;}
-      tx.oncomplete=()=>{db.close();resolve(result);};
-      tx.onerror=()=>{db.close();reject(tx.error || new Error('IndexedDB-transactie mislukt'));};
-      tx.onabort=()=>{db.close();reject(tx.error || new Error('IndexedDB-transactie afgebroken'));};
-    });
-  }
-  function requestResult(req){
-    return new Promise((resolve,reject)=>{
-      req.onsuccess=()=>resolve(req.result);
-      req.onerror=()=>reject(req.error || new Error('IndexedDB-verzoek mislukt'));
-    });
+  function fallbackRead(){return readJson(FALLBACK_KEY,[]);}
+  function fallbackWrite(items){return writeJson(FALLBACK_KEY,items);}
+  function fallbackQueueRead(){return readJson(FALLBACK_QUEUE_KEY,[]);}
+  function fallbackQueueWrite(items){return writeJson(FALLBACK_QUEUE_KEY,items);}
+  function fallbackMetaRead(){return readJson(FALLBACK_META_KEY,{});}
+  function fallbackMetaWrite(value){return writeJson(FALLBACK_META_KEY,value);}
+
+  function emitChange(type,detail){
+    try{window.dispatchEvent(new CustomEvent(type,{detail}));}catch(_){/* oudere browsers */}
   }
 
   async function list(){
@@ -80,7 +80,7 @@
     }
   }
 
-  async function put(record){
+  async function put(record,{source='local'}={}){
     if(!record?.id) throw new Error('Roadtrip-ID ontbreekt');
     try{
       const db=await openDb();
@@ -91,17 +91,18 @@
         tx.onerror=()=>reject(tx.error);
       });
       db.close();
-      return record;
     }catch(_){
       const rows=fallbackRead();
       const index=rows.findIndex(x=>x.id===record.id);
       if(index>=0) rows[index]=record; else rows.unshift(record);
-      if(!fallbackWrite(rows.slice(0,50))) throw new Error('Lokale fallback-opslag mislukt');
-      return record;
+      if(!fallbackWrite(rows.slice(0,100))) throw new Error('Lokale fallback-opslag mislukt');
     }
+    if(source==='local') emitChange('roadora:trip-local-change',{type:'upsert',record});
+    return record;
   }
 
-  async function remove(id){
+  async function remove(id,{source='local'}={}){
+    const existing=await get(id);
     try{
       const db=await openDb();
       await new Promise((resolve,reject)=>{
@@ -114,7 +115,90 @@
     }catch(_){
       if(!fallbackWrite(fallbackRead().filter(x=>x.id!==id))) throw new Error('Lokale fallback-opslag mislukt');
     }
+    if(source==='local') emitChange('roadora:trip-local-change',{type:'delete',tripId:id,record:existing});
   }
 
-  window.RoadoraTripDB={list,get,put,remove};
+  async function queuePut(item){
+    if(!item?.tripId) throw new Error('Synchronisatie-ID ontbreekt');
+    const normalized={...item,queuedAt:item.queuedAt||new Date().toISOString()};
+    try{
+      const db=await openDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(QUEUE_STORE,'readwrite');
+        tx.objectStore(QUEUE_STORE).put(normalized);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+      });
+      db.close();
+    }catch(_){
+      const rows=fallbackQueueRead();
+      const index=rows.findIndex(x=>x.tripId===normalized.tripId);
+      if(index>=0) rows[index]=normalized; else rows.push(normalized);
+      if(!fallbackQueueWrite(rows)) throw new Error('Synchronisatiewachtrij opslaan mislukt');
+    }
+    emitChange('roadora:sync-queue-changed',{tripId:normalized.tripId});
+    return normalized;
+  }
+
+  async function queueList(){
+    try{
+      const db=await openDb();
+      const rows=await new Promise((resolve,reject)=>{
+        const tx=db.transaction(QUEUE_STORE,'readonly');
+        const req=tx.objectStore(QUEUE_STORE).getAll();
+        req.onsuccess=()=>resolve(req.result||[]);
+        req.onerror=()=>reject(req.error);
+      });
+      db.close();
+      return rows.sort((a,b)=>String(a.queuedAt||'').localeCompare(String(b.queuedAt||'')));
+    }catch(_){return fallbackQueueRead();}
+  }
+
+  async function queueRemove(tripId){
+    try{
+      const db=await openDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(QUEUE_STORE,'readwrite');
+        tx.objectStore(QUEUE_STORE).delete(tripId);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+      });
+      db.close();
+    }catch(_){
+      if(!fallbackQueueWrite(fallbackQueueRead().filter(x=>x.tripId!==tripId))) throw new Error('Synchronisatiewachtrij bijwerken mislukt');
+    }
+  }
+
+  async function metaGet(key){
+    try{
+      const db=await openDb();
+      const value=await new Promise((resolve,reject)=>{
+        const tx=db.transaction(META_STORE,'readonly');
+        const req=tx.objectStore(META_STORE).get(key);
+        req.onsuccess=()=>resolve(req.result?.value ?? null);
+        req.onerror=()=>reject(req.error);
+      });
+      db.close();
+      return value;
+    }catch(_){return fallbackMetaRead()[key] ?? null;}
+  }
+
+  async function metaSet(key,value){
+    try{
+      const db=await openDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(META_STORE,'readwrite');
+        tx.objectStore(META_STORE).put({key,value});
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+      });
+      db.close();
+    }catch(_){
+      const meta=fallbackMetaRead();meta[key]=value;
+      if(!fallbackMetaWrite(meta)) throw new Error('Synchronisatiemetadata opslaan mislukt');
+    }
+    return value;
+  }
+
+  window.RoadoraTripDB={list,get,put,remove,queuePut,queueList,queueRemove,metaGet,metaSet};
 })();

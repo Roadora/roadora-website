@@ -38,7 +38,7 @@ for html in html_files:
 
 # Active asset references must be stable and unversioned.
 index=(ROOT/'index.html').read_text(encoding='utf-8')
-required=['css/webplanner.css','js/webplanner.js','js/trip-db.js','js/leaflet-fallback.js','js/app-shell.js']
+required=['css/webplanner.css','js/webplanner.js','js/trip-db.js','js/cloud-sync.js','js/leaflet-fallback.js','js/app-shell.js']
 for ref in required:
     if ref not in index: errors.append(f'index.html mist actieve verwijzing: {ref}')
 if re.search(r'(webplanner|trip-db|leaflet-fallback)-v\d+', index):
@@ -61,7 +61,7 @@ sw_build=re.search(r"const BUILD = '([^']+)'",sw_js)
 app_values=[values[0], pwa_build.group(1) if pwa_build else None, sw_build.group(1) if sw_build else None]
 if len(set(app_values))!=1: errors.append(f'PWA-buildversies verschillen: planner/pwa/service-worker = {app_values}')
 
-required_pwa_files=['manifest.webmanifest','sw.js','offline.html','js/pwa.js','js/app-shell.js','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/icon-maskable-192.png','assets/icons/icon-maskable-512.png','assets/icons/apple-touch-icon.png']
+required_pwa_files=['manifest.webmanifest','sw.js','offline.html','js/pwa.js','js/app-shell.js','js/cloud-sync.js','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/icon-maskable-192.png','assets/icons/icon-maskable-512.png','assets/icons/apple-touch-icon.png']
 for name in required_pwa_files:
     if not (ROOT/name).exists(): errors.append(f'Ontbrekend PWA-bestand: {name}')
 
@@ -117,6 +117,7 @@ for snippet,label in [
     ('v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie','mobiele v6.8.3 stops/toetsenbordfix'),
     ('v6.8.4 — stabiliteit, touchdoelen, tablet/landschap en meldingstack','mobiele v6.8.4 stabiliteitsfix'),
     ('v6.8.5 — mobiele afwerking, roadtripkaarten, appstatus en bevestigingen','mobiele v6.8.5 afwerking'),
+    ('Roadora v6.9.0 — account en cloudsynchronisatie','v6.9.0 account/cloudstijl'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
@@ -170,6 +171,46 @@ for snippet,label in [
     ('.toast.toast-error','fouttoaststijl'),
 ]:
     if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
+
+# v6.9.0 account and cloud sync regression checks.
+cloud_js=(ROOT/'js/cloud-sync.js').read_text(encoding='utf-8') if (ROOT/'js/cloud-sync.js').exists() else ''
+trip_db=(ROOT/'js/trip-db.js').read_text(encoding='utf-8') if (ROOT/'js/trip-db.js').exists() else ''
+for snippet,label in [
+    ('id="roadoraAccountCard"','Roadora-accountkaart'),
+    ('id="roadoraAccountEmail"','account e-mailveld'),
+    ('id="sendRoadoraLoginLink"','magic-linkknop'),
+    ('id="syncRoadoraNow"','handmatige synchronisatieknop'),
+    ('id="tripStorageModePill"','opslagmodusstatus'),
+    ('id="mobileHomeStorageStatus"','mobiele cloudstatus'),
+]:
+    if snippet not in index: errors.append(f'index.html mist {label}')
+for snippet,label in [
+    ("const DB_VERSION=2",'IndexedDB migratie v2'),
+    ("const QUEUE_STORE='syncQueue'",'synchronisatiewachtrij'),
+    ('queuePut','wachtrij schrijven'),
+    ("if(source==='local')",'cloudbron zonder terugkoppellus'),
+]:
+    if snippet not in trip_db: errors.append(f'js/trip-db.js mist {label}')
+for snippet,label in [
+    ('signInWithOtp','wachtwoordloze login'),
+    ('processQueue','verwerking synchronisatiewachtrij'),
+    ('makeConflictCopy','conflictbeveiliging'),
+    ('is_deleted','soft-delete synchronisatie'),
+    ('roadora:cloud-sync-changed','cloudrefresh-event'),
+    ('navigator.onLine','offline synchronisatiecontrole'),
+]:
+    if snippet not in cloud_js: errors.append(f'js/cloud-sync.js mist {label}')
+for path in ['api/app-config.js','supabase/roadora_v6_9_0.sql','docs/SUPABASE_SETUP_v6_9_0.md']:
+    if not (ROOT/path).exists(): errors.append(f'Ontbrekend cloudbestand: {path}')
+sql=(ROOT/'supabase/roadora_v6_9_0.sql').read_text(encoding='utf-8') if (ROOT/'supabase/roadora_v6_9_0.sql').exists() else ''
+for snippet,label in [
+    ('enable row level security','RLS inschakelen'),
+    ('auth.uid()','eigen-gebruikerbeleid'),
+    ('primary key (user_id, id)','gebruikersgebonden sleutel'),
+    ('is_deleted boolean','cloudtombstone'),
+]:
+    if snippet not in sql.lower(): errors.append(f'Supabase SQL mist {label}')
+if '/js/cloud-sync.js?v=' not in sw_js: errors.append('sw.js cachet cloud-sync.js niet met actuele versie')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):
@@ -277,7 +318,7 @@ if (ROOT / 'roadora-sitemap.xml').exists():
     errors.append('Dubbele oude sitemap gevonden: roadora-sitemap.xml')
 
 # Required endpoints.
-for endpoint in ['route.js','geocode.js','google-hotels.js','google-camperplaces.js','google-food.js','google-outings.js','google-place-search.js','google-fuel.js','google-charging.js','google-wc.js','google-photo.js','resolve-map-link.js']:
+for endpoint in ['app-config.js','route.js','geocode.js','google-hotels.js','google-camperplaces.js','google-food.js','google-outings.js','google-place-search.js','google-fuel.js','google-charging.js','google-wc.js','google-photo.js','resolve-map-link.js']:
     if not (ROOT/'api'/endpoint).exists(): errors.append(f'Ontbrekend API-endpoint: api/{endpoint}')
 
 # Basic deployment/security checks.
@@ -286,6 +327,7 @@ try:
     text=json.dumps(vercel)
     for header in ['Content-Security-Policy','Referrer-Policy','X-Content-Type-Options','Permissions-Policy']:
         if header not in text: errors.append(f'vercel.json mist beveiligingsheader: {header}')
+    if 'https://*.supabase.co' not in text: errors.append('vercel.json CSP mist Supabase connect-src')
     sw_headers=next((item.get('headers',[]) for item in vercel.get('headers',[]) if item.get('source')=='/sw.js'),[])
     sw_header_text=json.dumps(sw_headers)
     if 'no-cache' not in sw_header_text or 'Service-Worker-Allowed' not in sw_header_text:

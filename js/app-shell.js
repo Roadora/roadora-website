@@ -252,7 +252,7 @@
   }
 
   function syncBuildInfo(){
-    const build = window.ROADORA_BUILD || body.dataset.roadoraBuild || 'v6.8.5';
+    const build = window.ROADORA_BUILD || body.dataset.roadoraBuild || 'v6.9.0';
     ['mobileBuildVersion','mobileHomeVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=build;});
   }
 
