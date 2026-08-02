@@ -3,11 +3,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   const build=$('#roadoraBuild'); if(build) build.textContent=ROADORA_BUILD;
 },{once:true});
 
-const ROADORA_BUILD='v6.8.3';
+const ROADORA_BUILD='v6.8.4';
 window.ROADORA_BUILD=ROADORA_BUILD;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 function todayISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function isPastTravelDate(value){ return /^\d{4}-\d{2}-\d{2}$/.test(String(value||'')) && String(value) < todayISO(); }
 function hasRoute(){ return ['google','ors','external-route'].includes(state.routeSource) && Array.isArray(routeCoords) && routeCoords.length > 1; }
 function effectiveRangeKm(){ if(Number(state.range)>0) return Number(state.range); if(state.vehicle==='electric') return 325; if(state.vehicle==='camper') return 500; if(state.vehicle==='bus') return 600; if(state.vehicle==='car') return 650; return 650; }
 function createDefaultState(){
@@ -2124,6 +2125,14 @@ async function loadRealRoute({preservePlan=false,requestedPreference=null}={}){
     toast('Vul vertrekpunt en bestemming in');
     return false;
   }
+  const dateInput=$('#date');
+  if(isPastTravelDate(state.date)){
+    dateInput?.setCustomValidity('Kies vandaag of een latere vertrekdatum.');
+    dateInput?.reportValidity();
+    toast('Kies vandaag of een latere vertrekdatum');
+    return false;
+  }
+  dateInput?.setCustomValidity('');
   const routeBackup={
     routeCoords:cloneJsonSafe(routeCoords), routeVariants:cloneJsonSafe(routeVariants),
     routeSource:state.routeSource, routeDistanceKm:state.routeDistanceKm, routeDurationMin:state.routeDurationMin,
@@ -3512,6 +3521,8 @@ function bind(){
     if(!el) return;
     ['input','change','blur'].forEach(ev=>el.addEventListener(ev,()=>{ readForm(); renderAll(); saveDraftNow(); }));
   });
+  $('#date')?.addEventListener('input',event=>event.currentTarget.setCustomValidity(''));
+  $('#date')?.addEventListener('change',event=>event.currentTarget.setCustomValidity(''));
   ['origin','destination'].forEach(id=>{
     const input=$('#'+id);
     if(!input) return;
@@ -3572,4 +3583,4 @@ function bind(){
   $('#resetDemo').onclick=resetPlanner;
   $('#acceptCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','yes');$('#cookieBanner').classList.remove('show')}); $('#rejectCookies')?.addEventListener('click',()=>{localStorage.setItem('roadoraCookie','no');$('#cookieBanner').classList.remove('show')}); if(!localStorage.getItem('roadoraCookie')) setTimeout(()=>$('#cookieBanner')?.classList.add('show'),900);
 }
-document.addEventListener('DOMContentLoaded',async()=>{ const dateInput=$('#date'); if(dateInput && !dateInput.value) dateInput.value=todayISO(); state.date=dateInput?.value||todayISO(); const restored=restoreDraft(); bind(); updateDepartTimeDisplay(); applyRouteZones({resetPlan:!restored});renderAll(); await refreshTripsCache(); setStorageStatus(state.tripId?'Opgeslagen op dit apparaat':'Nog niet bewaard'); setTimeout(async()=>{ const ready=await (window.ROADORA_LEAFLET_READY||Promise.resolve(Boolean(window.L))); if(!ready&&!window.L){toast('Kaartbibliotheek kon niet worden geladen'); return;} initMap(); if(hasRoute()){setTimeout(()=>{updateMapRoute(); fitMap();},250);}},250); });
+document.addEventListener('DOMContentLoaded',async()=>{ const dateInput=$('#date'); if(dateInput){dateInput.min=todayISO();if(!dateInput.value) dateInput.value=todayISO();} state.date=dateInput?.value||todayISO(); const restored=restoreDraft(); bind(); updateDepartTimeDisplay(); applyRouteZones({resetPlan:!restored});renderAll(); await refreshTripsCache(); setStorageStatus(state.tripId?'Opgeslagen op dit apparaat':'Nog niet bewaard'); setTimeout(async()=>{ const ready=await (window.ROADORA_LEAFLET_READY||Promise.resolve(Boolean(window.L))); if(!ready&&!window.L){toast('Kaartbibliotheek kon niet worden geladen'); return;} initMap(); if(hasRoute()){setTimeout(()=>{updateMapRoute(); fitMap();},250);}},250); });

@@ -2739,7 +2739,7 @@ html,body{max-width:100%;overflow-x:clip}
 .pwa-notice{
   position:fixed;
   left:50%;
-  bottom:max(18px,env(safe-area-inset-bottom,0px));
+  bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + var(--pwa-stack-lift,0px));
   z-index:180;
   width:min(620px,calc(100vw - 28px));
   transform:translateX(-50%);
@@ -2787,8 +2787,8 @@ html,body{max-width:100%;overflow-x:clip}
 .mobile-sheet-scrim,
 .mobile-app-nav{display:none}
 
-@media (max-width:760px){
-  :root{
+@media all{
+  html.roadora-mobile-shell{
     --mobile-header-h:64px;
     --mobile-nav-h:72px;
     --mobile-sheet-radius:24px;
@@ -3314,7 +3314,7 @@ html,body{max-width:100%;overflow-x:clip}
     z-index:160;
   }
   .roadora-mobile-shell .pwa-notice{
-    bottom:calc(var(--mobile-nav-h) + 10px + env(safe-area-inset-bottom,0px));
+    bottom:calc(var(--mobile-nav-h) + 10px + env(safe-area-inset-bottom,0px) + var(--pwa-stack-lift,0px));
     z-index:170;
   }
   .roadora-mobile-shell .manual-place-modal,
@@ -3331,7 +3331,7 @@ html,body{max-width:100%;overflow-x:clip}
 
 
 /* v6.8.2 — mobiele interactie- en scrollfix */
-@media (max-width:760px){
+@media all{
   .roadora-mobile-shell .shell{
     isolation:isolate;
   }
@@ -3413,7 +3413,7 @@ html,body{max-width:100%;overflow-x:clip}
 
 
 /* v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie */
-@media (max-width:760px){
+@media all{
   /* Route invoeren opent merkbaar hoger, maar blijft onder de vaste topbar. */
   .roadora-mobile-shell body[data-mobile-sheet="route"] .left-panel.is-active{
     height:min(82dvh,820px)!important;
@@ -3475,4 +3475,29 @@ html,body{max-width:100%;overflow-x:clip}
   .roadora-mobile-shell body.mobile-keyboard-open.mobile-sheet-expanded .mobile-app-sheet.is-active{
     height:calc(var(--mobile-visual-height,100dvh) - var(--mobile-header-h) - 8px - env(safe-area-inset-top,0px))!important;
   }
+}
+
+
+/* v6.8.4 — stabiliteit, touchdoelen, tablet/landschap en meldingstack */
+@media all{
+  .roadora-mobile-shell .mobile-sheet-close{
+    width:44px;
+    height:44px;
+    min-width:44px;
+    min-height:44px;
+  }
+  .roadora-mobile-shell .mobile-app-sheet .btn,
+  .roadora-mobile-shell .mobile-app-sheet .choice,
+  .roadora-mobile-shell .mobile-app-sheet .pref,
+  .roadora-mobile-shell .mobile-app-sheet .pill-btn,
+  .roadora-mobile-shell .mobile-app-sheet .category-btn,
+  .roadora-mobile-shell .mobile-app-sheet .search-mode,
+  .roadora-mobile-shell .mobile-app-sheet .mode-btn,
+  .roadora-mobile-shell .mobile-app-sheet .day-tab{
+    min-height:44px;
+  }
+  .roadora-mobile-shell #planRoute{min-height:48px;font-size:14px}
+  .roadora-mobile-shell .pwa-notice-actions .btn{min-height:44px}
+  .roadora-mobile-shell .mobile-app-sheet[aria-hidden="true"],
+  .roadora-mobile-shell .mobile-app-home[aria-hidden="true"]{pointer-events:none!important}
 }

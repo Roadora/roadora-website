@@ -1,4 +1,4 @@
-# Architectuur v6.8.3
+# Architectuur v6.8.4
 
 ## Browser en geïnstalleerde app
 
@@ -41,3 +41,10 @@ De scrim is een kind van `main.shell`, zodat kaart, scrim en bottom sheets in é
 ## Mobiele interactielaag v6.8.3
 
 Stops gebruikt `#stopsTab.tab-panel.active` als enige verticale scrollcontainer. Deze ID-specifieke override voorkomt dat oudere Stops-layoutregels met `overflow: visible` het scrollen uitschakelen. De routesheet krijgt een hogere standaardhoogte. Focus op invoervelden zet expliciet de mobiele toetsenbordstatus, zodat ook geïnstalleerde Android-PWA's met afwijkend viewportgedrag correct reageren.
+
+
+## Mobiele stabiliteitslaag v6.8.4
+
+De app-shell wordt niet langer uitsluitend door schermbreedte bepaald. `APP_SHELL_QUERY` combineert smalle schermen, coarse-pointer touchapparaten tot tabletbreedte en standalone touch-PWA's. De CSS voor de app-shell is volledig aan `html.roadora-mobile-shell` gekoppeld, zodat telefoonlandschap en tablets dezelfde vaste kaart, topbar, bottom navigation en sheets krijgen zonder desktop te beïnvloeden.
+
+De body-classobserver bewaart de vorige `map-pick-active`-status en reageert uitsluitend op een echte overgang. `closeSheet()` is idempotent, waardoor een sheetwijziging de kaartselectieobserver niet opnieuw kan laten rondlopen. Inactieve sheets en achterliggende lagen worden met `aria-hidden` en `inert` uit de focus- en toegankelijkheidsboom gehaald.

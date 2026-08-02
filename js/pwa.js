@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = 'v6.8.3';
+  const BUILD = 'v6.8.4';
   const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   const canRegister = 'serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname));
@@ -11,6 +11,19 @@
   document.documentElement.classList.toggle('pwa-standalone', isStandalone);
 
   function installButton(){ return document.getElementById('installRoadoraApp'); }
+
+  function cookieBannerVisible(){
+    const banner = document.getElementById('cookieBanner');
+    if(!banner || banner.classList.contains('hidden')) return false;
+    const style = window.getComputedStyle(banner);
+    return banner.classList.contains('show') && style.display !== 'none' && style.visibility !== 'hidden';
+  }
+
+  function syncNoticeStack(){
+    const banner = document.getElementById('cookieBanner');
+    const lift = cookieBannerVisible() ? Math.ceil(banner.getBoundingClientRect().height + 12) : 0;
+    document.documentElement.style.setProperty('--pwa-stack-lift', `${lift}px`);
+  }
 
   function setInstallButtonVisible(visible){
     const button = installButton();
@@ -30,7 +43,7 @@
     notice.setAttribute('aria-live','polite');
     notice.innerHTML = '<div class="pwa-notice-copy"><strong></strong><span></span></div><div class="pwa-notice-actions"><button type="button" class="btn pwa-notice-dismiss">Later</button><button type="button" class="btn primary pwa-notice-action">Bijwerken</button></div>';
     document.body.appendChild(notice);
-    notice.querySelector('.pwa-notice-dismiss')?.addEventListener('click',()=>{ notice.hidden=true; });
+    notice.querySelector('.pwa-notice-dismiss')?.addEventListener('click',()=>{ notice.hidden=true; syncNoticeStack(); });
     return notice;
   }
 
@@ -42,8 +55,9 @@
     const dismiss = notice.querySelector('.pwa-notice-dismiss');
     action.textContent = actionLabel;
     dismiss.textContent = dismissLabel;
-    action.onclick = () => { notice.hidden=true; onAction?.(); };
+    action.onclick = () => { notice.hidden=true; syncNoticeStack(); onAction?.(); };
     notice.hidden = false;
+    window.requestAnimationFrame(syncNoticeStack);
   }
 
   function showIOSInstallHelp(){
@@ -83,6 +97,12 @@
   document.addEventListener('DOMContentLoaded', () => {
     installButton()?.addEventListener('click', requestInstall);
     if(!isStandalone && isIOS) setInstallButtonVisible(true);
+    const cookieBanner = document.getElementById('cookieBanner');
+    if(cookieBanner){
+      new MutationObserver(syncNoticeStack).observe(cookieBanner, {attributes:true,attributeFilter:['class','hidden','style']});
+    }
+    window.addEventListener('resize', syncNoticeStack, {passive:true});
+    syncNoticeStack();
   });
 
   function offerUpdate(registration){

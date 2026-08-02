@@ -98,9 +98,13 @@ scrim_pos=index.find('id="mobileSheetScrim"')
 if not (main_start >= 0 and main_end > main_start and main_start < scrim_pos < main_end):
     errors.append('mobileSheetScrim staat niet binnen de mobiele shell-stacking-context')
 for snippet,label in [
-    ("const MOBILE_QUERY = '(max-width: 760px)'",'mobiele breakpointcontroller'),
+    ('const APP_SHELL_QUERY =','adaptieve app-shellcontroller'),
     ('openView(view','mobiele paneelnavigatie'),
     ('map-pick-active','kaartpunt/routepunt app-shellkoppeling'),
+    ('if(picking === mapPickingState) return;','kaartselectie overgangsbeveiliging'),
+    ('hadSheetState','idempotente paneelsluiting'),
+    ('syncAccessibility','toegankelijkheidsstatus app-shell'),
+    ("toggleAttribute('inert'",'inert-afscherming inactieve appdelen'),
     ('syncRecentTrips','roadtrip-startschermkoppeling'),
     ('updateVisualViewport','mobiele toetsenbord/viewportkoppeling'),
     ('sheetScroller','interne bottom-sheet scrollcontainer'),
@@ -111,12 +115,29 @@ for snippet,label in [
     ('v6.8.2 — mobiele app-shell','app-shell stijlblok'),
     ('v6.8.2 — mobiele interactie- en scrollfix','mobiele interactie/scrollfix'),
     ('v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie','mobiele v6.8.3 stops/toetsenbordfix'),
+    ('v6.8.4 — stabiliteit, touchdoelen, tablet/landschap en meldingstack','mobiele v6.8.4 stabiliteitsfix'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
 ]:
     if snippet not in app_css: errors.append(f'webplanner.css mist {label}')
-if '/js/app-shell.js?v=6.8.3' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
+active_version=(values[0] or '').lstrip('v')
+if f'/js/app-shell.js?v={active_version}' not in sw_js: errors.append('sw.js cachet app-shell.js niet met actuele versie')
+
+# v6.8.4 stability regression checks.
+for snippet,label in [
+    ("dateInput.min=todayISO()",'minimum vertrekdatum'),
+    ('isPastTravelDate(state.date)','JavaScriptcontrole op vertrekdatum in verleden'),
+    ('Kies vandaag of een latere vertrekdatum','duidelijke datumfoutmelding'),
+]:
+    if snippet not in js: errors.append(f'webplanner.js mist {label}')
+for snippet,label in [
+    ('syncNoticeStack','meldingstack boven cookiebanner'),
+    ('--pwa-stack-lift','dynamische meldingoffset'),
+]:
+    if snippet not in pwa_js and snippet not in app_css: errors.append(f'PWA/CSS mist {label}')
+if '@media all{' not in app_css: errors.append('webplanner.css activeert app-shell niet onafhankelijk van schermbreedte')
+if 'min-height:48px' not in app_css: errors.append('webplanner.css mist groter primair mobiel touchdoel')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):

@@ -1,8 +1,10 @@
 (() => {
   'use strict';
 
-  const MOBILE_QUERY = '(max-width: 760px)';
-  const mobileMedia = window.matchMedia(MOBILE_QUERY);
+  const APP_SHELL_QUERY = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse), (display-mode: standalone) and (pointer: coarse)';
+  const mobileMedia = window.matchMedia(APP_SHELL_QUERY);
+  const standaloneMedia = window.matchMedia('(display-mode: standalone)');
+  const coarseMedia = window.matchMedia('(pointer: coarse)');
   const body = document.body;
   const html = document.documentElement;
 
@@ -21,15 +23,18 @@
 
   let currentView = 'route';
   let mapPickReturnView = '';
+  let mapPickingState = body.classList.contains('map-pick-active');
   let routeWasEmpty = true;
   let dragState = null;
   let viewportTimer = 0;
   let stableViewportHeight = 0;
+  let lastSheetTrigger = null;
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
 
-  function isMobile(){ return mobileMedia.matches; }
+  function isStandalone(){ return standaloneMedia.matches || navigator.standalone === true; }
+  function isMobile(){ return mobileMedia.matches || (isStandalone() && coarseMedia.matches); }
   function shellOpen(){ return body.classList.contains('mobile-sheet-open'); }
   function homeOpen(){ return body.classList.contains('mobile-home-open'); }
   function activeSheet(){ return $('.mobile-app-sheet.is-active'); }
@@ -42,10 +47,72 @@
     return sheet.matches('.left-panel') ? sheet.querySelector(':scope > .panel-stack') : sheet.querySelector(':scope > .tab-panel.active');
   }
 
+  function setInert(element, inert){
+    if(!element) return;
+    element.toggleAttribute('inert', Boolean(inert));
+  }
+
+  function setAccessibleHidden(element, hidden){
+    if(!element) return;
+    element.setAttribute('aria-hidden', String(Boolean(hidden)));
+    setInert(element, hidden);
+  }
+
+  function syncAccessibility(){
+    const mobile = isMobile();
+    const home = $('#mobileAppHome');
+    const planner = $('#planner');
+    const mapStage = $('.map-stage');
+    const sheets = $$('.mobile-app-sheet');
+
+    if(!mobile){
+      planner?.removeAttribute('aria-hidden');
+      setInert(planner, false);
+      mapStage?.removeAttribute('aria-hidden');
+      setInert(mapStage, false);
+      setAccessibleHidden(home, true);
+      sheets.forEach(sheet => {
+        sheet.removeAttribute('aria-hidden');
+        sheet.removeAttribute('role');
+        sheet.removeAttribute('aria-modal');
+        setInert(sheet, false);
+      });
+      return;
+    }
+
+    const showingHome = homeOpen();
+    setAccessibleHidden(home, !showingHome);
+    if(planner){
+      planner.setAttribute('aria-hidden', String(showingHome));
+      setInert(planner, showingHome);
+    }
+
+    const open = shellOpen() && !showingHome;
+    setAccessibleHidden(mapStage, open);
+    sheets.forEach(sheet => {
+      const active = open && sheet.classList.contains('is-active');
+      setAccessibleHidden(sheet, !active);
+      if(active){
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+      }else{
+        sheet.removeAttribute('role');
+        sheet.removeAttribute('aria-modal');
+      }
+    });
+  }
+
+  function focusSoon(element){
+    if(!element) return;
+    window.requestAnimationFrame(() => window.setTimeout(() => {
+      if(element.isConnected && !element.closest('[inert]')) element.focus({preventScroll:true});
+    }, 30));
+  }
+
   function updateVisualViewport(){
     if(!isMobile()) return;
     const viewport = window.visualViewport;
-    const height = Math.max(320, Math.round(viewport?.height || window.innerHeight));
+    const height = Math.max(240, Math.round(viewport?.height || window.innerHeight));
     const focused = Boolean(activeEditable());
 
     if(!stableViewportHeight) stableViewportHeight = Math.max(height, Math.round(window.innerHeight || height));
@@ -77,7 +144,8 @@
     $$('#mobileAppNav [data-mobile-view]').forEach(button => {
       const active = button.dataset.mobileView === view;
       button.classList.toggle('active', active);
-      button.setAttribute('aria-current', active ? 'page' : 'false');
+      if(active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
     });
   }
 
@@ -86,16 +154,31 @@
     if(title) title.textContent = viewTitles[view] || 'Roadora';
   }
 
-  function closeSheet({keepView = true} = {}){
+  function closeSheet({keepView = true, restoreFocus = true} = {}){
     const focused = document.activeElement;
+    const hadSheetState = shellOpen()
+      || body.classList.contains('mobile-sheet-expanded')
+      || body.classList.contains('mobile-input-focused')
+      || body.classList.contains('mobile-keyboard-open')
+      || Boolean(body.dataset.mobileSheet)
+      || $$('.mobile-app-sheet').some(sheet => sheet.classList.contains('is-active'));
+
     if(focused?.closest?.('.mobile-app-sheet')) focused.blur();
-    body.classList.remove('mobile-sheet-open', 'mobile-sheet-expanded', 'mobile-input-focused', 'mobile-keyboard-open');
-    body.removeAttribute('data-mobile-sheet');
-    $$('.mobile-app-sheet').forEach(sheet => sheet.classList.remove('is-active'));
-    $('#mobileSheetScrim')?.setAttribute('aria-hidden', 'true');
-    if(!keepView) currentView = 'route';
-    updateNav();
-    dispatchMapResize();
+    if(hadSheetState){
+      body.classList.remove('mobile-sheet-open', 'mobile-sheet-expanded', 'mobile-input-focused', 'mobile-keyboard-open');
+      body.removeAttribute('data-mobile-sheet');
+      $$('.mobile-app-sheet').forEach(sheet => sheet.classList.remove('is-active'));
+      $('#mobileSheetScrim')?.setAttribute('aria-hidden', 'true');
+      if(!keepView) currentView = 'route';
+      updateNav();
+      dispatchMapResize();
+    }
+    syncAccessibility();
+
+    const trigger = lastSheetTrigger;
+    if(restoreFocus && !body.classList.contains('map-pick-active') && trigger?.isConnected){
+      focusSoon(trigger);
+    }
   }
 
   function activateExistingTab(tabId){
@@ -105,7 +188,8 @@
 
   function openView(view, options = {}){
     if(!isMobile()) return;
-    const {expand = false, toggle = false, resetScroll = false} = options;
+    const {expand = false, toggle = false, resetScroll = false, trigger = null, focus = true} = options;
+    if(trigger) lastSheetTrigger = trigger;
     closeHome({silent:true});
 
     if(toggle && currentView === view && shellOpen()){
@@ -119,20 +203,25 @@
     body.classList.add('mobile-sheet-open');
     $('#mobileSheetScrim')?.setAttribute('aria-hidden', 'false');
 
+    let sheet = null;
     if(view === 'route'){
       body.dataset.mobileSheet = 'route';
-      $('.left-panel')?.classList.add('is-active');
+      sheet = $('.left-panel');
+      sheet?.classList.add('is-active');
       $('.right-panel')?.classList.remove('is-active');
     }else{
       const tabId = viewToTab[view] || 'roadtripTab';
       activateExistingTab(tabId);
       updateRightSheetTitle(view);
       body.dataset.mobileSheet = 'right';
-      $('.right-panel')?.classList.add('is-active');
+      sheet = $('.right-panel');
+      sheet?.classList.add('is-active');
       $('.left-panel')?.classList.remove('is-active');
     }
+    syncAccessibility();
     scheduleViewportUpdate();
     if(resetScroll) window.requestAnimationFrame(resetSheetScroll);
+    if(focus) focusSoon(sheet?.querySelector('.mobile-sheet-chrome>strong'));
     dispatchMapResize();
   }
 
@@ -174,31 +263,31 @@
     const cards = [...target.querySelectorAll('.trip-card')];
     cards.slice(3).forEach(card => card.remove());
     if(cards.length > 3){
-      // Defensive; cards beyond three are removed above in browsers where the NodeList is live.
       [...target.querySelectorAll('.trip-card')].slice(3).forEach(card => card.remove());
     }
   }
 
   function shouldOpenHomeInitially(){
     const params = new URLSearchParams(location.search);
-    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
-    return standalone || params.get('source') === 'pwa';
+    return isStandalone() || params.get('source') === 'pwa';
   }
 
-  function openHome(){
+  function openHome({focus = true} = {}){
     if(!isMobile()) return;
-    closeSheet();
+    closeSheet({restoreFocus:false});
     syncRecentTrips();
     syncHeader();
     syncInstallButton();
     body.classList.add('mobile-home-open');
-    $('#mobileAppHome')?.setAttribute('aria-hidden', 'false');
     updateNav('route');
+    syncAccessibility();
+    if(focus) focusSoon($('.mobile-new-roadtrip'));
   }
 
   function closeHome({silent = false} = {}){
-    body.classList.remove('mobile-home-open');
-    $('#mobileAppHome')?.setAttribute('aria-hidden', 'true');
+    const wasOpen = homeOpen();
+    if(wasOpen) body.classList.remove('mobile-home-open');
+    syncAccessibility();
     if(!silent) updateNav();
   }
 
@@ -238,13 +327,43 @@
     currentView = view;
     updateRightSheetTitle(view);
     updateNav(view);
+    syncAccessibility();
+  }
+
+  function enableShellMode(){
+    html.classList.add('roadora-mobile-shell');
+    updateVisualViewport();
+    syncHeader();
+    syncRecentTrips();
+    syncInstallButton();
+    syncAccessibility();
+  }
+
+  function disableShellMode(){
+    html.classList.remove('roadora-mobile-shell');
+    closeHome({silent:true});
+    closeSheet({restoreFocus:false});
+    syncAccessibility();
+  }
+
+  function syncShellMode(){
+    const wasEnabled = html.classList.contains('roadora-mobile-shell');
+    if(isMobile()){
+      enableShellMode();
+      if(!wasEnabled){
+        if(shouldOpenHomeInitially()) openHome({focus:false});
+        else if(routeWasEmpty && !shellOpen() && !homeOpen()) openView('route', {focus:false});
+      }
+    }else if(wasEnabled){
+      disableShellMode();
+    }
   }
 
   function bind(){
     $('#mobileAppNav')?.addEventListener('click', event => {
       const button = event.target.closest('[data-mobile-view]');
       if(!button) return;
-      openView(button.dataset.mobileView, {toggle:true});
+      openView(button.dataset.mobileView, {toggle:true, trigger:button});
     });
 
     $('#mobileSheetScrim')?.addEventListener('click', () => closeSheet());
@@ -260,23 +379,23 @@
       });
     });
 
-    $('#mobileHeaderMore')?.addEventListener('click', () => openView('more', {toggle:true}));
+    $('#mobileHeaderMore')?.addEventListener('click', event => openView('more', {toggle:true, trigger:event.currentTarget}));
     $('.brand')?.addEventListener('click', event => {
       if(!isMobile()) return;
       event.preventDefault();
       openHome();
     });
 
-    $('.mobile-new-roadtrip')?.addEventListener('click', () => {
+    $('.mobile-new-roadtrip')?.addEventListener('click', event => {
       $('#newRoadtrip')?.click();
       closeHome({silent:true});
-      window.setTimeout(() => openView('route', {expand:true, resetScroll:true}), 80);
+      window.setTimeout(() => openView('route', {expand:true, resetScroll:true, trigger:event.currentTarget}), 80);
     });
-    $('#mobileContinueTrip')?.addEventListener('click', () => {
+    $('#mobileContinueTrip')?.addEventListener('click', event => {
       closeHome({silent:true});
-      openView('planning');
+      openView('planning', {trigger:event.currentTarget});
     });
-    $('#mobileOpenLibrary')?.addEventListener('click', () => openView('more', {expand:true}));
+    $('#mobileOpenLibrary')?.addEventListener('click', event => openView('more', {expand:true, trigger:event.currentTarget}));
     $('#mobileInstallApp')?.addEventListener('click', () => $('#installRoadoraApp')?.click());
 
     $('#mobileRecentTrips')?.addEventListener('click', event => {
@@ -284,7 +403,7 @@
       if(action?.dataset.tripAction === 'open'){
         window.setTimeout(() => {
           closeHome({silent:true});
-          closeSheet();
+          closeSheet({restoreFocus:false});
           syncHeader();
         }, 160);
       }
@@ -311,7 +430,11 @@
 
     window.visualViewport?.addEventListener('resize', scheduleViewportUpdate);
     window.visualViewport?.addEventListener('scroll', scheduleViewportUpdate);
-    window.addEventListener('orientationchange', scheduleViewportUpdate);
+    window.addEventListener('orientationchange', () => {
+      stableViewportHeight = 0;
+      scheduleViewportUpdate();
+      window.setTimeout(syncShellMode, 180);
+    });
 
     document.addEventListener('keydown', event => {
       if(event.key !== 'Escape' || !isMobile()) return;
@@ -348,31 +471,22 @@
     new MutationObserver(() => {
       if(!isMobile()) return;
       const picking = body.classList.contains('map-pick-active');
+      if(picking === mapPickingState) return;
+      mapPickingState = picking;
       if(picking){
         if(shellOpen()) mapPickReturnView = currentView;
-        closeSheet();
+        closeSheet({restoreFocus:false});
       }else if(mapPickReturnView){
         const returnView = mapPickReturnView;
         mapPickReturnView = '';
-        window.setTimeout(() => openView(returnView), 100);
+        window.setTimeout(() => openView(returnView, {focus:false}), 100);
       }
     }).observe(body, {attributes:true,attributeFilter:['class']});
 
-    mobileMedia.addEventListener?.('change', event => {
-      if(event.matches){
-        html.classList.add('roadora-mobile-shell');
-        updateVisualViewport();
-        syncHeader();
-        syncRecentTrips();
-        syncInstallButton();
-        if(shouldOpenHomeInitially()) openHome();
-        else if(routeWasEmpty) openView('route');
-      }else{
-        html.classList.remove('roadora-mobile-shell');
-        closeHome({silent:true});
-        closeSheet();
-      }
-    });
+    const mediaChanged = () => syncShellMode();
+    mobileMedia.addEventListener?.('change', mediaChanged);
+    standaloneMedia.addEventListener?.('change', mediaChanged);
+    coarseMedia.addEventListener?.('change', mediaChanged);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -381,16 +495,16 @@
     syncRecentTrips();
     syncInstallButton();
     syncFromExistingTabs();
+    syncAccessibility();
 
     if(isMobile()){
-      html.classList.add('roadora-mobile-shell');
-      updateVisualViewport();
+      enableShellMode();
       currentView = 'route';
       updateNav();
       window.setTimeout(() => {
         syncHeader();
-        if(shouldOpenHomeInitially()) openHome();
-        else if(routeWasEmpty) openView('route');
+        if(shouldOpenHomeInitially()) openHome({focus:false});
+        else if(routeWasEmpty) openView('route', {focus:false});
       }, 420);
     }
   }, {once:true});

@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.8.4 — Stabiliteitsfix mobiele app
+
+- Verwijdert de oneindige observerlus bij Kaartpunt, Routepunt en Pin op kaart.
+- Maakt paneelsluiting idempotent en reageert alleen op echte kaartselectie-overgangen.
+- Activeert de app-shell ook in telefoonlandschap, op touchtablets en in geïnstalleerde touch-PWA's.
+- Blokkeert nieuwe routeberekeningen met een vertrekdatum vóór vandaag.
+- Vergroot primaire en belangrijke mobiele tikdoelen naar 48 en minimaal 44 pixels.
+- Stapelt PWA-installatie-/updateberichten boven de cookiebanner.
+- Schermt inactieve sheets en achterliggende appdelen af met `aria-hidden` en `inert`.
+- Herstelt focus naar de knop die een mobiele sheet opende.
+
 ## v6.8.3 — Mobiele Stops-scroll en hogere routesheet
 
 - Herstelt verticaal scrollen in het volledige Stops-paneel en na het kiezen van een stopcategorie.
