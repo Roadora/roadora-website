@@ -1,0 +1,117 @@
+[
+  {
+    "categoryId": "accuboormachines",
+    "path": "data/published/offers/accuboormachines.json",
+    "count": 231
+  },
+  {
+    "categoryId": "accus-laders",
+    "path": "data/published/offers/accus-laders.json",
+    "count": 201
+  },
+  {
+    "categoryId": "afkortzagen",
+    "path": "data/published/offers/afkortzagen.json",
+    "count": 49
+  },
+  {
+    "categoryId": "boorhamers",
+    "path": "data/published/offers/boorhamers.json",
+    "count": 140
+  },
+  {
+    "categoryId": "bouwplaats",
+    "path": "data/published/offers/bouwplaats.json",
+    "count": 165
+  },
+  {
+    "categoryId": "cirkelzagen",
+    "path": "data/published/offers/cirkelzagen.json",
+    "count": 99
+  },
+  {
+    "categoryId": "combisets",
+    "path": "data/published/offers/combisets.json",
+    "count": 77
+  },
+  {
+    "categoryId": "decoupeerzagen",
+    "path": "data/published/offers/decoupeerzagen.json",
+    "count": 43
+  },
+  {
+    "categoryId": "frezen",
+    "path": "data/published/offers/frezen.json",
+    "count": 48
+  },
+  {
+    "categoryId": "haakse-slijpers",
+    "path": "data/published/offers/haakse-slijpers.json",
+    "count": 224
+  },
+  {
+    "categoryId": "multitools",
+    "path": "data/published/offers/multitools.json",
+    "count": 36
+  },
+  {
+    "categoryId": "polijstmachines",
+    "path": "data/published/offers/polijstmachines.json",
+    "count": 16
+  },
+  {
+    "categoryId": "reciprozagen",
+    "path": "data/published/offers/reciprozagen.json",
+    "count": 40
+  },
+  {
+    "categoryId": "reiniging",
+    "path": "data/published/offers/reiniging.json",
+    "count": 121
+  },
+  {
+    "categoryId": "schaafmachines",
+    "path": "data/published/offers/schaafmachines.json",
+    "count": 16
+  },
+  {
+    "categoryId": "schroefmachines",
+    "path": "data/published/offers/schroefmachines.json",
+    "count": 30
+  },
+  {
+    "categoryId": "schuurmachines",
+    "path": "data/published/offers/schuurmachines.json",
+    "count": 86
+  },
+  {
+    "categoryId": "slagmoersleutels",
+    "path": "data/published/offers/slagmoersleutels.json",
+    "count": 109
+  },
+  {
+    "categoryId": "slagschroevendraaiers",
+    "path": "data/published/offers/slagschroevendraaiers.json",
+    "count": 85
+  },
+  {
+    "categoryId": "specialistische-machines",
+    "path": "data/published/offers/specialistische-machines.json",
+    "count": 87
+  },
+  {
+    "categoryId": "spijkerpistolen",
+    "path": "data/published/offers/spijkerpistolen.json",
+    "count": 49
+  },
+  {
+    "categoryId": "tuinmachines",
+    "path": "data/published/offers/tuinmachines.json",
+    "count": 329
+  },
+  {
+    "categoryId": "zaagmachines",
+    "path": "data/published/offers/zaagmachines.json",
+    "count": 33
+  }
+]
