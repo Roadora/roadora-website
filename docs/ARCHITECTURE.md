@@ -1,4 +1,4 @@
-# Architectuur v6.9.0
+# Architectuur v6.9.1
 
 ## Browser en geïnstalleerde app
 
@@ -22,7 +22,7 @@ De gebruiker kiest categorie, zoekgebied en locatie. Roadora voegt niets automat
 
 Roadtrips worden altijd eerst lokaal opgeslagen in IndexedDB en blijven buiten de service-workercache. `trip-db.js` gebruikt databaseversie 2 met aparte stores voor roadtrips, synchronisatiewachtrij en apparaatsmetadata. Daardoor verwijdert een appupdate geen opgeslagen roadtrips en blijven wijzigingen zonder internet beschikbaar.
 
-`cloud-sync.js` is een optionele laag. Het haalt uitsluitend de publieke Supabase-URL en publishable key op via `/api/app-config`. Wanneer deze configuratie ontbreekt, blijft Roadora volledig lokaal werken. Na login verwerkt de synchronisatielaag de wachtrij, haalt cloudwijzigingen op en werkt lokale records bij.
+`cloud-sync.js` is een optionele laag. Het haalt uitsluitend de publieke Supabase-URL en publishable key op via `/api/geocode?mode=app-config`. Wanneer deze configuratie ontbreekt, blijft Roadora volledig lokaal werken. Na login verwerkt de synchronisatielaag de wachtrij, haalt cloudwijzigingen op en werkt lokale records bij.
 
 De Supabase-tabel gebruikt een samengestelde sleutel van `user_id` en lokaal roadtrip-ID. Row Level Security beperkt select, insert en update tot `auth.uid() = user_id`. De browser krijgt nooit een service-role-key. Verwijderingen zijn soft deletes, zodat andere apparaten de verwijdering ontvangen.
 
@@ -63,9 +63,9 @@ De lokale roadtripbibliotheek blijft volledig uit `webplanner.js` en IndexedDB k
 `pwa.js` is de centrale controller voor alle installatieknoppen en voor handmatige en automatische updatecontrole. De appstatuskaart leest de actieve build uit `window.ROADORA_BUILD`. Route- en opslagknoppen gebruiken `aria-busy` om dubbele acties te voorkomen. Verwijderen gebruikt een eigen `alertdialog` met focusherstel en Escape-ondersteuning.
 
 
-## Account- en cloudlaag v6.9.0
+## Account- en cloudlaag v6.9.1
 
-- `api/app-config.js` publiceert alleen de Supabase Project URL en publishable key uit Vercel Environment Variables.
+- `api/geocode.js?mode=app-config` publiceert alleen de Supabase Project URL en publishable key uit Vercel Environment Variables en telt niet als extra functie.
 - `js/cloud-sync.js` laadt `supabase-js` pas wanneer cloudconfiguratie aanwezig is.
 - Authenticatie gebruikt een magic link/PKCE-flow en een blijvende browsersessie.
 - `trip-db.js` verzendt lokale wijzigingen als events; de cloudlaag verwerkt die zonder de plannerlogica te dupliceren.

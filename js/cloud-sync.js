@@ -1,9 +1,9 @@
-/* Roadora account- en cloudsynchronisatie v6.9.0 */
+/* Roadora account- en cloudsynchronisatie v6.9.1 */
 (() => {
   'use strict';
 
-  const BUILD='v6.9.0';
-  const CONFIG_URL='/api/app-config';
+  const BUILD='v6.9.1';
+  const CONFIG_URL='/api/geocode?mode=app-config';
   const SDK_URL='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
   const TABLE='roadora_trips';
   const SYNC_INTERVAL_MS=45000;

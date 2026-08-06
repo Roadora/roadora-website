@@ -3599,7 +3599,7 @@ body.roadora-confirm-open{overflow:hidden}
 }
 
 /* =========================================================
-   Roadora v6.9.0 — account en cloudsynchronisatie
+   Roadora v6.9.1 — account en cloudsynchronisatie
    ========================================================= */
 .account-card{position:relative;overflow:hidden}
 .account-card::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#0c7779,#d59b20)}

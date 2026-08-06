@@ -1,4 +1,4 @@
-# Roadora v6.9.0 — Supabase instellen
+# Roadora v6.9.1 — Supabase instellen
 
 Roadora blijft zonder cloudconfiguratie volledig lokaal werken. Na onderstaande configuratie worden roadtrips automatisch tussen desktop en mobiele app gesynchroniseerd.
 
@@ -71,7 +71,7 @@ Na het opslaan moet Vercel opnieuw deployen.
 
 ### Cloud instellen blijft zichtbaar
 
-Controleer `/api/app-config` op de productiedomain. Het antwoord moet `configured: true` bevatten. De publishable key is openbaar bedoeld; een `service_role`-key mag daar nooit verschijnen.
+Controleer `/api/geocode?mode=app-config` op de productiedomain. Het antwoord moet `configured: true` bevatten. De publishable key is openbaar bedoeld; een `service_role`-key mag daar nooit verschijnen.
 
 ### Inloglink keert niet terug naar Roadora
 
@@ -84,3 +84,7 @@ Controleer de Site URL en Redirect URLs in Supabase Authentication.
 - controleer internetverbinding;
 - controleer in Supabase of RLS aanstaat en de drie policies bestaan;
 - controleer de browserconsole en Vercel-deploymentlogs.
+
+## Vercel Hobby
+
+Roadora v6.9.1 gebruikt exact 12 functies. De publieke Supabase-configuratie wordt via het bestaande geocode-endpoint geleverd en maakt dus geen dertiende functie aan.

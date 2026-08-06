@@ -1,4 +1,4 @@
-// Roadora Geocoding API — v4.4.1 Route & Places Audit Fix
+// Roadora Geocoding + publieke appconfig API — v6.9.1
 // Server-side Google Geocoding proxy. Keeps GOOGLE_MAPS_API_KEY out of frontend code.
 
 
@@ -85,6 +85,24 @@ function send(res, status, body) {
   res.status(status).json(body);
 }
 
+function sendPublicAppConfig(res) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '');
+  const supabasePublishableKey = String(
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    ''
+  ).trim();
+  const validUrl = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl);
+  const configured = Boolean(validUrl && supabasePublishableKey);
+  return res.status(200).json({
+    configured,
+    supabaseUrl: configured ? supabaseUrl : '',
+    supabasePublishableKey: configured ? supabasePublishableKey : ''
+  });
+}
+
 function cleanQuery(value) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 180);
 }
@@ -113,6 +131,10 @@ export default async function handler(req, res) {
   const security = roadoraSecureRequest(req, res, { methods: 'GET, OPTIONS', maxRequests: 90, bucket: 'GEOCODE' });
   if (security.handled) return;
   if (req.method !== 'GET') return send(res, 405, { ok: false, status: 'method_not_allowed' });
+
+  if (String(req.query?.mode || '').trim() === 'app-config') {
+    return sendPublicAppConfig(res);
+  }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_GEOCODING_API_KEY;
   if (!apiKey) {

@@ -1,6 +1,14 @@
 # Changelog
 
-## v6.9.0 — Accounts en cloudsynchronisatie
+## v6.9.1 — Vercel Hobby deploymentfix
+
+- Verlaagt het aantal Vercel Functions van 13 naar exact 12.
+- Verplaatst de publieke Supabase-runtimeconfiguratie naar `api/geocode.js?mode=app-config`.
+- Verwijdert het losse endpoint `api/app-config.js`.
+- Houdt accountinloggen en cloudsynchronisatie inhoudelijk ongewijzigd.
+- Breidt de quality gate uit met een harde controle op de Hobby-limiet.
+
+## v6.9.1 — Accounts en cloudsynchronisatie
 
 - Voegt wachtwoordloos Roadora-inloggen via e-mail toe.
 - Synchroniseert lokale roadtrips automatisch tussen ingelogde apparaten.

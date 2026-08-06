@@ -17,7 +17,7 @@
 - [ ] Google Maps-export voor volledige dag en volgende stop
 - [ ] Geen consolefouten of ontbrekende assets
 - [ ] Footer en buildmetadata tonen dezelfde versie
-- [ ] `/api/app-config` geeft zonder configuratie veilig `configured: false`
+- [ ] `/api/geocode?mode=app-config` geeft zonder configuratie veilig `configured: false`
 - [ ] Supabase SQL uitgevoerd en RLS/policies gecontroleerd
 - [ ] Alleen `SUPABASE_URL` en `SUPABASE_PUBLISHABLE_KEY` in Vercel; geen service-role-key
 - [ ] Magic link getest op desktop en telefoon

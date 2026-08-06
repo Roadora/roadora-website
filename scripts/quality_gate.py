@@ -117,7 +117,7 @@ for snippet,label in [
     ('v6.8.3 — hogere routesheet, Stops-scroll en toetsenborddetectie','mobiele v6.8.3 stops/toetsenbordfix'),
     ('v6.8.4 — stabiliteit, touchdoelen, tablet/landschap en meldingstack','mobiele v6.8.4 stabiliteitsfix'),
     ('v6.8.5 — mobiele afwerking, roadtripkaarten, appstatus en bevestigingen','mobiele v6.8.5 afwerking'),
-    ('Roadora v6.9.0 — account en cloudsynchronisatie','v6.9.0 account/cloudstijl'),
+    ('Roadora v6.9.1 — account en cloudsynchronisatie','v6.9.1 account/cloudstijl'),
     ('.mobile-app-nav','vaste bottom navigation'),
     ('.mobile-app-home','mobiel startscherm'),
     ('.mobile-app-sheet','mobiele bottom sheet'),
@@ -200,7 +200,7 @@ for snippet,label in [
     ('navigator.onLine','offline synchronisatiecontrole'),
 ]:
     if snippet not in cloud_js: errors.append(f'js/cloud-sync.js mist {label}')
-for path in ['api/app-config.js','supabase/roadora_v6_9_0.sql','docs/SUPABASE_SETUP_v6_9_0.md']:
+for path in ['supabase/roadora_v6_9_0.sql','docs/SUPABASE_SETUP_v6_9_0.md']:
     if not (ROOT/path).exists(): errors.append(f'Ontbrekend cloudbestand: {path}')
 sql=(ROOT/'supabase/roadora_v6_9_0.sql').read_text(encoding='utf-8') if (ROOT/'supabase/roadora_v6_9_0.sql').exists() else ''
 for snippet,label in [
@@ -211,6 +211,11 @@ for snippet,label in [
 ]:
     if snippet not in sql.lower(): errors.append(f'Supabase SQL mist {label}')
 if '/js/cloud-sync.js?v=' not in sw_js: errors.append('sw.js cachet cloud-sync.js niet met actuele versie')
+if "const CONFIG_URL='/api/geocode?mode=app-config';" not in cloud_js: errors.append('cloud-sync gebruikt niet het samengevoegde appconfig-endpoint')
+geocode_api=(ROOT/'api/geocode.js').read_text(encoding='utf-8') if (ROOT/'api/geocode.js').exists() else ''
+for snippet,label in [('sendPublicAppConfig','publieke appconfig-handler'),("mode || '').trim() === 'app-config'",'appconfig-routering')]:
+    if snippet not in geocode_api: errors.append(f'api/geocode.js mist {label}')
+if (ROOT/'api/app-config.js').exists(): errors.append('api/app-config.js mag niet meer bestaan: Hobby ondersteunt maximaal 12 functies')
 
 # Manifest validation and PNG dimensions without third-party dependencies.
 def png_size(path):
@@ -318,8 +323,12 @@ if (ROOT / 'roadora-sitemap.xml').exists():
     errors.append('Dubbele oude sitemap gevonden: roadora-sitemap.xml')
 
 # Required endpoints.
-for endpoint in ['app-config.js','route.js','geocode.js','google-hotels.js','google-camperplaces.js','google-food.js','google-outings.js','google-place-search.js','google-fuel.js','google-charging.js','google-wc.js','google-photo.js','resolve-map-link.js']:
+for endpoint in ['route.js','geocode.js','google-hotels.js','google-camperplaces.js','google-food.js','google-outings.js','google-place-search.js','google-fuel.js','google-charging.js','google-wc.js','google-photo.js','resolve-map-link.js']:
     if not (ROOT/'api'/endpoint).exists(): errors.append(f'Ontbrekend API-endpoint: api/{endpoint}')
+api_functions=sorted((ROOT/'api').glob('*.js'))
+if len(api_functions)>12: errors.append(f'Te veel Vercel Functions voor Hobby: {len(api_functions)} (maximaal 12)')
+elif len(api_functions)<12: errors.append(f'Onverwacht aantal Vercel Functions: {len(api_functions)} (verwacht 12)')
+else: notes.append('Vercel Functions: 12/12 Hobby-limiet')
 
 # Basic deployment/security checks.
 try:

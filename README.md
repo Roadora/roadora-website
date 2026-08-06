@@ -1,8 +1,8 @@
-# Roadora v6.9.0 — Accounts en cloudsynchronisatie
+# Roadora v6.9.1 — Accounts en cloudsynchronisatie
 
-Roadora v6.9.0 voegt een optioneel Roadora-account toe. Zonder configuratie en zonder login blijft de volledige planner lokaal werken zoals in v6.8.5. Na koppeling met Supabase worden roadtrips automatisch tussen desktop, telefoon en tablet gesynchroniseerd.
+Roadora v6.9.1 behoudt een optioneel Roadora-account toe. Zonder configuratie en zonder login blijft de volledige planner lokaal werken zoals in v6.8.5. Na koppeling met Supabase worden roadtrips automatisch tussen desktop, telefoon en tablet gesynchroniseerd.
 
-## Nieuw
+## Accounts en synchronisatie
 
 - Wachtwoordloos inloggen via een beveiligde e-maillink.
 - Lokale opslag blijft altijd de eerste opslaglaag en werkt offline.
@@ -13,7 +13,7 @@ Roadora v6.9.0 voegt een optioneel Roadora-account toe. Zonder configuratie en z
 - Veilige Row Level Security: iedere gebruiker ziet alleen eigen roadtrips.
 - Conflictbeveiliging: bij gelijktijdige wijzigingen blijven beide versies bewaard.
 - Soft delete/tombstone zodat verwijderen op andere apparaten wordt doorgevoerd.
-- Publieke runtimeconfiguratie via `/api/app-config`; er komt geen geheime sleutel in de repository.
+- Publieke runtimeconfiguratie via `/api/geocode?mode=app-config`; dit hergebruikt een bestaand endpoint zodat Roadora binnen de limiet van 12 Vercel Functions op Hobby blijft.
 - Privacy- en voorwaardenpagina bijgewerkt voor account- en cloudgebruik.
 
 ## Belangrijk
@@ -31,3 +31,9 @@ Voer daarna het SQL-bestand uit:
 ## Installatie
 
 Pak de compacte update uit in de hoofdmap van de Roadora-repository, vervang bestaande bestanden, commit en push via GitHub Desktop. Configureer daarna Supabase en de twee Vercel Environment Variables volgens het setupdocument.
+
+## v6.9.1 deploymentfix
+
+- Houdt de API-map op exact 12 Vercel Functions voor het Hobby-plan.
+- Voegt geen dertiende losse functie meer toe voor publieke Supabase-configuratie.
+- De ESM-naar-CommonJS melding in Vercel is alleen een waarschuwing en blokkeert de build niet.
