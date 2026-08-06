@@ -1,4 +1,4 @@
-# Architectuur v6.9.1
+# Architectuur v6.9.2
 
 ## Browser en geïnstalleerde app
 
@@ -63,7 +63,7 @@ De lokale roadtripbibliotheek blijft volledig uit `webplanner.js` en IndexedDB k
 `pwa.js` is de centrale controller voor alle installatieknoppen en voor handmatige en automatische updatecontrole. De appstatuskaart leest de actieve build uit `window.ROADORA_BUILD`. Route- en opslagknoppen gebruiken `aria-busy` om dubbele acties te voorkomen. Verwijderen gebruikt een eigen `alertdialog` met focusherstel en Escape-ondersteuning.
 
 
-## Account- en cloudlaag v6.9.1
+## Account- en cloudlaag v6.9.2
 
 - `api/geocode.js?mode=app-config` publiceert alleen de Supabase Project URL en publishable key uit Vercel Environment Variables en telt niet als extra functie.
 - `js/cloud-sync.js` laadt `supabase-js` pas wanneer cloudconfiguratie aanwezig is.

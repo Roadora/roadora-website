@@ -1,6 +1,6 @@
-# Roadora v6.9.1 — Accounts en cloudsynchronisatie
+# Roadora v6.9.2 — Schone planner- en appinterface
 
-Roadora v6.9.1 behoudt een optioneel Roadora-account toe. Zonder configuratie en zonder login blijft de volledige planner lokaal werken zoals in v6.8.5. Na koppeling met Supabase worden roadtrips automatisch tussen desktop, telefoon en tablet gesynchroniseerd.
+Roadora v6.9.2 bouwt voort op de account- en cloudsynchronisatiebasis en verwijdert een overbodige visuele stappenbalk. Roadora behoudt een optioneel Roadora-account. Zonder configuratie en zonder login blijft de volledige planner lokaal werken zoals in v6.8.5. Na koppeling met Supabase worden roadtrips automatisch tussen desktop, telefoon en tablet gesynchroniseerd.
 
 ## Accounts en synchronisatie
 
@@ -32,7 +32,7 @@ Voer daarna het SQL-bestand uit:
 
 Pak de compacte update uit in de hoofdmap van de Roadora-repository, vervang bestaande bestanden, commit en push via GitHub Desktop. Configureer daarna Supabase en de twee Vercel Environment Variables volgens het setupdocument.
 
-## v6.9.1 deploymentfix
+## v6.9.2 deploymentfix
 
 - Houdt de API-map op exact 12 Vercel Functions voor het Hobby-plan.
 - Voegt geen dertiende losse functie meer toe voor publieke Supabase-configuratie.

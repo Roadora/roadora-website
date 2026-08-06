@@ -76,6 +76,11 @@ for html in html_files:
         ]:
             if snippet not in source: errors.append(f'{html.name} mist {label}')
 if 'id="installRoadoraApp"' not in index: errors.append('index.html mist installatieknop')
+if 'class="route-dots"' in index:
+    errors.append('index.html bevat nog de overbodige gekleurde route-stappenbalk')
+_route_css=(ROOT/'css/webplanner.css').read_text(encoding='utf-8')
+if re.search(r'\.route-dots\s*\{|\.dot\.start\s*\{|\.dot\.end\s*\{', _route_css):
+    errors.append('webplanner.css bevat nog ongebruikte stappenbalkstijlen')
 
 # Mobile app-shell regression checks.
 app_shell=(ROOT/'js/app-shell.js').read_text(encoding='utf-8') if (ROOT/'js/app-shell.js').exists() else ''

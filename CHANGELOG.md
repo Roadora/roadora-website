@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.9.2 — Overbodige stappenbalk verwijderd
+
+- Verwijdert de gekleurde route-stappenbalk met ✓, 1, 2, 3, 4 en B uit de website en mobiele app.
+- Laat de kaart, dagplanning, Stops en bottom navigation als enige voortgangs- en navigatielagen staan.
+- Verwijdert de ongebruikte CSS voor de stappenbalk, zodat geen lege ruimte achterblijft.
+- Voegt een regressiecontrole toe die voorkomt dat de balk later ongemerkt terugkeert.
+
 ## v6.9.1 — Vercel Hobby deploymentfix
 
 - Verlaagt het aantal Vercel Functions van 13 naar exact 12.

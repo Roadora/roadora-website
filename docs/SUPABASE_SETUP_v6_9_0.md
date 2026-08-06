@@ -1,4 +1,4 @@
-# Roadora v6.9.1 — Supabase instellen
+# Roadora v6.9.2 — Supabase instellen
 
 Roadora blijft zonder cloudconfiguratie volledig lokaal werken. Na onderstaande configuratie worden roadtrips automatisch tussen desktop en mobiele app gesynchroniseerd.
 
@@ -87,4 +87,4 @@ Controleer de Site URL en Redirect URLs in Supabase Authentication.
 
 ## Vercel Hobby
 
-Roadora v6.9.1 gebruikt exact 12 functies. De publieke Supabase-configuratie wordt via het bestaande geocode-endpoint geleverd en maakt dus geen dertiende functie aan.
+Roadora v6.9.2 gebruikt exact 12 functies. De publieke Supabase-configuratie wordt via het bestaande geocode-endpoint geleverd en maakt dus geen dertiende functie aan.

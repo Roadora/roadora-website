@@ -1,4 +1,4 @@
-// Roadora Geocoding + publieke appconfig API — v6.9.1
+// Roadora Geocoding + publieke appconfig API — v6.9.2
 // Server-side Google Geocoding proxy. Keeps GOOGLE_MAPS_API_KEY out of frontend code.
 
 
